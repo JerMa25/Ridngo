@@ -1,0 +1,105 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: reactive-hexagonal
+    
+  docker:
+    compose:
+      enabled: false
+
+  # POSTGRESQL (R2DBC)
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:payment_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    pool:
+      enabled: true
+      initial-size: 1
+      max-size: 5
+      max-idle-time: 30m
+      max-life-time: 10m
+      acquire-retry: 3
+      max-acquire-time: 30s
+      validation-query: SELECT 1
+  sql:
+    init:
+      mode: always
+
+  # REDIS CLUSTER 
+  data:
+    redis:
+      password: ${REDIS_PASSWORD:password}
+      cluster:
+        nodes:
+          - ${REDIS_HOST:localhost}:7001
+          - ${REDIS_HOST:localhost}:7002
+          - ${REDIS_HOST:localhost}:7003
+          - ${REDIS_HOST:localhost}:7004
+          - ${REDIS_HOST:localhost}:7005
+          - ${REDIS_HOST:localhost}:7006
+
+  # KAFKA 
+  kafka:
+    bootstrap-servers:  ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# CUSTOM CONFIG 
+application:
+  external:
+    stock-service-url: http://${EXTERNAL_HOST:localhost}:8081
+    fare-calculator-url: https://fare-calculator-service.pynfi.com
+
+  kafka:
+    topics:
+      product-events: test-topic
+      notification-service-create-topic: notification-create-topic
+      # Utilisez un nom de topic dédié pour cet événement
+      offer-created: offer-created-topic
+      offer-send: notification-send-topic
+    notification-registration:
+      name: "Nom du projet"
+      email:
+        host: ${SMTP_HOST:smtp.gmail.com}
+        port: ${SMTP_PORT:587}
+        username: ${SMTP_USERNAME}
+        password: ${SMTP_PASSWORD}
+    notification-service:
+      token: token-topic
+      template:
+        new-offer-id: 1001
+        accepted-offer-id: 1002
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ["health","info","prometheus"]
+  endpoint:
+    health:
+      show-details: "always"
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# RESILIENCE4J 
+resilience4j:
+  circuitbreaker:
+    instances:
+      stock-service:
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        slidingWindowSize: 5
+
