@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  /* Vos couleurs personnalisées */
+  --color-bleu-nuit: #1B263B;
+  --color-orange-btn: #FF8C00;
+  --color-blanc-casse: #FAF3DD;
+
+  /* --- CORRECTION ICI --- */
+  /* On mappe les noms utilitaires (bg-background) vers les variables CSS */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+:root {
+  /* LIGHT MODE : Crème */
+  --background: #FAF3DD; 
+  --foreground: #1B263B;
+  
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(27, 38, 59, 0.1);
+}
+
+.dark {
+  /* DARK MODE : Bleu Nuit */
+  --background: #1B263B;
+  --foreground: #FAF3DD;
+  
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* ... le reste (glass, scrollbar) ... */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+#navigoo-map-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+/* Texture de grain (plus marquée) */
+.bg-grain {
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.04;
+  pointer-events: none;
+  /* Empêche le recalcul au changement de couleur */
+  background-attachment: fixed;
+}
+
+/* Pattern de points (Dots) */
+.bg-dots {
+  background-image: radial-gradient(rgba(255, 140, 0, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black, transparent 90%);
+}
+
+/* Blobs animés pour donner de la vie au fond */
+.blur-blob {
+  position: fixed;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  filter: blur(80px); /* Réduit de 120px à 80px pour la performance */
+  z-index: -1;
+  opacity: 0.15;
+  pointer-events: none;
+  /* Forcer l'utilisation de la carte graphique */
+  will-change: transform, opacity;
+  transform: translateZ(0); 
+  animation: blob-float 20s infinite alternate linear;
+}
+
+@keyframes blob-float {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(10%, 10%) scale(1.1); }
+}
+
+.dark .blur-blob {
+  opacity: 0.15;
+}
+

@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "features": "Avantages",
+    "howItWorks": "Comment ça marche",
+    "ride": "Rechercher un trajet",
+    "help": "Aide",
+    "login": "Connexion",
+    "register": "Inscription",
+    "driver": "Devenir Chauffeur",
+    "logout": "Déconnexion",
+    "dashboard": "Dashboard",
+    "admin": "Administration"
+  },
+  "hero": {
+    "title": "Bougez en toute",
+    "highlight": "liberté",
+    "subtitle": "Le premier service de transport qui vous laisse fixer votre propre prix. Sûr, local et fiable.",
+    "from": "Point de départ",
+    "to": "Destination",
+    "placeholderFrom": "Ex: Akwa, Douala",
+    "placeholderTo": "Où allez-vous ?",
+    "btnSearch": "ESTIMER LE PRIX",
+    "calculating": "Estimation...",
+    "recommendedPrice": "Prix recommandé",
+    "yourPrice": "Votre offre",
+    "publishOffer": "PUBLIER MON OFFRE",
+    "findingDrivers": "Recherche de chauffeurs...",
+    "selectDriver": "Sélectionner",
+    "waitingDriver": "Confirmation du chauffeur...",
+    "rideStarted": "Course en cours !",
+    "finishRide": "TERMINER LA COURSE",
+    "tabRide": "Course",
+    "rideCompleted": "Course terminée avec succès !",
+    "backHome": "Retour à l'accueil"
+  },
+  "features": {
+    "tag": "Pourquoi RidnGo ?",
+    "title": "La révolution du transport urbain",
+    "priceTitle": "Prix Équitable",
+    "priceDesc": "Pas d'algorithme caché. Vous proposez, le chauffeur accepte ou contre-propose.",
+    "safetyTitle": "Sécurité Maximale",
+    "safetyDesc": "Tous nos chauffeurs sont vérifiés par les syndicats locaux et suivis par GPS.",
+    "speedTitle": "Rapidité",
+    "speedDesc": "Trouvez un véhicule en moins de 3 minutes dans les grandes métropoles."
+  },
+  "howItWorks": {
+    "title": "Commander en 3 étapes",
+    "step1": "Simulez votre trajet",
+    "step1Desc": "Entrez vos adresses pour obtenir une estimation tarifaire juste.",
+    "step2": "Fixez votre prix",
+    "step2Desc": "Publiez votre offre et recevez les propositions des chauffeurs autour de vous.",
+    "step3": "Voyagez sereinement",
+    "step3Desc": "Sélectionnez votre chauffeur selon sa note et son véhicule, puis partez !"
+  },
+  "appPromo": {
+    "title": "RidnGo dans votre poche",
+    "subtitle": "Téléchargez l'application mobile pour une expérience encore plus fluide et un suivi en temps réel sur carte.",
+    "download": "Télécharger l'app"
+  },
+  "testimonials": {
+    "title": "Ils nous font confiance",
+    "user1": "Grâce à RidnGo, je maîtrise enfin mon budget transport mensuel à Yaoundé.",
+    "user2": "La sécurité est au top. Je sais exactement qui vient me chercher.",
+    "client": "Client régulier",
+    "student": "Étudiante"
+  },
+  "values": {
+    "safety": "Sûreté Garantie",
+    "price": "Prix Négociables",
+    "support": "Support 24/7",
+    "vehicles": "Véhicules Vérifiés"
+  },
+  "driver": {
+    "welcome": "Espace Chauffeur",
+    "statusOnline": "En ligne",
+    "statusOffline": "Hors-ligne",
+    "availableRides": "Offres à proximité",
+    "iAmInterested": "JE SUIS INTÉRESSÉ",
+    "selectedTitle": "VOUS AVEZ ÉTÉ CHOISI !",
+    "confirmClient": "CONFIRMER LA COURSE",
+    "viewClientMap": "Localisation du client",
+    "price": "Prix proposé",
+    "waitingSelection": "En attente du client...",
+    "rideFinished": "COURSE TERMINÉE",
+    "backToRadar": "RETOURNER AU RADAR",
+    "tabs": {
+      "dashboard": "Activités",
+      "history": "Historique",
+      "subscription": "Abonnement",
+      "profile": "Mon Profil"
+    },
+    "sub": {
+      "title": "Votre Abonnement",
+      "active": "Statut : Actif",
+      "expired": "Statut : Expiré",
+      "renew": "Renouveler mon plan",
+      "plan": "Plan Premium Mensuel"
+    },
+    "historyTitle": "Trajets récents"
+  },
+  "admin": {
+    "welcome": "Super Administration",
+    "stats": "Statistiques Globales",
+    "users": "Gestion Utilisateurs",
+    "drivers": "Gestion Chauffeurs",
+    "team": "Équipe Admin",
+    "rides": "Suivi des Courses",
+    "suspend": "Suspendre",
+    "activate": "Activer",
+    "role": "Rôle",
+    "createAdmin": "Ajouter un Administrateur",
+    "chartRides": "Évolution des courses",
+    "chartRevenue": "Revenus (FCFA)",
+    "addSuccess": "Nouvel administrateur ajouté avec succès !",
+    "passDefault": "Le mot de passe par défaut sera identique à l'email."
+  },
+  "auth": {
+    "loginTitle": "Bon retour !",
+    "loginSubtitle": "Connectez-vous pour accéder à votre espace.",
+    "registerTitle": "Rejoignez RidnGo",
+    "registerDriverTitle": "Devenir Chauffeur",
+    "registerSubtitle": "Créez un compte pour commencer l'aventure.",
+    "fullName": "Nom complet",
+    "email": "Email",
+    "password": "Mot de passe",
+    "btnLogin": "Se connecter",
+    "btnRegister": "S'inscrire",
+    "asDriver": "Mode Chauffeur",
+    "asClient": "Mode Client",
+    "noAccount": "Pas encore de compte ?",
+    "alreadyAccount": "Déjà inscrit ?",
+    "backHome": "Retour à l'accueil",
+    "error": "Identifiants invalides",
+    "mockInfo": "Comptes démo : client@ridego.com, driver@ridego.com, superadmin@ridego.com"
+  },
+  "footer": {
+    "policy": "Politique",
+    "terms": "Conditions",
+    "contact": "Contact",
+    "rights": "Tous droits réservés. ENSPY 2025."
+  }
+}

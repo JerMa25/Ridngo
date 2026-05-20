@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Home",
+    "features": "Benefits",
+    "howItWorks": "How it works",
+    "ride": "Find a Ride",
+    "help": "Help",
+    "login": "Login",
+    "register": "Register",
+    "driver": "Become a Driver",
+    "logout": "Logout",
+    "dashboard": "Dashboard",
+    "admin": "Admin"
+  },
+  "hero": {
+    "title": "Move with total",
+    "highlight": "freedom",
+    "subtitle": "The first transport service that lets you set your own price. Safe, local, and reliable.",
+    "from": "Pickup point",
+    "to": "Destination",
+    "placeholderFrom": "e.g. Akwa, Douala",
+    "placeholderTo": "Where are you going?",
+    "btnSearch": "ESTIMATE PRICE",
+    "calculating": "Estimating...",
+    "recommendedPrice": "Recommended price",
+    "yourPrice": "Your offer",
+    "publishOffer": "PUBLISH MY OFFER",
+    "findingDrivers": "Finding drivers...",
+    "selectDriver": "Select",
+    "waitingDriver": "Driver confirming...",
+    "rideStarted": "Ride in progress!",
+    "finishRide": "FINISH RIDE",
+    "tabRide": "Ride",
+    "rideCompleted": "Ride completed successfully!",
+    "backHome": "Back to Home"
+  },
+  "features": {
+    "tag": "Why RidnGo?",
+    "title": "The urban transport revolution",
+    "priceTitle": "Fair Price",
+    "priceDesc": "No hidden algorithm. You propose, the driver accepts or counter-offers.",
+    "safetyTitle": "Maximum Safety",
+    "safetyDesc": "All our drivers are verified by local unions and GPS tracked.",
+    "speedTitle": "Speed",
+    "speedDesc": "Find a vehicle in less than 3 minutes in major cities."
+  },
+  "howItWorks": {
+    "title": "Order in 3 steps",
+    "step1": "Simulate your trip",
+    "step1Desc": "Enter your addresses to get a fair price estimate.",
+    "step2": "Set your price",
+    "step2Desc": "Publish your offer and receive proposals from nearby drivers.",
+    "step3": "Travel peacefully",
+    "step3Desc": "Select your driver based on rating and vehicle, then go!"
+  },
+  "appPromo": {
+    "title": "RidnGo in your pocket",
+    "subtitle": "Download the mobile app for an even smoother experience and real-time map tracking.",
+    "download": "Download App"
+  },
+  "testimonials": {
+    "title": "They trust us",
+    "user1": "Thanks to RidnGo, I finally control my monthly transport budget in Yaoundé.",
+    "user2": "Safety is top-notch. I know exactly who is picking me up.",
+    "client": "Regular Customer",
+    "student": "Student"
+  },
+  "values": {
+    "safety": "Guaranteed Safety",
+    "price": "Negotiable Prices",
+    "support": "24/7 Support",
+    "vehicles": "Verified Vehicles"
+  },
+  "driver": {
+    "welcome": "Driver Space",
+    "statusOnline": "Online",
+    "statusOffline": "Offline",
+    "availableRides": "Nearby Offers",
+    "iAmInterested": "I AM INTERESTED",
+    "selectedTitle": "YOU WERE CHOSEN!",
+    "confirmClient": "CONFIRM RIDE",
+    "viewClientMap": "Client Location",
+    "price": "Offered Price",
+    "waitingSelection": "Waiting for client...",
+    "rideFinished": "RIDE FINISHED",
+    "backToRadar": "BACK TO RADAR",
+    "tabs": {
+      "dashboard": "Activity",
+      "history": "History",
+      "subscription": "Subscription",
+      "profile": "My Profile"
+    },
+    "sub": {
+      "title": "Your Subscription",
+      "active": "Status: Active",
+      "expired": "Status: Expired",
+      "renew": "Renew Plan",
+      "plan": "Monthly Premium Plan"
+    },
+    "historyTitle": "Recent Rides"
+  },
+  "admin": {
+    "welcome": "Super Admin Panel",
+    "stats": "Global Statistics",
+    "users": "Manage Clients",
+    "drivers": "Manage Drivers",
+    "team": "Admin Team",
+    "rides": "Ride Tracking",
+    "suspend": "Suspend",
+    "activate": "Activate",
+    "role": "Role",
+    "createAdmin": "Create Admin Account",
+    "chartRides": "Rides Evolution",
+    "chartRevenue": "Revenue (FCFA)",
+    "addSuccess": "New administrator added successfully!",
+    "passDefault": "Default password will be the same as the email."
+  },
+  "auth": {
+    "loginTitle": "Welcome back!",
+    "loginSubtitle": "Login to access your workspace.",
+    "registerTitle": "Join RidnGo",
+    "registerDriverTitle": "Become a Driver",
+    "registerSubtitle": "Create an account to start.",
+    "fullName": "Full Name",
+    "email": "Email",
+    "password": "Password",
+    "btnLogin": "Login",
+    "btnRegister": "Register",
+    "asDriver": "Driver Mode",
+    "asClient": "Client Mode",
+    "noAccount": "No account yet?",
+    "alreadyAccount": "Already registered?",
+    "backHome": "Back Home",
+    "error": "Invalid credentials",
+    "mockInfo": "Demo accounts: client@ridego.com, driver@ridego.com, superadmin@ridego.com"
+  },
+  "footer": {
+    "policy": "Policy",
+    "terms": "Terms",
+    "contact": "Contact",
+    "rights": "All rights reserved. ENSPY 2025."
+  }
+}
