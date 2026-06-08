@@ -4,7 +4,7 @@ services:
     image: postgres:16
     container_name: ride-go-db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: yowyob_db
       POSTGRES_USER: fleet_admin
