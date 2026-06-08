@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from './api-client';
 import { AuthResponse, UserRole, UserResponse } from '@/types/api';
+import { errorHandler } from '@/utils/error-handler';
 
 export const handleAuthSubmit = async (
   type: 'login' | 'register', 
@@ -45,7 +46,8 @@ export const handleAuthSubmit = async (
   } catch (error: any) {
     return { 
       success: false, 
-      message: error.response?.data?.message || "Erreur d'authentification" 
+      //message: error.response?.data?.message || "Erreur d'authentification" 
+      message: errorHandler(error, 'auth')
     };
   }
 };
