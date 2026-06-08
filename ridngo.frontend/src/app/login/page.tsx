@@ -9,12 +9,15 @@ import { motion } from 'framer-motion';
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const res: any = await handleAuthSubmit('login', formData);
+    const res: any = await handleAuthSubmit('login', {
+      email: formData.identifier, // On repasse l'identifiant via le champ attendu par handleAuthSubmit
+      password: formData.password
+    });
     if (res.success) {
       window.location.href = res.redirectUrl;
     } else {
@@ -45,8 +48,8 @@ export default function LoginPage() {
 
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Email</label>
-              <input required type="email" placeholder="email@ridego.com" className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-orange-btn text-foreground" onChange={(e) => setFormData({...formData, email: e.target.value})} />
+              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Email ou Nom d&apos;utilisateur</label>
+              <input required type="text" placeholder="Utilisateur ou email" className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-orange-btn text-foreground" onChange={(e) => setFormData({...formData, identifier: e.target.value})} />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Mot de passe</label>

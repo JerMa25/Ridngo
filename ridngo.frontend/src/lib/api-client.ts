@@ -30,10 +30,23 @@ const processQueue = (error: any, token: string | null = null) => {
 
 const authInterceptor = (config: any) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('accessToken');
-    console.log("Attaching token:", token);
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // On construit l'URL complète pour le log et le check (si baseURL existe)
+    const fullUrl = config.baseURL 
+      ? `${config.baseURL.replace(/\/$/, '')}/${config.url?.replace(/^\//, '')}`
+      : config.url;
+
+    // Ne pas attacher le token pour les endpoints d'authentification publique
+    const publicEndpoints = ['/api/auth/register', '/api/auth/login'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => fullUrl?.endsWith(endpoint));
+
+    if (!isPublicEndpoint) {
+      const token = localStorage.getItem('accessToken');
+      if (token && config.headers) {
+        console.log("Attaching token to:", fullUrl);
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      console.log("Skipping token attachment for public endpoint:", fullUrl);
     }
   }
   return config;

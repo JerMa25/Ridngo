@@ -25,7 +25,7 @@ spring:
       validation-query: SELECT 1
   sql:
     init:
-      mode: always
+      mode: never
 
   # REDIS CLUSTER 
   data:
@@ -103,3 +103,10 @@ resilience4j:
         waitDurationInOpenState: 5s
         slidingWindowSize: 5
 
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+        web:
+          reactive: DEBUG

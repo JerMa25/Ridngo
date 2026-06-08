@@ -9,8 +9,8 @@ export const handleAuthSubmit = async (
 ) => {
   try {
     if (type === 'login') {
-      const response = await api.post<AuthResponse>('/api/v1/auth/login', {
-        identifier: data.email,
+      const response = await api.post<AuthResponse>('/api/auth/login', {
+        identifier: data.email, // L'identifiant peut être l'email ou le username
         password: data.password
       });
       return await finalizeSession(response.data);
@@ -22,10 +22,12 @@ export const handleAuthSubmit = async (
         username: data.username,
         password: data.password,
         email: data.email,
-        phone: data.phone,
         firstName: data.firstName,
         lastName: data.lastName,
-        roles: [requestedRole]
+        service: 'RIDE_AND_GO',
+        // On n'envoie pas 'roles' ou 'telephone' ici si le backend ne les attend pas dans l'objet 'data'
+        // Mais si on veut les garder, on peut essayer de les inclure s'ils sont présents
+        ...(data.phone && { telephone: data.phone })
       };
 
       formData.append('data', new Blob([JSON.stringify(registerDto)], { type: 'application/json' }));
@@ -34,7 +36,7 @@ export const handleAuthSubmit = async (
         formData.append('file', data.photo);
       }
 
-      const response = await api.post<AuthResponse>('/api/v1/auth/register', formData, {
+      const response = await api.post<AuthResponse>('/api/auth/register', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
@@ -54,29 +56,44 @@ const finalizeSession = async (authData: AuthResponse) => {
   localStorage.setItem('accessToken', authData.accessToken);
   if (authData.refreshToken) localStorage.setItem('refreshToken', authData.refreshToken);
   
-  const isDriver = authData.roles.includes('RIDE_AND_GO_DRIVER');
-  const profileRes = await api.get(isDriver ? '/api/v1/users/me/driver-profile' : '/api/v1/users/me');
+  // On utilise le profil utilisateur directement s'il est présent dans l'authData
+  const userProfile = authData.user;
   
-  // Le profil complet renvoyé par le backend
-  const userProfile = isDriver ? profileRes.data.user : profileRes.data;
+  if (!userProfile) {
+    // Si pas de profil dans la réponse, on tente de le récupérer (fallback)
+    const isDriver = authData.roles?.includes('RIDE_AND_GO_DRIVER');
+    const profileRes = await api.get(isDriver ? '/api/v1/users/me/driver-profile' : '/api/v1/users/me');
+    const fetchedProfile = isDriver ? profileRes.data.user : profileRes.data;
+    localStorage.setItem('user-full', JSON.stringify(fetchedProfile));
+    
+    const userObj = {
+      id: fetchedProfile.id,
+      name: fetchedProfile.name || `${fetchedProfile.firstName} ${fetchedProfile.lastName}`,
+      email: fetchedProfile.email,
+      phone: fetchedProfile.telephone || fetchedProfile.phone,
+      role: (fetchedProfile.roles?.[0] || 'PASSENGER').replace('RIDE_AND_GO_', '')
+    };
+    localStorage.setItem('user', JSON.stringify(userObj));
+  } else {
+    // On stocke le profil complet renvoyé par le backend
+    localStorage.setItem('user-full', JSON.stringify(userProfile));
+    console.log('userProfile from auth:', userProfile);
 
-  // On stocke TOUT le profil pour les besoins futurs (numéro, etc.)
-  localStorage.setItem('user-full', JSON.stringify(userProfile));
-  console.log('userProfile: ', userProfile);
+    // On stocke l'objet simplifié utilisé par la Navbar
+    const userObj = {
+      id: userProfile.id,
+      name: `${userProfile.firstName} ${userProfile.lastName}`,
+      email: userProfile.email,
+      phone: userProfile.phone || userProfile.telephone,
+      role: userProfile.roles[0].replace('RIDE_AND_GO_', '')
+    };
+    
+    localStorage.setItem('user', JSON.stringify(userObj));
+  }
 
-  // On stocke l'objet simplifié utilisé par la Navbar
-  const userObj = {
-    id: userProfile.id,
-    name: userProfile.name || `${userProfile.firstName} ${userProfile.lastName}`,
-    email: userProfile.email,
-    phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
-    role: userProfile.roles[0].replace('RIDE_AND_GO_', '')
-  };
-  
-  localStorage.setItem('user', JSON.stringify(userObj));
-
+  const isDriverProfile = (authData.user?.roles || authData.roles || []).includes('RIDE_AND_GO_DRIVER');
   return { 
     success: true, 
-    redirectUrl: isDriver ? "/driver/dashboard" : "/ride" 
+    redirectUrl: isDriverProfile ? "/driver/dashboard" : "/ride" 
   };
 };

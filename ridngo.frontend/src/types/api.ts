@@ -2,12 +2,29 @@ export type UserRole = 'RIDE_AND_GO_PASSENGER' | 'RIDE_AND_GO_DRIVER' | 'RIDE_AN
 export type OfferState = 'PENDING' | 'BID_RECEIVED' | 'DRIVER_SELECTED' | 'VALIDATED' | 'CANCELLED';
 export type RideState = 'CREATED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  phone?: string | null;
+  telephone?: string | null;
+  firstName: string;
+  lastName: string;
+  service: string;
+  photoId?: string | null;
+  photoUri?: string | null;
+  roles: string[];
+  permissions: string[];
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  username: string;
-  roles: string[];
-  permissions: string[];
+  user: UserProfile;
+  // Les champs suivants peuvent être présents à la racine ou dans 'user'
+  username?: string;
+  roles?: string[];
+  permissions?: string[];
 }
 
 export interface UserResponse {
