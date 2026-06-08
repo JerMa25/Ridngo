@@ -80,16 +80,17 @@ application:
 
   auth:
     mode: remote # 'fake' pour ton dev local, 'remote' pour le serveur réel
-    url: https://auth-service.pynfi.com
+    url: https://traefikdev.yowyob.com/auth
+
 
   fare:
     mode: remote # 'fake' pour ton dev local, 'remote' pour le serveur réel
-    url: https://fare-calculator-service.pynfi.com
+    url: https://traefikdev.yowyob.com/fare-calculator
     api-key: 974e9428-6ce2-48e7-b74b-93f572007ef8
     
   notification:
     mode: http # 'http' ou 'kafka'
-    url: https://notification-service.pynfi.com # URL du Swagger fourni
+    url: https://traefikdev.yowyob.com/notification # URL du Swagger fourni
     service-token: "a77599d3-8de7-4d52-b9d0-2202b2e13a9e" # Token récupéré après enregistrement du service
     templates:
       new-offer: 12        # ID template: Nouvelle offre pour les chauffeurs
@@ -100,13 +101,13 @@ application:
       admin-validation: 17 # ID template: admin a validé le profil du driver
 
   vehicle:
-    url: https://vehicule-service.pynfi.com
+    url: https://traefikdev.yowyob.com/vehicule
 
   syndicate:
     url: https://ugate.pynfi.com
 
   payment:
-    url: https://payment-service.pynfi.com
+    url: https://traefikdev.yowyob.com/payment
     commission-rate: 0.10
 
   kafka:
