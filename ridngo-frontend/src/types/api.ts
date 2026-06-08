@@ -165,6 +165,7 @@ export interface CreateOfferRequest {
   endLon: number; // Nouveau
   endPoint: string;
   price: number;
+  numberOfSeats: number;
   passengerPhone: string;
   departureTime: string;
 }
