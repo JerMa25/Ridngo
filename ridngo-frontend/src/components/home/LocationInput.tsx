@@ -141,7 +141,7 @@ export const LocationInput = ({
         }}
         onFocus={onFocus}
         placeholder={placeholder}
-        className="w-full bg-foreground/5 border border-transparent rounded-2xl py-4 pl-12 pr-12 outline-none focus:ring-2 focus:ring-orange-btn text-foreground font-bold transition-all placeholder:opacity-30"
+        className={`w-full bg-foreground/5 border border-transparent rounded-2xl py-4 pl-12 outline-none focus:ring-2 focus:ring-orange-btn text-foreground font-bold transition-all placeholder:opacity-30 ${showGPS ? 'pr-[110px] sm:pr-[120px]' : 'pr-12'}`}
       />
 
       {/* BOUTON GPS STYLISÉ */}
@@ -150,10 +150,13 @@ export const LocationInput = ({
           type="button"
           onClick={handleGPSClick}
           disabled={isLocating}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isLocating ? 'text-orange-btn' : 'text-foreground/20 hover:text-orange-btn hover:bg-orange-btn/10'}`}
+          className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all ${isLocating ? 'text-orange-btn bg-orange-btn/10' : 'text-foreground/40 bg-foreground/5 hover:text-orange-btn hover:bg-orange-btn/10'}`}
           title="Utiliser ma position actuelle"
         >
-          <Navigation size={18} className={isLocating ? 'fill-orange-btn' : ''} />
+          <Navigation size={14} className={`shrink-0 ${isLocating ? 'fill-orange-btn' : ''}`} />
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+            {isLocating ? 'Recherche' : 'Localiser'}
+          </span>
         </button>
       )}
 
