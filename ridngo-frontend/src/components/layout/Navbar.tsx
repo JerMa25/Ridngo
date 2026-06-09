@@ -77,10 +77,19 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
             </Link>
 
             <Link href="/profile" className="flex items-center gap-3 bg-foreground/5 pl-2 pr-2 sm:pr-4 py-1.5 rounded-full border border-foreground/5 hover:bg-foreground/10 transition-all group">
-              <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">{user.name[0]}</div>
+              <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">
+                {/*{user.name[0]}*/}
+                {user?.name?.[0] ?? "U"}
+              </div>
               <div className="hidden sm:flex flex-col -space-y-1 text-left">
-                 <span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>
-                 <span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>
+                 {/*<span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>*/}
+                <span className="text-[11px] font-black text-foreground">
+                 {user?.name?.[0] ?? "U"}
+                </span>
+                <span className="text-[9px] font-bold text-orange-btn uppercase">
+                  {user?.role ?? ""}
+                </span>
+                 {/*<span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>*/}
               </div>
             </Link>
           </div>
