@@ -9,6 +9,7 @@ import {
   Car, Wallet as WalletIcon, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 export default function ProfilePage() {
   const [fullProfile, setFullProfile] = useState<any>(null); // Contient l'objet complet du backend
@@ -75,10 +76,10 @@ export default function ProfilePage() {
         phone: editData.phone
       };
       await api.put('/api/v1/users/profile', updateReq);
-      alert("Profil mis à jour !");
+      toast.success("Profil mis à jour !");
       fetchProfile();
     } catch (err) {
-      alert("Erreur lors de la mise à jour");
+      toast.error("Erreur lors de la mise à jour");
     } finally {
       setSaving(false);
     }
@@ -87,7 +88,7 @@ export default function ProfilePage() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("La confirmation ne correspond pas.");
+      toast.error("La confirmation ne correspond pas.");
       return;
     }
     setChangingPassword(true);
@@ -96,10 +97,10 @@ export default function ProfilePage() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-      alert("Mot de passe modifié !");
+      toast.success("Mot de passe modifié !");
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
-      alert(err.response?.data?.message || "Erreur mot de passe.");
+      toast.error(err.response?.data?.message || "Erreur mot de passe.");
     } finally {
       setChangingPassword(false);
     }

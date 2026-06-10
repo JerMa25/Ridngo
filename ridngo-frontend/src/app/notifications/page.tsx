@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '@/lib/userService';
 import { Notification, NotificationSettings } from '@/types/api';
+import { toast } from 'react-hot-toast';
 
 export default function NotificationsPage() {
   // --- ÉTATS POUR LA PAGINATION ---
@@ -105,7 +106,7 @@ export default function NotificationsPage() {
         whatsapp: settings.whatsappEnabled
       });
       setShowSettings(false);
-    } catch (e) { alert("Erreur lors de la sauvegarde"); }
+    } catch (e) { toast.error("Erreur lors de la sauvegarde"); }
     setSavingSettings(false);
   };
 

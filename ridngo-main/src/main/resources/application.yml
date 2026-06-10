@@ -13,7 +13,7 @@ spring:
 
   # POSTGRESQL (R2DBC)
   r2dbc:
-    url: r2dbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5433}/${DB_NAME:yowyob_db}?schema=ride_and_go
+    url: r2dbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}?schema=ride_and_go
     username: ${DB_USERNAME:fleet_admin}
     password: ${DB_PASSWORD:fleet_password}
     pool:
@@ -27,7 +27,7 @@ spring:
       validation-query: SELECT 1
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5433}/${DB_NAME:yowyob_db}?currentSchema=ride_and_go
+    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}?currentSchema=ride_and_go
     username: ${DB_USERNAME:fleet_admin}
     password: ${DB_PASSWORD:fleet_password}
     driver-class-name: org.postgresql.Driver
@@ -40,7 +40,7 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
     default-schema: ride_and_go # Force Liquibase à travailler dans ce schéma
     liquibase-schema: ride_and_go # Stocke les tables de gestion Liquibase ici aussi
-    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5433}/${DB_NAME:yowyob_db}
+    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}
 
   sql:
     init:
@@ -104,7 +104,7 @@ application:
     url: https://traefikdev.yowyob.com/vehicule
 
   syndicate:
-    url: https://ugate.pynfi.com
+    url: https://traefikdev.yowyob.com/ugate
 
   payment:
     url: https://traefikdev.yowyob.com/payment

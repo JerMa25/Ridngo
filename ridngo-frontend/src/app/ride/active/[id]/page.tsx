@@ -6,6 +6,7 @@ import MapView from '@/components/home/MapView';
 import { Loader2, CheckCircle2, Phone, MapPin, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api-client';
+import toast from 'react-hot-toast';
 
 export default function ActiveRidePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -39,7 +40,7 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
       await rideService.updateRideStatus(id, 'COMPLETED');
       setShowReview(true);
     } catch (e) {
-      alert("Erreur lors de la clôture");
+      toast.error("Erreur lors de la clôture");
     }
   };
 
@@ -48,7 +49,10 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
       await rideService.postReview(id, rating, comment);
       window.location.href = "/ride"; // Retour accueil client
     } catch (e) {
-      alert("Merci pour votre note !");
+      //alert("Merci pour votre note !");
+      toast('Merci pour votre note !', {
+        icon: '👏',
+      });
       window.location.href = "/ride";
     }
   };

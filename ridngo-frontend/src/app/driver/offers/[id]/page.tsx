@@ -11,6 +11,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 // 1. IMPORT DYNAMIQUE DE LA CARTE
 const MapView = dynamic(() => import('@/components/home/MapView'), { 
@@ -114,7 +115,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
       const updated = await rideService.getOfferById(id);
       setOffer(updated);
     } catch (e: any) {
-      alert(e.response?.data?.message || "Erreur postulation");
+      toast.error(e.response?.data?.message || "Erreur postulation");
     } finally {
       setActionLoading(false);
     }
@@ -127,7 +128,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
       const rideRes = await rideService.driverAccepts(id, profile.data.id);
       router.push(`/driver/ride/${rideRes.id}`);
     } catch (e: any) {
-      alert("Erreur validation");
+      toast.error("Erreur validation");
     } finally {
       setActionLoading(false);
     }

@@ -44,7 +44,7 @@ export const handleAuthSubmit = async (
   } catch (error: any) {
     return { 
       success: false, 
-          message: handleApiError(error, 'auth')
+      message: handleApiError(error, 'auth')
     };
   }
 };

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { handleAuthSubmit } from '@/lib/auth';
 import { motion } from 'framer-motion';
+import toast  from 'react-hot-toast';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function LoginPage() {
     if (res.success) {
       window.location.href = res.redirectUrl;
     } else {
-      alert(res.message);
+      toast.error(res.message);
       setIsLoading(false);
     }
   };
