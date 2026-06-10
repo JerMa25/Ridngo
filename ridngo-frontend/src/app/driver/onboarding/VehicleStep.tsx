@@ -7,6 +7,7 @@ import {
   Gauge, Cog, ChevronRight, Loader2, 
   Plus, Trash2, Image as ImageIcon, Sparkles, 
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const FALLBACK_OPTIONS = {
   makes: [{ vehicleMakeId: '1', makeName: 'Toyota' }, { vehicleMakeId: '2', makeName: 'Mercedes' }],
@@ -165,12 +166,21 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
 
       onComplete();
     } catch (err: any) {
-        console.error("Erreur détaillée:", err.response?.data);
+    {/*}    console.error("Erreur détaillée:", err.response?.data);
         alert("Erreur: " + (err.response?.data?.message || "Vérifiez les données du véhicule"));
         setErrorStatus(err.response?.status || 500);
     } finally {
         setLoading(false);
-    }
+    }*/}
+    console.error("ERREUR COMPLÈTE :", err);
+
+    console.log("status :", err.response?.status);
+    console.log("data :", err.response?.data);
+
+    toast.error(JSON.stringify(err.response?.data, null, 2));
+
+    setErrorStatus(err.response?.status || 500);
+}
   };
 
   if (fetching) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-orange-btn" size={40} /></div>;

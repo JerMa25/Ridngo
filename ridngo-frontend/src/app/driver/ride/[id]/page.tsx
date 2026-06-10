@@ -7,6 +7,7 @@ import { MapPin, Navigation, Phone, Loader2, User, ArrowLeft, Flag } from 'lucid
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation'; // CORRECT IMPORT
+import { toast } from 'react-hot-toast';
 
 const MapView = dynamic(() => import('@/components/home/MapView'), { ssr: false });
 
@@ -56,14 +57,14 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
       await rideService.updateRideStatus(id, newStatus);
       
       if (newStatus === 'COMPLETED') {
-        alert("Course terminée avec succès !");
+        toast.success("Course terminée avec succès !");
         router.push("/driver/dashboard"); // Redirection vers le dashboard
       } else {
         setRide((prev: any) => ({ ...prev, state: newStatus }));
       }
     } catch (e: any) { 
       console.error("Erreur statut:", e);
-      alert(e.response?.data?.message || "Erreur lors de la mise à jour du statut"); 
+      toast.error(e.response?.data?.message || "Erreur lors de la mise à jour du statut"); 
     } finally {
       setActionLoading(false);
     }
