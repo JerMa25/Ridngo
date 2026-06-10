@@ -96,6 +96,7 @@ public class OfferService implements
                             .endLat(request.endLat())
                             .endLon(request.endLon())
                             .price(request.price())
+                            .numberOfPlaces(request.numberOfPlaces())
                             .passengerPhone(finalPhone)
                             .departureTime(request.departureTime())
                             .state(OfferState.PENDING)
@@ -175,7 +176,7 @@ public class OfferService implements
                                 .id(Utils.generateUUID())
                                 .userId(user.id())
                                 .title("Nouvelle course disponible")
-                                .message("Une course de " + offer.price() + " F est disponible à " + offer.startPoint())
+                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price() + " F est disponible à " + offer.startPoint())
                                 .type("OFFER")
                                 .isRead(false)
                                 .dataJson(json)
@@ -241,6 +242,7 @@ public class OfferService implements
                         offer.endLat(), // ✅ Pour dessiner la ligne d'arrivée sur la map
                         offer.endLon(), // ✅
                         offer.price(),
+                        offer.numberOfPlaces(),
                         offer.departureTime(),
                         // On récupère la date de création depuis le domaine
                         // Note: Assure-toi que ton OfferMapper mappe bien createdDate vers createdAt
@@ -405,7 +407,7 @@ public class OfferService implements
      * suffisant.
      */
     private Mono<Void> notifyEligibleDriversWithBalance(Offer offer) {
-        log.info("📢 Notifying eligible drivers for offer {} (Price: {})", offer.id(), offer.price());
+        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(), offer.numberOfPlaces(), offer.price());
 
         double requiredBalance = offer.price() * commissionRate;
 
@@ -599,6 +601,7 @@ public class OfferService implements
                             offerDetails.endLat() != null ? offerDetails.endLat() : existing.endLat(),
                             offerDetails.endLon() != null ? offerDetails.endLon() : existing.endLon(),
                             offerDetails.price() > 0 ? offerDetails.price() : existing.price(),
+                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces() : existing.numberOfPlaces(),
                             offerDetails.passengerPhone() != null ? offerDetails.passengerPhone()
                                     : existing.passengerPhone(),
                             offerDetails.departureTime() != null ? offerDetails.departureTime()

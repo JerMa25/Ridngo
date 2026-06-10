@@ -29,7 +29,7 @@ export default function RidePage() {
   const [departureTime, setDepartureTime] = useState(
     new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   );
-
+  const [numberOfPlaces, setNumberOfPlaces] = useState(1);
   const [offer, setOffer] = useState<any>(null);
   const [ride, setRide] = useState<any>(null);
   const [tracking, setTracking] = useState<any>(null);
@@ -156,6 +156,7 @@ export default function RidePage() {
         endLon: parseFloat(dest.lon), // Conversion en nombre
         endPoint: dest.name,
         price: price,
+        numberOfPlaces: numberOfPlaces,
         passengerPhone: passengerPhone,
         departureTime: departureTime
       });
@@ -211,6 +212,8 @@ export default function RidePage() {
                 setPassengerPhone={setPassengerPhone}
                 departureTime={departureTime}
                 setDepartureTime={setDepartureTime}
+                numberOfPlaces={numberOfPlaces}
+                setNumberOfPlaces={setNumberOfPlaces} 
                 onBack={() => setStep('search')} 
                 onPublish={handlePublishOffer} 
               />

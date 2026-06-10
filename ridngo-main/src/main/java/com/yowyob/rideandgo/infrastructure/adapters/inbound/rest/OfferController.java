@@ -142,6 +142,7 @@ public class OfferController {
                 .startPoint(request.startPoint())
                 .endPoint(request.endPoint())
                 .price(request.price() != null ? request.price() : 0.0)
+                .numberOfPlaces(request.numberOfPlaces() != null ? request.numberOfPlaces() : 0)
                 .build();
 
         return offerService.updateOffer(id, domainUpdate).map(mapper::toResponse);
