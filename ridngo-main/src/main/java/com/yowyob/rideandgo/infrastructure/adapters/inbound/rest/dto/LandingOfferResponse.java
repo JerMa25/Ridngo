@@ -10,6 +10,7 @@ public record LandingOfferResponse(
     Double endLat, // ✅ Pour dessiner la ligne d'arrivée sur la map
     Double endLon, // ✅
     double price,
+    int numberOfPlaces,
     String departureTime,
     LocalDateTime createdAt
 ) {}

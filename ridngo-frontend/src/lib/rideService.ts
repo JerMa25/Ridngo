@@ -1,6 +1,6 @@
 import api from './api-client';
 import { 
-  OfferResponse, FareResponse, RideResponse, 
+  OfferResponse, LandingOfferResponse, FareResponse, RideResponse, 
   CreateOfferRequest, FareRequest, RideTrackingResponse, Wallet, 
   DriverTrajectory
 } from '@/types/api';
@@ -38,8 +38,8 @@ export const rideService = {
     return response.data;
   },
 
-  getLandingOffers: async (): Promise<OfferResponse[]> => {
-    const response = await api.get<OfferResponse[]>(`/api/v1/offers/landing?limit=10`);
+  getLandingOffers: async (): Promise<LandingOfferResponse[]> => {
+    const response = await api.get<LandingOfferResponse[]>(`/api/v1/offers/landing?limit=10`);
     return response.data;
   },
 
