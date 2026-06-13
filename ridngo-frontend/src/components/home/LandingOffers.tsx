@@ -63,7 +63,7 @@ export const LandingOffers = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {offers.map((offer, idx) => (
               <motion.div 
-                key={offer.id}
+                key={offer.id || idx}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
