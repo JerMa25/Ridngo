@@ -52,7 +52,7 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
       {/* CENTRE : Liens (Desktop) */}
       <div className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-widest text-foreground/60">
         {user?.role === 'PASSENGER' && (
-          <Link href="/" className={`hover:text-orange-btn transition-colors ${isHome ? 'text-orange-btn' : ''}`}>Accueil</Link>
+          <Link href="/passenger/dashboard" className={`hover:text-orange-btn transition-colors ${pathname === '/passenger/dashboard' ? 'text-orange-btn' : ''}`}>Dashboard</Link>
         )}
         {user?.role === 'PASSENGER' && (
            <Link href="/ride" className="hover:text-orange-btn transition-colors flex items-center gap-2">
