@@ -7,6 +7,7 @@ import {
   User, XCircle, ChevronRight, Phone, Info 
 } from 'lucide-react';
 import api from '@/lib/api-client';
+import toast from 'react-hot-toast';
 
 interface Props {
   offer: any;
@@ -148,7 +149,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
       localStorage.removeItem('activeOfferId');
       window.location.reload();
     } catch (error: any) {
-      alert("Erreur lors de l'annulation.");
+      toast.error("Erreur lors de l'annulation.");
       setIsCancelling(false);
     }
   };

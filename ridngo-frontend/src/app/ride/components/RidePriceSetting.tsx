@@ -10,6 +10,8 @@ interface Props {
   setPassengerPhone: (val: string) => void;
   departureTime: string;
   setDepartureTime: (val: string) => void;
+  numberOfPlaces: number;
+  setNumberOfPlaces: (val: number) => void;
   onBack: () => void;
   onPublish: () => void;
 }
@@ -18,6 +20,7 @@ export const RidePriceSetting = ({
   price, setPrice, 
   passengerPhone, setPassengerPhone,
   departureTime, setDepartureTime,
+  numberOfPlaces, setNumberOfPlaces,
   onBack, onPublish 
 }: Props) => {
   const [isForSelf, setIsForSelf] = useState(true);
@@ -51,8 +54,19 @@ export const RidePriceSetting = ({
 
   console.log('phone: ', passengerPhone, ' departureTime: ', departureTime);
 
+  const adjustSeats = (amount: number) => {
+    setNumberOfPlaces(
+      Math.min(5, Math.max(1, numberOfPlaces + amount))
+    );
+  };
+
   const adjustPrice = (amount: number) => {
-    setPrice(Math.max(100, price + amount));
+    const total = price * numberOfPlaces;
+    const newTotal = Math.max(100, total + amount); 
+    
+    const newUnitPrice = newTotal / numberOfPlaces;
+
+    setPrice(newUnitPrice);
   };
 
   return (
@@ -84,8 +98,11 @@ export const RidePriceSetting = ({
         <div className="text-center">
           <input 
             type="number" 
-            value={price} 
-            onChange={(e) => setPrice(parseInt(e.target.value || "0"))} 
+            value={price * numberOfPlaces} 
+            onChange={(e) => {
+              const total = parseInt(e.target.value || "0");
+              setPrice(total);
+            }} 
             className="bg-transparent text-4xl font-black text-center w-32 outline-none text-foreground" 
           />
           <p className="text-[9px] font-black text-orange-btn uppercase">FCFA</p>
@@ -93,6 +110,32 @@ export const RidePriceSetting = ({
         
         <button 
           onClick={() => adjustPrice(50)} 
+          className="w-14 h-14 bg-orange-btn text-white rounded-2xl shadow-md flex items-center justify-center font-bold text-2xl hover:scale-105 transition-all active:scale-90"
+        >
+          <Plus/>
+        </button>
+      </div>
+
+      {/* SÉLECTEUR DE PLACES */}
+      <div className="flex items-center justify-between bg-foreground/5 p-4 rounded-3xl border border-foreground/5">
+        <button 
+          onClick={() => adjustSeats(-1)}
+          disabled={numberOfPlaces <= 1} 
+          className="w-14 h-14 bg-background rounded-2xl shadow-sm flex items-center justify-center font-bold text-2xl hover:bg-orange-btn hover:text-white transition-all active:scale-90"
+        >
+          <Minus/>
+        </button>
+        
+        <div className="text-center">
+          <p className="text-4xl font-black">{numberOfPlaces}</p>
+          <p className="text-[9px] font-black text-orange-btn uppercase">
+            {numberOfPlaces > 1 ? "places" : "place"}
+          </p>
+        </div>
+        
+        <button 
+          onClick={() => adjustSeats(1)} 
+          disabled={numberOfPlaces >= 5}
           className="w-14 h-14 bg-orange-btn text-white rounded-2xl shadow-md flex items-center justify-center font-bold text-2xl hover:scale-105 transition-all active:scale-90"
         >
           <Plus/>

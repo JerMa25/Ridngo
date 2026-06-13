@@ -8,6 +8,7 @@ import {
   Mail, ShieldPlus, ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast, { Toaster } from 'react-hot-toast';
 
 import fr from '@/dictionaries/fr.json';
 import en from '@/dictionaries/en.json';
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
     setDbUsers([...dbUsers, adminAccount]);
     setIsAddAdminOpen(false);
     setNewAdmin({ fullName: '', email: '' });
-    alert(t.admin.addSuccess);
+    toast.success(t.admin.addSuccess);
   };
 
   return (

@@ -51,6 +51,9 @@ public class OfferEntity implements Persistable<UUID> {
 
     private double price;
 
+    @Column("number_of_places")
+    private int numberOfPlaces;
+
     @Column("state")
     private OfferState state;
 

@@ -18,6 +18,7 @@ public record Offer(
         Double endLat, // ✅ AJOUTÉ
         Double endLon, // ✅ AJOUTÉ
         double price,
+        int numberOfPlaces,
         String passengerPhone,
         String departureTime,
         OfferState state,
@@ -27,17 +28,17 @@ public record Offer(
 ) {
     public Offer withBids(List<Bid> bids) {
         return new Offer(id, passengerId, selectedDriverId, startPoint, startLat, startLon,
-                endPoint, endLat, endLon, price, passengerPhone, departureTime, state, bids, version, createdAt);
+                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt);
     }
 
     public Offer withState(OfferState state) {
         return new Offer(id, passengerId, selectedDriverId, startPoint, startLat, startLon,
-                endPoint, endLat, endLon, price, passengerPhone, departureTime, state, bids, version, createdAt);
+                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt);
     }
 
     public Offer withDriverSelected(UUID driverId) {
         return new Offer(id, passengerId, driverId, startPoint, startLat, startLon,
-                endPoint, endLat, endLon, price, passengerPhone, departureTime, OfferState.DRIVER_SELECTED, bids,
+                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, OfferState.DRIVER_SELECTED, bids,
                 version, createdAt);
     }
 

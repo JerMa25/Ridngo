@@ -1,13 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert } from 'lucide-react';
+import { userService } from '@/lib/userService';
 
 export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      userService.getNotifications(0, 10)
+        .then(data => {
+          setHasUnread(data.content.some((n: any) => !n.isRead));
+        })
+        .catch(() => {});
+    }
+  }, [user, pathname]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -73,14 +86,25 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
           <div className="flex items-center gap-2 ml-2">
             <Link href="/notifications" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/60 hover:bg-orange-btn hover:text-white transition-all relative">
               <Bell size={18} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-background"></span>
+              {hasUnread && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-background animate-pulse"></span>
+              )}
             </Link>
 
             <Link href="/profile" className="flex items-center gap-3 bg-foreground/5 pl-2 pr-2 sm:pr-4 py-1.5 rounded-full border border-foreground/5 hover:bg-foreground/10 transition-all group">
-              <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">{user.name[0]}</div>
+              <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">
+                {/*{user.name[0]}*/}
+                {user?.name?.[0] ?? "U"}
+              </div>
               <div className="hidden sm:flex flex-col -space-y-1 text-left">
-                 <span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>
-                 <span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>
+                 {/*<span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>*/}
+                <span className="text-[11px] font-black text-foreground">
+                 {user?.name?.[0] ?? "U"}
+                </span>
+                <span className="text-[9px] font-bold text-orange-btn uppercase">
+                  {user?.role ?? ""}
+                </span>
+                 {/*<span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>*/}
               </div>
             </Link>
           </div>

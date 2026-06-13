@@ -8,6 +8,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 import { RideSearch } from './components/RideSearch';
 import { RidePriceSetting } from './components/RidePriceSetting';
@@ -29,7 +30,7 @@ export default function RidePage() {
   const [departureTime, setDepartureTime] = useState(
     new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   );
-
+  const [numberOfPlaces, setNumberOfPlaces] = useState(1);
   const [offer, setOffer] = useState<any>(null);
   const [ride, setRide] = useState<any>(null);
   const [tracking, setTracking] = useState<any>(null);
@@ -156,6 +157,7 @@ export default function RidePage() {
         endLon: parseFloat(dest.lon), // Conversion en nombre
         endPoint: dest.name,
         price: price,
+        numberOfPlaces: numberOfPlaces,
         passengerPhone: passengerPhone,
         departureTime: departureTime
       });
@@ -164,7 +166,7 @@ export default function RidePage() {
       setStep('waiting');
     } catch (e: any) {
       console.error("Erreur publication:", e.response?.data);
-      alert(e.response?.data?.message || "Erreur lors de la publication de l'offre");
+      toast.error(e.response?.data?.message || "Erreur lors de la publication de l'offre");
     }
   };
 
@@ -211,6 +213,8 @@ export default function RidePage() {
                 setPassengerPhone={setPassengerPhone}
                 departureTime={departureTime}
                 setDepartureTime={setDepartureTime}
+                numberOfPlaces={numberOfPlaces}
+                setNumberOfPlaces={setNumberOfPlaces} 
                 onBack={() => setStep('search')} 
                 onPublish={handlePublishOffer} 
               />

@@ -68,10 +68,30 @@ export interface OfferResponse {
   passengerId: string;
   selectedDriverId?: string;
   startPoint: string;
+  startLat?: number;
+  startLon?: number;
   endPoint: string;
+  endLat?: number;
+  endLon?: number;
   price: number;
+  numberOfPlaces: number;
+  passengerPhone?: string;
+  departureTime?: string;
   state: OfferState;
   bids: Bid[];
+}
+
+export interface LandingOfferResponse {
+  startPoint: string;
+  endPoint: string;
+  startLat?: number;
+  startLon?: number;
+  endLat?: number;
+  endLon?: number;
+  price: number;
+  numberOfPlaces: number;
+  departureTime?: string;
+  createdAt?: string;
 }
 
 export interface RideResponse {
@@ -165,6 +185,7 @@ export interface CreateOfferRequest {
   endLon: number; // Nouveau
   endPoint: string;
   price: number;
+  numberOfPlaces: number;
   passengerPhone: string;
   departureTime: string;
 }

@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import VehicleStep from './VehicleStep';
 import SyndicateStep from './SyndicateStep';
@@ -48,7 +49,7 @@ function OnboardingContent() {
       setStep(3);
       setTimeout(() => router.push('/driver/dashboard'), 3000);
     } catch (e) {
-      alert("La vérification UGate n'a pas pu être confirmée. Contactez le support.");
+      toast.error("La vérification UGate n'a pas pu être confirmée. Contactez le support.");
       setLoading(false);
     }
   };
