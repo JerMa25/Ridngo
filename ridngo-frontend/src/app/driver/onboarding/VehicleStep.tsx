@@ -326,7 +326,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                     {
                       filteredManufacturers.map((m: any) => (
                         <div
-                          key={m.vehicleMakeId}
+                          key={m.manufacturerId}
                           onMouseDown={() => {
                             setManufacturerQuery(m.manufacturerName);
                             handleInputChange({
