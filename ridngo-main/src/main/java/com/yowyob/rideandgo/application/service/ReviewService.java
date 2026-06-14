@@ -92,6 +92,7 @@ public class ReviewService {
     private ReviewResponse mapToResponse(Review review, User passenger) {
         return ReviewResponse.builder()
                 .reviewId(review.id())
+                .rideId(review.rideId())
                 .rating(review.rating())
                 .comment(review.comment())
                 .createdAt(review.createdAt())
