@@ -69,6 +69,7 @@ const finalizeSession = async (authData: AuthResponse) => {
   const userObj = {
     id: userProfile.id,
     name: userProfile.name || `${userProfile.firstName} ${userProfile.lastName}`,
+    username: userProfile.username || userProfile.name?.split(' ')[0] || userProfile.firstName,
     email: userProfile.email,
     phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
     role: userProfile.roles[0].replace('RIDE_AND_GO_', '')

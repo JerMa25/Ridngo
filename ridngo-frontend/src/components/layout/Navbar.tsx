@@ -107,22 +107,22 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
             <span className="text-foreground hidden sm:inline">RidnGo</span>
           </Link>
         </div>
-        
+      
         {/* CENTRE : Liens (Desktop) */}
         <div className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-widest text-foreground/60">
           {user?.role === 'PASSENGER' && (
-            <Link href="/" className={`hover:text-orange-btn transition-colors ${isHome ? 'text-orange-btn' : ''}`}>Accueil</Link>
+            <Link href="/passenger/dashboard" className={`hover:text-orange-btn transition-colors ${pathname === '/passenger/dashboard' ? 'text-orange-btn' : ''}`}>Dashboard</Link>
           )}
           {user?.role === 'PASSENGER' && (
-             <Link href="/ride" className="hover:text-orange-btn transition-colors flex items-center gap-2">
-               <Car size={16} /> Commander
-             </Link>
+            <Link href="/ride" className="hover:text-orange-btn transition-colors flex items-center gap-2">
+              <Car size={16} /> Commander
+            </Link>
           )}
           {user?.role === 'DRIVER' && (
-             <Link href="/driver/dashboard" className="hover:text-orange-btn transition-colors">Radar</Link>
+            <Link href="/driver/dashboard" className="hover:text-orange-btn transition-colors">Radar</Link>
           )}
           {user?.role === 'ADMIN' && (
-             <Link href="/admin/dashboard" className="text-orange-btn flex items-center gap-1"><ShieldAlert size={14}/> Admin</Link>
+            <Link href="/admin/dashboard" className="text-orange-btn flex items-center gap-1"><ShieldAlert size={14}/> Admin</Link>
           )}
         </div>
 
@@ -151,19 +151,13 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
               </Link>
 
               <Link href="/profile" className="flex items-center gap-3 bg-foreground/5 pl-2 pr-2 sm:pr-4 py-1.5 rounded-full border border-foreground/5 hover:bg-foreground/10 transition-all group">
-                <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">
-                  {user?.name?.[0] ?? "U"}
-                </div>
+                <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">{user.name[0]}</div>
                 <div className="hidden sm:flex flex-col -space-y-1 text-left">
-                  <span className="text-[11px] font-black text-foreground">
-                   {user?.name?.split(' ')[0] ?? "Profil"}
-                  </span>
-                  <span className="text-[9px] font-bold text-orange-btn uppercase">
-                    {user?.role ?? ""}
-                  </span>
+                  <span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>
+                  <span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>
                 </div>
               </Link>
-
+            
               {/* BOUTON DÉCONNEXION */}
               <button
                 onClick={() => setShowLogoutModal(true)}

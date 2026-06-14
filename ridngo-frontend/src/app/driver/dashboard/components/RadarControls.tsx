@@ -19,7 +19,7 @@ export const RadarControls = ({
       {/* SECTION TITRE & COMPTEUR */}
       <div className="flex items-center gap-6">
         <div className="relative">
-          <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center transition-all duration-500 ${
+          <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all duration-500 ${
             isOnline ? 'bg-orange-btn text-white shadow-[0_0_30px_rgba(255,140,0,0.3)]' : 'bg-foreground/5 opacity-30'
           }`}>
             <motion.div
@@ -71,7 +71,7 @@ export const RadarControls = ({
               </span>
             </button>
 
-            <div className="h-8 w-[1px] bg-foreground/10 mx-1 hidden sm:block" />
+            <div className="h-8 w-px bg-foreground/10 mx-1 hidden sm:block" />
 
             {/* FILTRE DÉPART */}
             <button 
@@ -79,7 +79,7 @@ export const RadarControls = ({
               className={`btn-filter ${depFilter ? 'active' : ''}`}
             >
               <MapPin size={16} className={depFilter ? 'text-white' : 'text-orange-btn'} />
-              <span className="max-w-[120px] truncate">
+              <span className="max-w-30 truncate">
                 {depFilter || 'Point A'}
               </span>
             </button>
@@ -90,7 +90,7 @@ export const RadarControls = ({
               className={`btn-filter ${arrFilter ? 'active' : ''}`}
             >
               <Filter size={16} className={arrFilter ? 'text-white' : 'opacity-40'} />
-              <span className="max-w-[120px] truncate">
+              <span className="max-w-30 truncate">
                 {arrFilter || 'Destination'}
               </span>
             </button>
