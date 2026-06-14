@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '@/lib/api-client';
+import toast from 'react-hot-toast';
 
 // Composants existants
 import { OfferCard } from './components/OfferCard';
@@ -152,7 +153,7 @@ export default function DriverDashboard() {
       await driverService.toggleOnlineStatus(newStatus);
       setFullProfile({ ...fullProfile, driver: { ...fullProfile.driver, isOnline: newStatus } });
       if (newStatus) fetchOffers();
-    } catch (e) { alert("Erreur réseau"); }
+    } catch (e) { toast.error("Erreur réseau"); }
   };
 
   // --- SCROLL ACTION ---

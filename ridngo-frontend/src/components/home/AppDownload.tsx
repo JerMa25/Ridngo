@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, Car, Download, Apple, Play, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 export const AppDownload = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -32,7 +33,12 @@ export const AppDownload = () => {
 
   const handleInstallClick = async () => {
     if (isIOS) {
-      alert("Sur iOS, cliquez sur le bouton 'Partager' en bas de Safari, puis sur 'Sur l'écran d'accueil'.");
+      //alert("Sur iOS, cliquez sur le bouton 'Partager' en bas de Safari, puis sur 'Sur l'écran d'accueil'.");
+      toast(() => (
+      <span>
+        Sur iOS, cliquez sur le bouton 'Partager' en bas de Safari, puis sur 'Sur l'écran d'accueil'.
+      </span>
+    ));
       return;
     }
 

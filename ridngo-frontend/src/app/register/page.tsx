@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, User, Mail, Lock, Phone, Camera, AtSign, Loader2 } from 'lucide-react';
 import { handleAuthSubmit } from '@/lib/auth';
 import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 function RegisterForm() {
   const searchParams = useSearchParams();
@@ -45,7 +46,7 @@ function RegisterForm() {
     if (res.success) {
       window.location.href = res.redirectUrl;
     } else {
-      alert(res.message);
+      toast.error(res.message);
       setIsLoading(false);
     }
   };

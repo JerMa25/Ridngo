@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from './api-client';
 import { AuthResponse, UserRole, UserResponse } from '@/types/api';
+import { handleApiError } from '@/utils/error-handler';
 
 export const handleAuthSubmit = async (
   type: 'login' | 'register', 
@@ -43,7 +44,7 @@ export const handleAuthSubmit = async (
   } catch (error: any) {
     return { 
       success: false, 
-      message: error.response?.data?.message || "Erreur d'authentification" 
+      message: handleApiError(error, 'auth')
     };
   }
 };
@@ -68,6 +69,7 @@ const finalizeSession = async (authData: AuthResponse) => {
   const userObj = {
     id: userProfile.id,
     name: userProfile.name || `${userProfile.firstName} ${userProfile.lastName}`,
+    username: userProfile.username || userProfile.name?.split(' ')[0] || userProfile.firstName,
     email: userProfile.email,
     phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
     role: userProfile.roles[0].replace('RIDE_AND_GO_', '')

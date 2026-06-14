@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 export default function MyVehiclePage() {
   const [vehicle, setVehicle] = useState<any>(null);
@@ -95,10 +96,10 @@ export default function MyVehiclePage() {
       
       await fetchVehicle();
       setIsEditing(false);
-      alert("Véhicule mis à jour !");
+      toast.success("Véhicule mis à jour !");
     } catch (e: any) {
       console.error("Erreur 400 Details:", e.response?.data);
-      alert("Erreur de validation : " + (e.response?.data?.message || "Vérifiez les champs"));
+      toast.error("Erreur de validation : " + (e.response?.data?.message || "Vérifiez les champs"));
     } finally {
       setUpdateLoading(false);
     }
@@ -115,7 +116,7 @@ export default function MyVehiclePage() {
       });
       fetchVehicle();
     } catch (e) {
-      alert("Erreur lors de l'upload");
+      toast.error("Erreur lors de l'upload");
     } finally {
       setUpdateLoading(false);
     }

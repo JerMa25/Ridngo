@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Loader2, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 interface Props {
   placeholder: string;
@@ -80,7 +81,7 @@ export const LocationInput = ({
   // --- LOGIQUE AUTO-FILL GPS ---
   const handleGPSClick = () => {
     if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas supportée.");
+      toast.error("La géolocalisation n'est pas supportée.");
       return;
     }
 
@@ -113,7 +114,7 @@ export const LocationInput = ({
     }, (error) => {
       setIsLocating(false);
       console.error(error);
-      alert("Erreur de localisation. Vérifiez que votre GPS est activé.");
+      toast.error("Erreur de localisation. Vérifiez que votre GPS est activé.");
     }, { enableHighAccuracy: true });
   };
 

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { rideService } from '@/lib/rideService';
 import api from '@/lib/api-client';
+import toast from 'react-hot-toast';
 
 interface Props {
   ride: any;
@@ -70,7 +71,10 @@ export const RideActive = ({ ride, tracking }: Props) => {
         stars: rating,
         comment: comment
       });
-      alert("Merci pour votre évaluation !");
+      //alert("Merci pour votre évaluation !");
+      toast('Merci pour votre évaluation !', {
+      icon: '👏',
+    });
       window.location.href = "/ride"; // Reset de l'interface client
     } catch (e) {
       console.error("Erreur review", e);
