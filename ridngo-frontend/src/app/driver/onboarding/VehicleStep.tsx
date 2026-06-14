@@ -435,12 +435,12 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
 
         {/* SECTION 4: MÉDIAS OBLIGATOIRES */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-[32px] p-8 cursor-pointer transition-all ${registrationFile ? 'border-green-500 bg-green-500/5' : 'border-foreground/10 hover:border-orange-btn'}`}>
+            <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-4xl p-8 cursor-pointer transition-all ${registrationFile ? 'border-green-500 bg-green-500/5' : 'border-foreground/10 hover:border-orange-btn'}`}>
               <FileText className={registrationFile ? 'text-green-500' : 'opacity-20'} />
               <span className="text-[10px] font-black mt-2 uppercase text-center">{registrationFile ? registrationFile.name : "Scanner Carte Grise"}</span>
               <input type="file" hidden accept="image/*" onChange={e => setRegistrationFile(e.target.files?.[0] || null)} />
             </label>
-            <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-[32px] p-8 cursor-pointer transition-all ${serialFile ? 'border-green-500 bg-green-500/5' : 'border-foreground/10 hover:border-orange-btn'}`}>
+            <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-4xl p-8 cursor-pointer transition-all ${serialFile ? 'border-green-500 bg-green-500/5' : 'border-foreground/10 hover:border-orange-btn'}`}>
               <ShieldCheck className={serialFile ? 'text-green-500' : 'opacity-20'} />
               <span className="text-[10px] font-black mt-2 uppercase text-center">{serialFile ? serialFile.name : "Photo N° Série (VIN)"}</span>
               <input type="file" hidden accept="image/*" onChange={e => setSerialFile(e.target.files?.[0] || null)} />
