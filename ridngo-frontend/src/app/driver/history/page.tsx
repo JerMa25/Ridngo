@@ -3,18 +3,30 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api-client';
 import { 
-  ArrowLeft, Calendar, User, Loader2, 
-  MapPin, Clock, CheckCircle2 
+  ArrowLeft, User, Loader2, 
+  MapPin, CheckCircle2, Star, ChevronDown, MessageSquareQuote
 } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Interface pour les avis
+interface ReviewInfo {
+  reviewId: string;
+  rideId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  passengerName: string;
+  passengerPhoto: string | null;
+}
 
 /**
  * SOUS-COMPOSANT : Carte de trajet pour le driver
  */
-const DriverHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
+const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, review?: ReviewInfo }) => {
   const [partner, setPartner] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isCommentExpanded, setIsCommentExpanded] = useState(false);
 
   useEffect(() => {
     const fetchFullDetails = async () => {
@@ -35,66 +47,172 @@ const DriverHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
     fetchFullDetails();
   }, [ride.rideId]);
 
+  const commentLength = review?.comment?.length || 0;
+  const isLongComment = commentLength > 100;
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        size={12}
+        className={`transition-colors ${
+          i < rating 
+            ? 'text-orange-btn fill-orange-btn' 
+            : 'text-foreground/15'
+        }`}
+      />
+    ));
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-      className="glass p-6 border-none shadow-lg hover:shadow-xl transition-all flex flex-col md:flex-row justify-between md:items-center gap-6 rounded-[32px] overflow-hidden"
+      className="glass p-6 border-none shadow-lg hover:shadow-xl transition-all flex flex-col gap-5 rounded-[32px] overflow-hidden"
     >
-      <div className="flex items-center gap-5">
-         <div className="w-14 h-14 bg-foreground/5 rounded-2xl flex items-center justify-center text-orange-btn shadow-inner overflow-hidden">
-            {ride.partnerPhoto ? (
-              <img src={ride.partnerPhoto} className="w-full h-full object-cover" alt="" />
-            ) : (
-              <User size={24} />
-            )}
-         </div>
-         <div>
-            <p className="text-[9px] font-black uppercase opacity-30 tracking-widest leading-none mb-1">Passager</p>
-            {loading ? (
-              <div className="h-4 w-28 bg-foreground/5 animate-pulse rounded mt-1" />
-            ) : (
-              <p className="font-black text-base capitalize">
-                {partner?.firstName} {partner?.lastName}
+      {/* --- LIGNE PRINCIPALE : Infos passager + Trajet + Prix --- */}
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
+        <div className="flex items-center gap-5">
+           <div className="w-14 h-14 bg-foreground/5 rounded-2xl flex items-center justify-center text-orange-btn shadow-inner overflow-hidden">
+              {ride.partnerPhoto ? (
+                <img src={ride.partnerPhoto} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <User size={24} />
+              )}
+           </div>
+           <div>
+              <p className="text-[9px] font-black uppercase opacity-30 tracking-widest leading-none mb-1">Passager</p>
+              {loading ? (
+                <div className="h-4 w-28 bg-foreground/5 animate-pulse rounded mt-1" />
+              ) : (
+                <p className="font-black text-base capitalize">
+                  {partner?.firstName} {partner?.lastName}
+                </p>
+              )}
+              <p className="text-[10px] font-bold opacity-40 mt-1 uppercase tracking-tighter">
+                 {new Date(ride.createdAt).toLocaleDateString()} • ID #{ride.rideId.slice(0, 5)}
               </p>
-            )}
-            <p className="text-[10px] font-bold opacity-40 mt-1 uppercase tracking-tighter">
-               {new Date(ride.createdAt).toLocaleDateString()} • ID #{ride.rideId.slice(0, 5)}
-            </p>
-         </div>
+           </div>
+        </div>
+
+        <div className="flex-1 space-y-3 px-2">
+           <div className="flex items-start gap-3">
+              <MapPin size={14} className="text-orange-btn mt-0.5 shrink-0" />
+              <div>
+                 <p className="text-xs font-bold leading-tight line-clamp-1">{ride.startPoint}</p>
+                 <p className="text-[9px] font-bold opacity-30 uppercase mt-1">Vers : {ride.endPoint?.split(',')[0]}</p>
+              </div>
+           </div>
+        </div>
+
+        <div className="flex items-center justify-between md:flex-col md:items-end gap-3 bg-foreground/5 md:bg-transparent p-4 md:p-0 rounded-2xl">
+           <div className="text-right order-2 md:order-1">
+              <p className="text-2xl font-black italic tracking-tighter text-foreground">{ride.price?.toLocaleString()} F</p>
+              <p className="text-[8px] font-black uppercase opacity-30 tracking-[0.2em] leading-none mt-1 text-right">Net Chauffeur</p>
+           </div>
+           <div className={`order-1 md:order-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${ride.state === 'COMPLETED' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+             {ride.state === 'COMPLETED' && <CheckCircle2 size={12}/>} {ride.state}
+           </div>
+        </div>
       </div>
 
-      <div className="flex-1 space-y-3 px-2">
-         <div className="flex items-start gap-3">
-            <MapPin size={14} className="text-orange-btn mt-0.5 shrink-0" />
-            <div>
-               <p className="text-xs font-bold leading-tight line-clamp-1">{ride.startPoint}</p>
-               <p className="text-[9px] font-bold opacity-30 uppercase mt-1">Vers : {ride.endPoint?.split(',')[0]}</p>
+      {/* --- SECTION AVIS DU PASSAGER --- */}
+      {review && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          transition={{ duration: 0.3 }}
+          className="border-t border-foreground/5 pt-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Étoiles + Note */}
+            <div className="flex items-center gap-3 bg-foreground/[0.03] px-4 py-2.5 rounded-xl shrink-0">
+              <div className="flex items-center gap-0.5">
+                {renderStars(review.rating)}
+              </div>
+              <div className="flex items-baseline gap-0.5 pl-2 border-l border-foreground/10">
+                <span className="text-base font-black text-foreground tracking-tighter">{review.rating}</span>
+                <span className="text-[9px] font-bold opacity-30">/5</span>
+              </div>
             </div>
-         </div>
-      </div>
 
-      <div className="flex items-center justify-between md:flex-col md:items-end gap-3 bg-foreground/5 md:bg-transparent p-4 md:p-0 rounded-2xl">
-         <div className="text-right order-2 md:order-1">
-            <p className="text-2xl font-black italic tracking-tighter text-foreground">{ride.price?.toLocaleString()} F</p>
-            <p className="text-[8px] font-black uppercase opacity-30 tracking-[0.2em] leading-none mt-1 text-right">Net Chauffeur</p>
-         </div>
-         <div className={`order-1 md:order-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${ride.state === 'COMPLETED' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-           {ride.state === 'COMPLETED' && <CheckCircle2 size={12}/>} {ride.state}
-         </div>
-      </div>
+            {/* Commentaire déroulable */}
+            {review.comment ? (
+              <div className="flex-1 min-w-0">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={isCommentExpanded ? 'expanded' : 'collapsed'}
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 1 }}
+                    className="relative"
+                  >
+                    <div className="flex items-start gap-2">
+                      <MessageSquareQuote size={12} className="text-orange-btn/40 mt-0.5 shrink-0" />
+                      <p className={`text-xs leading-relaxed text-foreground/70 font-medium italic ${
+                        !isCommentExpanded && isLongComment ? 'line-clamp-2' : ''
+                      }`}>
+                        &ldquo;{review.comment}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Gradient de fondu quand le texte est tronqué */}
+                    {!isCommentExpanded && isLongComment && (
+                      <div className="absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-t from-[var(--glass-bg)] to-transparent pointer-events-none" />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+
+                {isLongComment && (
+                  <button
+                    onClick={() => setIsCommentExpanded(!isCommentExpanded)}
+                    className="flex items-center gap-1.5 mt-1.5 text-orange-btn hover:text-orange-btn/80 transition-colors"
+                  >
+                    <span className="text-[9px] font-black uppercase tracking-widest">
+                      {isCommentExpanded ? 'Voir moins' : 'Voir plus'}
+                    </span>
+                    <ChevronDown 
+                      size={10} 
+                      className={`transition-transform duration-300 ${isCommentExpanded ? 'rotate-180' : ''}`} 
+                    />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 opacity-30">
+                <MessageSquareQuote size={10} />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Aucun commentaire</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 };
 
 export default function HistoryPage() {
   const [rides, setRides] = useState<any[]>([]);
+  const [reviewsMap, setReviewsMap] = useState<Map<string, ReviewInfo>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await api.get('/api/v1/trips/enriched-history?page=0&size=50');
-        setRides(res.data);
+        // Fetch rides et reviews en parallèle
+        const [historyRes, reviewsRes] = await Promise.all([
+          api.get('/api/v1/trips/enriched-history?page=0&size=50'),
+          api.get('/api/v1/reviews/me').catch(() => ({ data: [] }))
+        ]);
+
+        setRides(historyRes.data);
+
+        // Créer un Map rideId -> review pour lookup rapide
+        const map = new Map<string, ReviewInfo>();
+        (reviewsRes.data as ReviewInfo[]).forEach(review => {
+          if (review.rideId) {
+            map.set(review.rideId, review);
+          }
+        });
+        setReviewsMap(map);
       } catch (e) { 
         console.error("Erreur historique enrichi:", e); 
       } finally { 
@@ -130,7 +248,12 @@ export default function HistoryPage() {
           </div>
         ) : (
           rides.map((ride, idx) => (
-            <DriverHistoryCard key={ride.rideId} ride={ride} idx={idx} />
+            <DriverHistoryCard 
+              key={ride.rideId} 
+              ride={ride} 
+              idx={idx} 
+              review={reviewsMap.get(ride.rideId)}
+            />
           ))
         )}
       </div>

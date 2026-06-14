@@ -9,6 +9,7 @@ import java.util.UUID;
 @Builder
 public class ReviewResponse {
     private UUID reviewId;
+    private UUID rideId;
     private int rating;
     private String comment;
     private LocalDateTime createdAt;
