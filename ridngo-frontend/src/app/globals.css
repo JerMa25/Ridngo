@@ -104,3 +104,13 @@ body {
   opacity: 0.15;
 }
 
+input.no-autofill::-webkit-credentials-auto-fill-button,
+input.no-autofill::-webkit-contacts-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+input.no-autofill {
+  background-image: none !important;
+}

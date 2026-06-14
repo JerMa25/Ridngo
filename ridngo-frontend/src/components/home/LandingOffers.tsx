@@ -57,7 +57,7 @@ export const LandingOffers = () => {
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-20">
-            {[1, 2, 3].map(i => <div key={i} className="h-48 bg-foreground/10 rounded-[32px] animate-pulse" />)}
+            {[1, 2, 3].map(i => <div key={i} className="h-48 bg-foreground/10 rounded-4xl animate-pulse" />)}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -67,7 +67,7 @@ export const LandingOffers = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="glass p-6 border-none bg-background shadow-xl rounded-[32px] space-y-6"
+                className="glass p-6 border-none bg-background shadow-xl rounded-4xl space-y-6"
               >
                 <div className="flex justify-between items-center">
                   <div className="w-10 h-10 bg-orange-btn/10 rounded-xl flex items-center justify-center text-orange-btn">
@@ -84,6 +84,10 @@ export const LandingOffers = () => {
                   <div className="flex items-start gap-3">
                     <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-foreground" /></div>
                     <p className="text-xs font-bold line-clamp-1">{offer.endPoint}</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-foreground" /></div>
+                    <p className="text-xs font-bold line-clamp-1">{offer.numberOfPlaces} places</p>
                   </div>
                 </div>
 
