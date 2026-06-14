@@ -14,8 +14,8 @@ const FALLBACK_OPTIONS = {
   models: [{ vehicleModelId: '1', modelName: 'Corolla' }, { vehicleModelId: '2', modelName: 'Yaris' }],
   transmissions: [{ transmissionTypeId: '1', typeName: 'Manual' }, { transmissionTypeId: '2', typeName: 'Automatic' }],
   fuels: [{ fuelTypeId: '1', fuelTypeName: 'Petrol' }, { fuelTypeId: '2', fuelTypeName: 'Diesel' }],
-  types: [{ vehicleTypeId: '1', typeName: 'Sedan' }, { vehicleTypeId: '2', typeName: 'SUV' }],
-  sizes: [{ vehicleSizeId: '1', sizeName: 'Medium' }, { vehicleSizeId: '2', sizeName: 'Large' }],
+  types: [{ vehicleTypeId: '1', typeName: 'Berline' }, { vehicleTypeId: '2', typeName: 'Citadine' }, { vehicleTypeId: '3', typeName: 'SUV' }],
+  sizes: [{vehicleSizeId: '1', sizeName: 'Small'}, { vehicleSizeId: '2', sizeName: 'Medium' }, { vehicleSizeId: '3', sizeName: 'Large' }],
   manufacturers: [{ manufacturerId: '1', manufacturerName: 'Toyota Plant' }]
 };
 
@@ -27,10 +27,29 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
   const [registrationFile, setRegistrationFile] = useState<File | null>(null);
   const [serialFile, setSerialFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [makeQuery, setMakeQuery] = useState('');
+  const [modelQuery, setModelQuery] = useState('');
+  const [manufacturerQuery, setManufacturerQuery] = useState('');
+  const [showMakeDropdown, setShowMakeDropdown] = useState(false);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showManufacturerDropdown, setShowManufacturerDropdown] = useState(false);
+
 
   const [options, setOptions] = useState<any>({ 
     makes: [], models: [], transmissions: [], manufacturers: [], sizes: [], types: [], fuels: [] 
   });
+
+  const filteredMakes = options.makes.filter((m: any) =>
+    m.makeName.toLowerCase().includes(makeQuery.toLowerCase())
+  );
+
+  const filteredModels = options.models.filter((m: any) =>
+    m.modelName.toLowerCase().includes(modelQuery.toLowerCase())
+  );
+
+  const filteredManufacturers = options.manufacturers.filter((m: any) =>
+    m.manufacturerName.toLowerCase().includes(manufacturerQuery.toLowerCase())
+  );
 
   const [form, setForm] = useState({
     licenseNumber: '',
@@ -196,15 +215,15 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
                 <label className="label-v">Numéro de Permis</label>
-                <input required name="licenseNumber" className="input-v" placeholder="N° Permis" onChange={handleInputChange} />
+                <input required name="licenseNumber" className="input-v no-autofill" placeholder="N° Permis" onChange={handleInputChange} />
               </div>
               <div className="space-y-1">
                 <label className="label-v">Immatriculation</label>
-                <input required name="registrationNumber" className="input-v" placeholder="Ex: LT-000-AA" onChange={handleInputChange} />
+                <input required name="registrationNumber" className="input-v no-autofill" placeholder="Ex: LT-000-AA" onChange={handleInputChange} />
               </div>
               <div className="space-y-1">
                 <label className="label-v">Numéro de Série (VIN)</label>
-                <input required name="vehicleSerialNumber" className="input-v" placeholder="N° Série (VIN)" onChange={handleInputChange} />
+                <input required name="vehicleSerialNumber" className="input-v no-autofill" placeholder="N° Série (VIN)" onChange={handleInputChange} />
               </div>
             </div>
         </section>
@@ -215,52 +234,139 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
               <Cog size={18}/><h2 className="font-black uppercase text-xs tracking-widest">Spécifications techniques</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className="label-v">Marque</label>
-                <select required name="makeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
-                    {options.makes.map((o: any) => <option key={o.vehicleMakeId || o.id} value={o.makeName} className="opt-v">{o.makeName}</option>)}
-                </select>
+
+                <input
+                  value={makeQuery}
+                  onChange={(e) => {
+                    setMakeQuery(e.target.value);   // 🔥 triggers instant filtering
+                    setShowMakeDropdown(true);
+                  }}
+                  onFocus={() => setShowMakeDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowMakeDropdown(false), 150)}
+                  className="input-v no-autofill"
+                  placeholder="Entrez une marque..."
+                />
+
+                {showMakeDropdown && makeQuery && (
+                  <div className="absolute z-50 w-full mt-1 max-h-40 overflow-y-auto rounded-xl bg-bleu-nuit">
+                    {
+                      filteredMakes.map((m: any) => (
+                        <div
+                          key={m.vehicleMakeId}
+                          onMouseDown={() => {
+                            setMakeQuery(m.makeName);
+                            handleInputChange({
+                              target: { name: 'makeName', value: m.makeName }
+                            });
+                          }}
+                          className="px-4 py-2 cursor-pointer hover:bg-orange-btn/10"
+                        >
+                          {m.makeName}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className="label-v">Modèle</label>
-                <select required name="modelName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
-                    {options.models.map((o: any) => <option key={o.vehicleModelId || o.id} value={o.modelName} className="opt-v">{o.modelName}</option>)}
-                </select>
+
+                <input
+                  value={modelQuery}
+                  onChange={(e) => {
+                    setModelQuery(e.target.value);   // 🔥 triggers instant filtering
+                    setShowModelDropdown(true);
+                  }}
+                  onFocus={() => setShowModelDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowModelDropdown(false), 150)}
+                  className="input-v no-autofill"
+                  placeholder="Entrez un modèle..."
+                />
+
+                {showModelDropdown && modelQuery && (
+                  <div className="absolute z-50 w-full mt-1 max-h-40 overflow-y-auto rounded-xl bg-bleu-nuit">
+                    {
+                      filteredModels.map((m: any) => (
+                        <div
+                          key={m.vehicleModelId}
+                          onMouseDown={() => {
+                            setModelQuery(m.modelName);
+                            handleInputChange({
+                              target: { name: 'modelName', value: m.modelName }
+                            });
+                          }}
+                          className="px-4 py-2 cursor-pointer hover:bg-orange-btn/10"
+                        >
+                          {m.modelName}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className="label-v">Constructeur</label>
-                <select required name="manufacturerName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
-                    {options.manufacturers.map((o: any) => <option key={o.manufacturerId || o.id} value={o.manufacturerName} className="opt-v">{o.manufacturerName}</option>)}
-                </select>
+
+                <input
+                  value={manufacturerQuery}
+                  onChange={(e) => {
+                    setManufacturerQuery(e.target.value);   // 🔥 triggers instant filtering
+                    setShowManufacturerDropdown(true);
+                  }}
+                  onFocus={() => setShowManufacturerDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowManufacturerDropdown(false), 150)}
+                  className="input-v no-autofill"
+                  placeholder="Entrez un constructeur..."
+                />
+
+                {showManufacturerDropdown && manufacturerQuery && (
+                  <div className="absolute z-50 w-full mt-1 max-h-40 overflow-y-auto rounded-xl bg-bleu-nuit">
+                    {
+                      filteredManufacturers.map((m: any) => (
+                        <div
+                          key={m.vehicleMakeId}
+                          onMouseDown={() => {
+                            setManufacturerQuery(m.manufacturerName);
+                            handleInputChange({
+                              target: { name: 'manufacturerName', value: m.manufacturerName }
+                            });
+                          }}
+                          className="px-4 py-2 cursor-pointer hover:bg-orange-btn/10"
+                        >
+                          {m.manufacturerName}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="label-v">Transmission</label>
                 <select required name="transmissionType" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
                     {options.transmissions.map((o: any) => <option key={o.transmissionTypeId || o.id} value={o.typeName} className="opt-v">{o.typeName}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="label-v">Carburant</label>
                 <select required name="fuelTypeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
                     {options.fuels.map((o: any) => <option key={o.fuelTypeId || o.id} value={o.fuelTypeName} className="opt-v">{o.fuelTypeName}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="label-v">Usage véhicule</label>
+                <label className="label-v">Type véhicule</label>
                 <select required name="typeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
                     {options.types.map((o: any) => <option key={o.vehicleTypeId || o.id} value={o.typeName} className="opt-v">{o.typeName}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="label-v">Gabarit</label>
                 <select required name="sizeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v">Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
                     {options.sizes.map((o: any) => <option key={o.vehicleSizeId || o.id} value={o.sizeName} className="opt-v">{o.sizeName}</option>)}
                 </select>
               </div>
@@ -310,19 +416,19 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1">
                 <label className="label-v">Capacité Réservoir (L)</label>
-                <input type="number" name="tankCapacity" placeholder="Ex: 50" className="input-v" onChange={handleInputChange} value={form.vehicle.tankCapacity} />
+                <input type="number" name="tankCapacity" placeholder="Ex: 50" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.tankCapacity} />
               </div>
               <div className="space-y-1">
                 <label className="label-v">Kilométrage Actuel</label>
-                <input type="number" name="mileageSinceCommissioning" placeholder="Ex: 12000" className="input-v" onChange={handleInputChange} value={form.vehicle.mileageSinceCommissioning} />
+                <input type="number" name="mileageSinceCommissioning" placeholder="Ex: 12000" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.mileageSinceCommissioning} />
               </div>
               <div className="space-y-1">
                 <label className="label-v">Nombre de Places</label>
-                <input type="number" name="totalSeatNumber" placeholder="Ex: 4" className="input-v" onChange={handleInputChange} value={form.vehicle.totalSeatNumber} />
+                <input type="number" name="totalSeatNumber" placeholder="Ex: 4" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.totalSeatNumber} />
               </div>
               <div className="space-y-1">
                 <label className="label-v">Consommation (L/km)</label>
-                <input type="number" step="0.01" name="averageFuelConsumptionPerKm" placeholder="Ex: 0.08" className="input-v" onChange={handleInputChange} value={form.vehicle.averageFuelConsumptionPerKm} />
+                <input type="number" step="0.01" name="averageFuelConsumptionPerKm" placeholder="Ex: 0.08" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.averageFuelConsumptionPerKm} />
               </div>
             </div>
         </section>

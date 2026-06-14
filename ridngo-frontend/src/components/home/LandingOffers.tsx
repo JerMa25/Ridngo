@@ -85,6 +85,10 @@ export const LandingOffers = () => {
                     <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-foreground" /></div>
                     <p className="text-xs font-bold line-clamp-1">{offer.endPoint}</p>
                   </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-foreground" /></div>
+                    <p className="text-xs font-bold line-clamp-1">{offer.numberOfPlaces} places</p>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-foreground/5 flex items-center justify-between text-[10px] font-black uppercase opacity-40 tracking-tighter">
