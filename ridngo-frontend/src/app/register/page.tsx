@@ -42,6 +42,11 @@ function RegisterForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    if (formData.password.length < 8) {
+      toast.error("Le mot de passe doit contenir au moins 8 caractères.");
+      setIsLoading(false);
+      return;
+    }
     const res: any = await handleAuthSubmit('register', formData, role);
     if (res.success) {
       window.location.href = res.redirectUrl;
