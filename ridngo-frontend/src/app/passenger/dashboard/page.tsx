@@ -125,7 +125,7 @@ const RecentRideCard = ({ ride, idx }: { ride: any; idx: number }) => {
         </div>
       </div>
 
-      {ride.distance && (
+      {ride.distance > 0 && (
         <div className="pt-3 border-t border-foreground/5 flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-foreground/30 text-[10px] font-bold">
             <Route size={12} className="text-orange-btn" />
@@ -197,7 +197,7 @@ export default function PassengerDashboard() {
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40 mb-1">Tableau de bord</p>
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic">
-              Bonjour, <span className="text-orange-btn">{user?.username || user?.name?.split(' ')[0] || 'Voyageur'}</span>
+              Bonjour, <span className="text-orange-btn">{user?.name?.split(' ')[0] || (user?.username && !user.username.includes('@') ? user.username : 'Voyageur')}</span>
             </h1>
           </div>
           <Link

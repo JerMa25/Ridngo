@@ -39,7 +39,7 @@ export default function MapView({ pickup, destination, partnerPos, heatmapPoints
 
         // Création de la nouvelle instance
         mapInstance.current = new NavigooMap(mapId, {
-          center: [4.05, 9.70], 
+          center: [3.848, 11.502], 
           zoom: 13, 
           zoomControl: false,
           attributionControl: false
