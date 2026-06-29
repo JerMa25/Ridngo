@@ -88,7 +88,7 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-6 md:px-12 py-5 bg-background/80 backdrop-blur-md border-b border-foreground/5 sticky top-0 z-[100]">
+      <nav className="flex items-center justify-between px-6 md:px-12 py-5 bg-background/80 backdrop-blur-md border-b border-foreground/5 sticky top-0 z-100">
         
         {/* GAUCHE : Logo ou Retour */}
         <div className="flex items-center gap-4">
