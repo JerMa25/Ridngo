@@ -346,14 +346,24 @@ public class OfferService implements
                             .thenReturn(offer);
                 })
                 .flatMap(offer -> {
+                    double estimatedDistance = 0.0;
+                    int estimatedDuration = 0;
+                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null && offer.endLon() != null) {
+                        estimatedDistance = trackingCalculatorService.calculateDistance(
+                                offer.startLat(), offer.startLon(),
+                                offer.endLat(), offer.endLon()
+                        );
+                        estimatedDuration = trackingCalculatorService.calculateEtaInMinutes(estimatedDistance);
+                    }
+
                     // 3. Création de la Course (Ride)
                     Ride ride = Ride.builder()
                             .id(Utils.generateUUID())
                             .offerId(offer.id())
                             .passengerId(offer.passengerId())
                             .driverId(driverId)
-                            .distance(0.0)
-                            .duration(0)
+                            .distance(estimatedDistance)
+                            .duration(estimatedDuration)
                             .state(RideState.CREATED)
                             .build();
 

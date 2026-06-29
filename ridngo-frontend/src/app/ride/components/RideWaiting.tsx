@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 interface Props {
   offer: any;
   onSelectDriver: (driverId: string) => void;
+  onCancelSearch?: () => void;
 }
 
 /**
@@ -135,7 +136,7 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
 /**
  * COMPOSANT PRINCIPAL : RideWaiting
  */
-export default function RideWaiting({ offer, onSelectDriver }: Props) {
+export default function RideWaiting({ offer, onSelectDriver, onCancelSearch }: Props) {
   const [isCancelling, setIsCancelling] = useState(false);
 
   const handleCancelOffer = async () => {
@@ -145,9 +146,13 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
 
     setIsCancelling(true);
     try {
-      await api.delete(`/api/v1/offers/${offer.id}`);
+      await api.post(`/api/v1/offers/${offer.id}/cancel`);
       localStorage.removeItem('activeOfferId');
-      window.location.reload();
+      if (onCancelSearch) {
+        onCancelSearch();
+      } else {
+        window.location.reload();
+      }
     } catch (error: any) {
       toast.error("Erreur lors de l'annulation.");
       setIsCancelling(false);
@@ -198,13 +203,12 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
         </div>
       )}
       
-      {/* ANNULER L'OFFRE */}
       <button 
         disabled={isCancelling}
-        className="w-full py-3 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] opacity-30 hover:opacity-100 hover:text-red-500 transition-all disabled:opacity-10"
+        className="w-full py-4 mt-4 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
         onClick={handleCancelOffer}
       >
-        {isCancelling ? <Loader2 className="animate-spin" size={14} /> : <XCircle size={14} />}
+        {isCancelling ? <Loader2 className="animate-spin" size={16} /> : <XCircle size={16} />}
         Annuler ma demande
       </button>
 
