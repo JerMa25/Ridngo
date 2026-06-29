@@ -40,7 +40,7 @@ const ActiveRideBanner = ({ ride }: { ride: any }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
-    className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-r from-orange-btn to-amber-500 text-white shadow-2xl shadow-orange-btn/30"
+    className="relative overflow-hidden rounded-4xl p-6 bg-linear-to-r from-orange-btn to-amber-500 text-white shadow-2xl shadow-orange-btn/30"
   >
     <div className="absolute inset-0 opacity-10">
       <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/20" />
@@ -85,7 +85,7 @@ const RecentRideCard = ({ ride, idx }: { ride: any; idx: number }) => {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.08, duration: 0.35 }}
-      className="glass p-5 rounded-[24px] border-none bg-background shadow-lg hover:shadow-xl transition-all group"
+      className="glass p-5 rounded-3xl border-none bg-background shadow-lg hover:shadow-xl transition-all group"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ const RecentRideCard = ({ ride, idx }: { ride: any; idx: number }) => {
       <div className="flex gap-3 mb-4">
         <div className="flex flex-col items-center py-1">
           <div className="w-2.5 h-2.5 rounded-full bg-orange-btn ring-4 ring-orange-btn/10" />
-          <div className="w-[2px] flex-1 bg-foreground/10 my-1.5 rounded-full" />
+          <div className="w-0.5 flex-1 bg-foreground/10 my-1.5 rounded-full" />
           <div className="w-2.5 h-2.5 rounded-full bg-foreground ring-4 ring-foreground/5" />
         </div>
         <div className="flex-1 space-y-3 min-w-0">

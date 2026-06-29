@@ -62,11 +62,8 @@ export const RidePriceSetting = ({
 
   const adjustPrice = (amount: number) => {
     const total = price * numberOfPlaces;
-    const newTotal = Math.max(100, total + amount); 
     
-    const newUnitPrice = newTotal / numberOfPlaces;
-
-    setPrice(newUnitPrice);
+    setPrice(total);
   };
 
   return (

@@ -14,7 +14,7 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; on
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 z-200 flex items-center justify-center p-4"
       onClick={onCancel}
     >
       {/* Fond flouté */}
@@ -26,7 +26,7 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; on
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative glass rounded-[32px] p-8 max-w-sm w-full shadow-2xl border border-foreground/10 flex flex-col items-center gap-6 text-center"
+        className="relative glass rounded-4xl p-8 max-w-sm w-full shadow-2xl border border-foreground/10 flex flex-col items-center gap-6 text-center"
       >
         {/* Icône d'alerte */}
         <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
