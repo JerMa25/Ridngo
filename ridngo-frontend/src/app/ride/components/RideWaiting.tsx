@@ -9,10 +9,11 @@ import {
 import api from '@/lib/api-client';
 import toast from 'react-hot-toast';
 
+import DriverProfilePopup from './DriverProfile';
+
 interface Props {
   offer: any;
   onSelectDriver: (driverId: string) => void;
-  onCancelSearch?: () => void;
 }
 
 /**
@@ -22,7 +23,8 @@ interface Props {
 const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelectDriver: any }) => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
+  const [showPopup, setShowPopup] = useState(false);
+  
   useEffect(() => {
     const fetchFullProfile = async () => {
       try {
@@ -39,7 +41,7 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
   }, [bid.driverId]);
 
   if (loading) return (
-    <div className="glass p-6 flex items-center justify-center bg-background/50 rounded-[32px]">
+    <div className="glass p-6 flex items-center justify-center bg-background/50 rounded-4xl">
       <Loader2 className="animate-spin text-orange-btn/20" size={20} />
     </div>
   );
@@ -52,11 +54,17 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
   const isSelected = offer.selectedDriverId === bid.driverId;
 
   return (
+  <>
+    {/* Popup profil — géré dans DriverProfilePopup.tsx */}
+    {showPopup && profile && (
+        <DriverProfilePopup profile={profile} onClose={() => setShowPopup(false)} />
+      )}
+
     <motion.div 
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       className={`glass p-5 flex flex-col gap-4 border-none shadow-xl relative overflow-hidden transition-all ${
-        isSelected ? 'ring-2 ring-orange-btn bg-orange-btn/[0.03]' : 'bg-background hover:bg-foreground/[0.02]'
+        isSelected ? 'ring-2 ring-orange-btn bg-orange-btn/3' : 'bg-background hover:bg-foreground/2'
       }`}
     >
       {/* HEADER : IDENTITÉ & NOTE */}
@@ -70,9 +78,11 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
             )}
           </div>
           <div>
-            <h4 className="font-black text-base text-foreground tracking-tight">
+            <button onClick={() => setShowPopup(true)} className="font-black text-base text-foreground tracking-tight
+            text-left hover:text-orange-btn transition-colors underline-offset-2 hover:underline">
                 {driverUser?.firstName} {driverUser?.lastName}
-            </h4>
+            </button>
+
             <div className="flex items-center gap-2 mt-0.5">
                <div className="flex items-center gap-1 bg-orange-btn/10 px-1.5 py-0.5 rounded-lg">
                   <Star size={10} className="fill-orange-btn text-orange-btn"/>
@@ -130,13 +140,14 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
         )}
       </div>
     </motion.div>
+  </>
   );
 };
 
 /**
  * COMPOSANT PRINCIPAL : RideWaiting
  */
-export default function RideWaiting({ offer, onSelectDriver, onCancelSearch }: Props) {
+export default function RideWaiting({ offer, onSelectDriver }: Props) {
   const [isCancelling, setIsCancelling] = useState(false);
 
   const handleCancelOffer = async () => {
@@ -146,13 +157,9 @@ export default function RideWaiting({ offer, onSelectDriver, onCancelSearch }: P
 
     setIsCancelling(true);
     try {
-      await api.post(`/api/v1/offers/${offer.id}/cancel`);
+      await api.delete(`/api/v1/offers/${offer.id}`);
       localStorage.removeItem('activeOfferId');
-      if (onCancelSearch) {
-        onCancelSearch();
-      } else {
-        window.location.reload();
-      }
+      window.location.reload();
     } catch (error: any) {
       toast.error("Erreur lors de l'annulation.");
       setIsCancelling(false);
@@ -168,7 +175,7 @@ export default function RideWaiting({ offer, onSelectDriver, onCancelSearch }: P
       className="space-y-6"
     >
       {/* HEADER RADAR */}
-      <div className="flex items-center gap-4 py-5 px-6 bg-orange-btn/10 rounded-[24px] text-orange-btn border border-orange-btn/10 shadow-sm">
+      <div className="flex items-center gap-4 py-5 px-6 bg-orange-btn/10 rounded-3xl text-orange-btn border border-orange-btn/10 shadow-sm">
         <Loader2 className="animate-spin" size={20} />
         <div className="flex flex-col">
           <span className="font-black uppercase text-xs tracking-widest">Radar actif</span>
@@ -203,12 +210,13 @@ export default function RideWaiting({ offer, onSelectDriver, onCancelSearch }: P
         </div>
       )}
       
+      {/* ANNULER L'OFFRE */}
       <button 
         disabled={isCancelling}
-        className="w-full py-4 mt-4 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+        className="w-full py-3 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] opacity-30 hover:opacity-100 hover:text-red-500 transition-all disabled:opacity-10"
         onClick={handleCancelOffer}
       >
-        {isCancelling ? <Loader2 className="animate-spin" size={16} /> : <XCircle size={16} />}
+        {isCancelling ? <Loader2 className="animate-spin" size={14} /> : <XCircle size={14} />}
         Annuler ma demande
       </button>
 
