@@ -91,7 +91,7 @@ function RegisterForm() {
                <p className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Photo de profil</p>
                <div 
                  onClick={() => fileInputRef.current?.click()}
-                 className="group relative w-24 h-24 rounded-[32px] bg-foreground/5 border-2 border-dashed border-foreground/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-orange-btn transition-all"
+                 className="group relative w-24 h-24 rounded-4xl bg-foreground/5 border-2 border-dashed border-foreground/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-orange-btn transition-all"
                >
                   {photoPreview ? (
                     <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" />

@@ -18,6 +18,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -91,7 +92,10 @@ public class OfferR2dbcAdapter implements OfferRepositoryPort {
     public Flux<Offer> findLatestPending(int limit) {
         return offerRepository.findAll()
                 .filter(o -> o.getState() == OfferState.PENDING || o.getState() == OfferState.BID_RECEIVED)
-                .sort((o1, o2) -> o2.getCreatedDate().compareTo(o1.getCreatedDate()))
+                .sort(Comparator.comparing(
+                        OfferEntity::getCreatedDate,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
                 .take(limit)
                 .flatMap(this::enrichOfferWithAgreements)
                 .map(this::mapToDomainManual);
