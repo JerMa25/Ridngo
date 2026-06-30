@@ -25,8 +25,13 @@ public class ReviewController {
     public Mono<Review> postReview(@PathVariable UUID rideId, @RequestBody ReviewRequest request) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> UUID.fromString(ctx.getAuthentication().getName()))
-                .flatMap(passengerId -> reviewService.submitReview(rideId, passengerId, request.stars(),
-                        request.comment()));
+                .flatMap(passengerId -> reviewService.submitReview(
+                        rideId,
+                        passengerId,
+                        request.stars(),
+                        request.comment(),
+                        request.anonymous()   // false par défaut si le client n'envoie pas ce champ
+                ));
     }
 
     @GetMapping("/me")
@@ -38,6 +43,11 @@ public class ReviewController {
                 .flatMapMany(reviewService::getReviewsForDriver);
     }
 
-    public record ReviewRequest(int stars, String comment) {
+    /**
+     * DTO de la requête d'évaluation envoyée par le passager.
+     * anonymous = true  → le chauffeur voit "Anonyme" dans son historique
+     * anonymous = false (défaut) → le chauffeur voit le vrai nom du passager
+     */
+    public record ReviewRequest(int stars, String comment, boolean anonymous) {
     }
 }

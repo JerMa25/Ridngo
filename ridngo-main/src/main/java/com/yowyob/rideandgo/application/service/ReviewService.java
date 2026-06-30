@@ -27,8 +27,8 @@ public class ReviewService {
     private final UserRepositoryPort userRepository;
 
     @Transactional
-    public Mono<Review> submitReview(UUID rideId, UUID passengerId, int stars, String comment) {
-        log.info("⭐ Process start: Submitting {} stars for ride {}", stars, rideId);
+    public Mono<Review> submitReview(UUID rideId, UUID passengerId, int stars, String comment, boolean anonymous) {
+        log.info("⭐ Process start: Submitting {} stars for ride {} (anonymous={})", stars, rideId, anonymous);
 
         return rideRepository.findRideById(rideId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Course introuvable")))
@@ -48,6 +48,7 @@ public class ReviewService {
                             .passengerId(passengerId)
                             .rating(stars)
                             .comment(comment)
+                            .anonymous(anonymous)
                             .build();
 
                     // 1. Sauvegarde l'avis 
@@ -83,21 +84,30 @@ public class ReviewService {
 
     public Flux<ReviewResponse> getReviewsForDriver(UUID driverId) {
         return reviewRepository.findAllByDriverId(driverId)
-                .flatMap(review -> userRepository.findUserById(review.passengerId())
-                        .map(user -> mapToResponse(review, user))
-                        .defaultIfEmpty(mapToResponse(review, User.builder().firstName("Client").lastName("Anonyme").build()))
-                );
+                .flatMap(review -> {
+                    if (review.anonymous()) {
+                        // Avis anonyme : on ne révèle pas l'identité du passager au chauffeur
+                        return Mono.just(mapToResponse(review,
+                                User.builder().firstName("Anonyme").lastName("").build(), true));
+                    }
+                    return userRepository.findUserById(review.passengerId())
+                            .map(user -> mapToResponse(review, user, false))
+                            .defaultIfEmpty(mapToResponse(review,
+                                    User.builder().firstName("Client").lastName("Inconnu").build(), false));
+                });
     }
 
-    private ReviewResponse mapToResponse(Review review, User passenger) {
+    private ReviewResponse mapToResponse(Review review, User passenger, boolean isAnonymous) {
         return ReviewResponse.builder()
                 .reviewId(review.id())
                 .rideId(review.rideId())
                 .rating(review.rating())
                 .comment(review.comment())
                 .createdAt(review.createdAt())
-                .passengerName(passenger.firstName() + " " + passenger.lastName())
-                .passengerPhoto(passenger.photoUri())
+                .anonymous(isAnonymous)
+                // Si anonyme : pas de nom ni de photo réels
+                .passengerName(isAnonymous ? "Anonyme" : passenger.firstName() + " " + passenger.lastName())
+                .passengerPhoto(isAnonymous ? null : passenger.photoUri())
                 .build();
     }
 }

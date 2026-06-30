@@ -51,3 +51,6 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changes/016-add-offer-number-of-places.sql
+
+  - include:
+      file: db/changelog/changes/017-add-anonymous-to-reviews.sql

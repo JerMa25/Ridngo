@@ -4,18 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api-client';
 import { 
   ArrowLeft, User, Loader2, 
-  MapPin, CheckCircle2, Star, ChevronDown, MessageSquareQuote
+  MapPin, CheckCircle2, Star, ChevronDown, MessageSquareQuote, EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Interface pour les avis
+// Interface pour les avis reçus de l'API
 interface ReviewInfo {
   reviewId: string;
   rideId: string;
   rating: number;
   comment: string | null;
   createdAt: string;
+  // Si anonymous=true côté backend, passengerName sera déjà "Anonyme" et passengerPhoto sera null
+  anonymous: boolean;
   passengerName: string;
   passengerPhoto: string | null;
 }
@@ -29,6 +31,11 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
 
   useEffect(() => {
+    // Si l'avis est anonyme, on n'appelle PAS l'API pour récupérer le vrai nom
+    if (review?.anonymous) {
+      setLoading(false);
+      return;
+    }
     const fetchFullDetails = async () => {
       try {
         // 1. Chercher le ride par son ID pour avoir le passengerId
@@ -45,10 +52,11 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
       }
     };
     fetchFullDetails();
-  }, [ride.rideId]);
+  }, [ride.rideId, review?.anonymous]);
 
   const commentLength = review?.comment?.length || 0;
   const isLongComment = commentLength > 100;
+  const isAnonymous = review?.anonymous === true;
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -72,17 +80,29 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
       {/* --- LIGNE PRINCIPALE : Infos passager + Trajet + Prix --- */}
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
         <div className="flex items-center gap-5">
+           {/* Avatar : masque si anonyme */}
            <div className="w-14 h-14 bg-foreground/5 rounded-2xl flex items-center justify-center text-orange-btn shadow-inner overflow-hidden">
-              {ride.partnerPhoto ? (
+              {isAnonymous ? (
+                <EyeOff size={22} className="opacity-30" />
+              ) : ride.partnerPhoto ? (
                 <img src={ride.partnerPhoto} className="w-full h-full object-cover" alt="" />
               ) : (
                 <User size={24} />
               )}
            </div>
+
            <div>
               <p className="text-[9px] font-black uppercase opacity-30 tracking-widest leading-none mb-1">Passager</p>
               {loading ? (
                 <div className="h-4 w-28 bg-foreground/5 animate-pulse rounded mt-1" />
+              ) : isAnonymous ? (
+                // Avis anonyme : afficher "Anonyme" — le chauffeur ne voit pas le vrai nom
+                <div className="flex items-center gap-2">
+                  <p className="font-black text-base opacity-50 italic">Anonyme</p>
+                  <span className="text-[8px] font-black uppercase tracking-widest bg-orange-btn/10 text-orange-btn px-2 py-0.5 rounded-full">
+                    Avis anonyme
+                  </span>
+                </div>
               ) : (
                 <p className="font-black text-base capitalize">
                   {partner?.firstName} {partner?.lastName}

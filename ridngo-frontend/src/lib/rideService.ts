@@ -81,10 +81,11 @@ export const rideService = {
   },
 
   // Noter le chauffeur (Après COMPLETED)
-  postReview: async (rideId: string, stars: number, comment: string) => {
-    const response = await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment });
+  postReview: async (rideId: string, stars: number, comment: string, anonymous: boolean = false) => {
+    const response = await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment, anonymous });
     return response.data;
   },
+
 
   getOfferById: async (id: string) => (await api.get<OfferResponse>(`/api/v1/offers/${id}`)).data,
   getMyWallet: async () => (await api.get<Wallet>('/api/v1/wallets/me')).data,

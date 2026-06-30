@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import { rideService } from '@/lib/rideService';
 import MapView from '@/components/home/MapView';
-import { Loader2, CheckCircle2, Phone, MapPin, Star, X } from 'lucide-react';
+import { Loader2, CheckCircle2, Phone, Star, EyeOff, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api-client';
 import toast from 'react-hot-toast';
@@ -15,6 +15,7 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
   const [showReview, setShowReview] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
 
   useEffect(() => {
     // 1. Charger les détails initiaux
@@ -46,13 +47,10 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
 
   const submitReview = async () => {
     try {
-      await rideService.postReview(id, rating, comment);
-      window.location.href = "/ride"; // Retour accueil client
+      await rideService.postReview(id, rating, comment, anonymous);
+      window.location.href = "/ride";
     } catch (e) {
-      //alert("Merci pour votre note !");
-      toast('Merci pour votre note !', {
-        icon: '👏',
-      });
+      toast('Merci pour votre note !', { icon: '👏' });
       window.location.href = "/ride";
     }
   };
@@ -95,6 +93,14 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
             Terminer la course
           </button>
         )}
+
+        {/* Bouton test évaluation (DEBUG - à supprimer en prod) */}
+        <button
+          onClick={() => setShowReview(true)}
+          className="w-full py-3 border-2 border-orange-btn/30 text-orange-btn rounded-2xl font-black text-xs uppercase tracking-widest mt-3 hover:bg-orange-btn/10 transition-all"
+        >
+          Tester l&apos;évaluation
+        </button>
       </div>
 
       <div className="flex-1 relative z-0">
@@ -106,12 +112,17 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
         {showReview && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass max-w-md w-full p-10 relative bg-background border-none text-center rounded-[40px]">
-               <CheckCircle2 size={64} className="text-green-500 mx-auto mb-6" />
-               <h2 className="text-3xl font-black mb-2">Trajet Terminé !</h2>
-               <p className="text-sm opacity-50 mb-10">Comment s&apos;est passée votre course ?</p>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass max-w-md w-full p-8 relative bg-background border-none text-center rounded-[40px] z-10 overflow-y-auto max-h-[90vh]"
+            >
+               <CheckCircle2 size={56} className="text-green-500 mx-auto mb-4" />
+               <h2 className="text-3xl font-black mb-1">Trajet Terminé !</h2>
+               <p className="text-sm opacity-50 mb-8">Comment s&apos;est passée votre course ?</p>
                
-               <div className="flex justify-center gap-2 mb-8">
+               {/* Étoiles */}
+               <div className="flex justify-center gap-2 mb-6">
                   {[1,2,3,4,5].map(s => (
                     <button key={s} onClick={() => setRating(s)}>
                       <Star size={32} className={s <= rating ? "fill-orange-btn text-orange-btn" : "text-foreground/10"} />
@@ -119,15 +130,55 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
                   ))}
                </div>
 
+               {/* Commentaire */}
                <textarea 
                 placeholder="Un petit commentaire... (Optionnel)"
-                className="w-full bg-foreground/5 p-4 rounded-2xl mb-8 outline-none focus:ring-2 focus:ring-orange-btn font-medium"
+                className="w-full bg-foreground/5 p-4 rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-orange-btn font-medium resize-none text-sm"
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                />
 
-               <button onClick={submitReview} className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest shadow-xl">
+               {/* ─── TOGGLE ANONYME ─── */}
+               <button
+                 onClick={() => setAnonymous(!anonymous)}
+                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-6 transition-all duration-200 border-2 ${
+                   anonymous
+                     ? 'border-orange-btn/60 bg-orange-btn/10'
+                     : 'border-foreground/10 bg-foreground/[0.03]'
+                 }`}
+               >
+                 <div className="flex items-center gap-3">
+                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                     anonymous ? 'bg-orange-btn' : 'bg-foreground/10'
+                   }`}>
+                     {anonymous
+                       ? <EyeOff size={15} className="text-white" />
+                       : <Eye size={15} className="text-foreground/50" />
+                     }
+                   </div>
+                   <div className="text-left">
+                     <p className={`text-xs font-black uppercase tracking-wider transition-colors ${anonymous ? 'text-orange-btn' : 'text-foreground/60'}`}>
+                       {anonymous ? 'Commentaire anonyme' : 'Envoyer avec mon nom'}
+                     </p>
+                     <p className="text-[10px] text-foreground/40 font-medium mt-0.5">
+                       {anonymous
+                         ? 'Le chauffeur verra "Anonyme" à la place de votre nom'
+                         : 'Le chauffeur pourra voir votre nom'
+                       }
+                     </p>
+                   </div>
+                 </div>
+                 {/* Indicateur ON/OFF */}
+                 <div className={`w-10 h-5 rounded-full relative transition-all duration-200 ${anonymous ? 'bg-orange-btn' : 'bg-foreground/10'}`}>
+                   <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${anonymous ? 'right-0.5' : 'left-0.5'}`} />
+                 </div>
+               </button>
+
+               <button
+                 onClick={submitReview}
+                 className="w-full py-4 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest shadow-xl hover:opacity-90 transition-opacity"
+               >
                   Envoyer l&apos;évaluation
                </button>
             </motion.div>
