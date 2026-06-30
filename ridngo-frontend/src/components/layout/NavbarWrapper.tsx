@@ -5,12 +5,14 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 export const NavbarWrapper = () => {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const { location, isLoading: isLoadingLocation } = useGeolocation(!!user);
 
   useEffect(() => {
     setMounted(true);
@@ -30,6 +32,8 @@ export const NavbarWrapper = () => {
       setTheme={setTheme} 
       user={user} 
       setUser={setUser}
+      location={location}
+      isLoadingLocation={isLoadingLocation}
     />
   );
 };

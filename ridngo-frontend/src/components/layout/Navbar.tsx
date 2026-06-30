@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert, LogOut, AlertTriangle } from 'lucide-react';
+import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert, LogOut, AlertTriangle, MapPin, Loader2 } from 'lucide-react';
+import { UserLocation } from '@/utils/geolocation';
 import { userService } from '@/lib/userService';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,7 +63,10 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; on
   </AnimatePresence>
 );
 
-export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
+export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLocation }: any & {
+  location?: UserLocation | null;
+  isLoadingLocation?: boolean;
+}) => {
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
@@ -106,6 +110,25 @@ export const Navbar = ({ theme, setTheme, user, setUser }: any) => {
             <span className="bg-orange-btn text-white px-2 rounded-lg italic">R</span>
             <span className="text-foreground hidden sm:inline">RidnGo</span>
           </Link>
+
+          {user && location && (
+            <div
+              className="flex items-center gap-1.5 pl-3 ml-1 border-l border-foreground/10 max-w-[180px] sm:max-w-[240px]"
+              title={`${location.lat.toFixed(5)}, ${location.lon.toFixed(5)}`}
+            >
+              <MapPin size={14} className="text-orange-btn shrink-0" />
+              <span className="text-[10px] sm:text-[11px] font-bold text-foreground/60 truncate">
+                {location.label}
+              </span>
+            </div>
+          )}
+
+          {user && isLoadingLocation && !location && (
+            <div className="flex items-center gap-1.5 pl-3 ml-1 border-l border-foreground/10">
+              <Loader2 size={14} className="text-orange-btn animate-spin shrink-0" />
+              <span className="text-[10px] font-bold text-foreground/40 hidden sm:inline">Localisation…</span>
+            </div>
+          )}
         </div>
       
         {/* CENTRE : Liens (Desktop) */}
