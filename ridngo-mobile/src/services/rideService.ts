@@ -183,12 +183,12 @@ export const rideService = {
     } catch { return null; }
   },
 
-  submitReview: async (rideId: string, stars: number, comment: string): Promise<void> => {
-    await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment });
+  submitReview: async (rideId: string, stars: number, comment: string, anonymous = false): Promise<void> => {
+    await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment, anonymous });
   },
 
-  postReview: async (rideId: string, stars: number, comment: string): Promise<void> => {
-    await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment });
+  postReview: async (rideId: string, stars: number, comment: string, anonymous = false): Promise<void> => {
+    await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment, anonymous });
   },
 
   getMyWallet: async (): Promise<Wallet> => {

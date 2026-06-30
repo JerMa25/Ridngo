@@ -545,10 +545,10 @@ export default function RideScreen() {
   // Cette fonction est conservée pour compatibilité mais ne fait rien.
   const handleFinishRide = () => {};
 
-  const handleSubmitReview = async () => {
+  const handleSubmitReview = async (anonymous = false) => {
     if (!activeRideId) return;
     try {
-      await rideService.submitReview(activeRideId, stars, comment);
+      await rideService.submitReview(activeRideId, stars, comment, anonymous);
     } catch { /* silent */ }
     await clearPassengerRideData();
     setStep('search');
@@ -969,9 +969,15 @@ export default function RideScreen() {
               />
               <TouchableOpacity
                 style={[styles.primaryBtn, { backgroundColor: '#FF8C00' }]}
-                onPress={handleSubmitReview}
+                onPress={() => handleSubmitReview(false)}
               >
-                <Text style={styles.primaryBtnText}>Envoyer l'évaluation</Text>
+                <Text style={styles.primaryBtnText}>Envoyer l&apos;évaluation</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.anonymousBtn]}
+                onPress={() => handleSubmitReview(true)}
+              >
+                <Text style={styles.anonymousBtnText}>Envoyer de façon anonyme</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1107,6 +1113,14 @@ const styles = StyleSheet.create({
   commentInput: {
     borderRadius: Radius.md, borderWidth: 1, padding: 12,
     fontWeight: '500', fontSize: 14, textAlignVertical: 'top', minHeight: 80,
+  },
+  anonymousBtn: {
+    borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)', marginTop: 4,
+  },
+  anonymousBtnText: {
+    fontWeight: '700', fontSize: 12, textTransform: 'uppercase',
+    letterSpacing: 0.8, opacity: 0.5,
   },
   // ── Step price styles ──
   priceTitleBlock: { alignItems: 'center', paddingVertical: Spacing.sm },

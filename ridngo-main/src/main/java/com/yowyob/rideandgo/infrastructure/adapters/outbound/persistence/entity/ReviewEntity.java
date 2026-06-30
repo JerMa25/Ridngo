@@ -26,6 +26,7 @@ public class ReviewEntity implements Persistable<UUID> {
     private UUID driverId;
     private int rating;
     private String comment;
+    private boolean anonymous;
     @Column("created_at")
     private LocalDateTime createdAt;
 
