@@ -29,6 +29,13 @@ import { driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../src/types/api';
 
+interface ReviewInfo {
+  rideId: string;
+  rating: number;
+  comment: string | null;
+  passengerName?: string;
+}
+
 function formatDateTime(iso?: string) {
   if (!iso) return '--';
   try {
@@ -45,6 +52,7 @@ export default function MyRidesScreen() {
   const [selectedOffers, setSelectedOffers] = useState<OfferResponse[]>([]);
   const [activeTrips, setActiveTrips]       = useState<RideResponse[]>([]);
   const [history, setHistory]               = useState<RideResponse[]>([]);
+  const [reviewsMap, setReviewsMap]         = useState<Map<string, ReviewInfo>>(new Map());
   const [loading, setLoading]               = useState(true);
   const [refreshing, setRefreshing]         = useState(false);
   const [confirming, setConfirming]         = useState<string | null>(null);
@@ -129,8 +137,22 @@ export default function MyRidesScreen() {
     try {
       const myId = driverId || user?.id;
       if (!myId) return;
-      const data = await rideService.getDriverHistory(myId);
-      setHistory(data.filter(r => r.state === 'COMPLETED'));
+      // Chargement parallèle : historique enrichi + avis reçus
+      const [data, reviews] = await Promise.allSettled([
+        rideService.getEnrichedHistory(),
+        rideService.getMyReviews(),
+      ]);
+      const completed = data.status === 'fulfilled'
+        ? (data.value as RideResponse[]).filter((r: RideResponse) => r.state === 'COMPLETED')
+        : [];
+      setHistory(completed);
+      if (reviews.status === 'fulfilled') {
+        const map = new Map<string, ReviewInfo>();
+        (reviews.value as ReviewInfo[]).forEach((rev: ReviewInfo) => {
+          if (rev.rideId) map.set(rev.rideId, rev);
+        });
+        setReviewsMap(map);
+      }
     } catch { setHistory([]); }
   };
 
@@ -363,32 +385,56 @@ export default function MyRidesScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              history.map(trip => (
-                <View key={trip.id}
-                  style={[s.histCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
-                  <View style={s.histTop}>
-                    <View style={[s.badge, { backgroundColor: Colors.greenBg }]}>
-                      <Text style={[s.badgeTxt, { color: Colors.green }]}>TERMINÉE</Text>
-                    </View>
-                    <Text style={[s.timeText, { color: Colors.textMuted }]}>
-                      {formatDateTime(trip.createdAt)}
-                    </Text>
-                  </View>
-                  <View style={s.histBody}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[s.routePlace, { color: Colors.text }]} numberOfLines={1}>
-                        {trip.startPoint}
-                      </Text>
-                      <Text style={[s.routeLbl, { color: Colors.textMuted }]}>
-                        {trip.endPoint}
+              history.map(trip => {
+                const review = reviewsMap.get(trip.id || (trip as any).rideId);
+                return (
+                  <View key={trip.id}
+                    style={[s.histCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
+                    <View style={s.histTop}>
+                      <View style={[s.badge, { backgroundColor: Colors.greenBg }]}>
+                        <Text style={[s.badgeTxt, { color: Colors.green }]}>TERMINÉE</Text>
+                      </View>
+                      <Text style={[s.timeText, { color: Colors.textMuted }]}>
+                        {formatDateTime(trip.createdAt)}
                       </Text>
                     </View>
-                    <Text style={[s.histPrice, { color: Colors.text }]}>
-                      {trip.price?.toLocaleString()} <Text style={{ fontSize: 11 }}>FCFA</Text>
-                    </Text>
+                    <View style={s.histBody}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[s.routePlace, { color: Colors.text }]} numberOfLines={1}>
+                          {trip.startPoint}
+                        </Text>
+                        <Text style={[s.routeLbl, { color: Colors.textMuted }]}>
+                          {trip.endPoint}
+                        </Text>
+                      </View>
+                      <Text style={[s.histPrice, { color: Colors.text }]}>
+                        {trip.price?.toLocaleString()} <Text style={{ fontSize: 11 }}>FCFA</Text>
+                      </Text>
+                    </View>
+                    {/* Avis passager */}
+                    {review && (
+                      <View style={[s.reviewBlock, { backgroundColor: Colors.input, borderTopColor: Colors.cardBorder }]}>
+                        <View style={s.starsRow}>
+                          {[1,2,3,4,5].map(n => (
+                            <Ionicons
+                              key={n}
+                              name={n <= review.rating ? 'star' : 'star-outline'}
+                              size={13}
+                              color={Colors.orange}
+                            />
+                          ))}
+                          <Text style={[s.ratingNum, { color: Colors.orange }]}>{review.rating}/5</Text>
+                        </View>
+                        {review.comment ? (
+                          <Text style={[s.reviewComment, { color: Colors.textMuted }]} numberOfLines={2}>
+                            "{review.comment}"
+                          </Text>
+                        ) : null}
+                      </View>
+                    )}
                   </View>
-                </View>
-              ))
+                );
+              })
             )
           )}
         </ScrollView>
@@ -451,6 +497,11 @@ const s = StyleSheet.create({
   histPrice:   { fontSize: 18, fontWeight: '900' },
   refreshBtn:  { borderRadius: Radius.xl, paddingHorizontal: 24, paddingVertical: 12, marginTop: 8 },
   refreshTxt:  { fontWeight: '900', fontSize: 13 },
+  // Avis
+  reviewBlock: { borderRadius: 10, padding: 10, gap: 5, marginTop: 2, borderTopWidth: 1 },
+  starsRow:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  ratingNum:   { fontSize: 11, fontWeight: '900', marginLeft: 4 },
+  reviewComment: { fontSize: 11, fontWeight: '500', fontStyle: 'italic', lineHeight: 16 },
 });
 
 

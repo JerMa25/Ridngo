@@ -41,6 +41,9 @@ export default function PassengerLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
+
+      {/* Écran caché — accessible via router.push */}
+      <Tabs.Screen name="my-offer" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -223,8 +223,6 @@ export const rideService = {
   },
 };
 
-// import * as SecureStore from 'expo-secure-store';
-// import api from './api';
 // import {
 //   OfferResponse, FareResponse, RideResponse,
 //   CreateOfferRequest, RideTrackingResponse, Wallet, DriverTrajectory
