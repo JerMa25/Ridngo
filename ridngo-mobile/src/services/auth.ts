@@ -19,12 +19,9 @@ export const authService = {
     firstName: string; lastName: string; role: UserRole; photo?: any;
   }): Promise<{ success: boolean; role?: string; message?: string }> => {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
+      const formData = new FormData();
 
-      // Build multipart manually using fetch (Axios breaks multipart on React Native)
-      const boundary = '----RidnGoBoundary' + Date.now();
-
-      const registerDto = JSON.stringify({
+      const registerDto = {
         username: data.username,
         password: data.password,
         email: data.email,
@@ -32,35 +29,33 @@ export const authService = {
         firstName: data.firstName,
         lastName: data.lastName,
         roles: [data.role],
-      });
+      };
 
-      let body = '';
-      body += `--${boundary}\r\n`;
-      body += `Content-Disposition: form-data; name="data"\r\n`;
-      body += `Content-Type: application/json\r\n\r\n`;
-      body += `${registerDto}\r\n`;
+      formData.append('data', JSON.stringify(registerDto));
 
       if (data.photo) {
-        // For photo we still use FormData separately
-        body += `--${boundary}\r\n`;
-        body += `Content-Disposition: form-data; name="file"; filename="${data.photo.fileName || 'photo.jpg'}"\r\n`;
-        body += `Content-Type: ${data.photo.mimeType || 'image/jpeg'}\r\n\r\n`;
+        formData.append('file', {
+          uri: data.photo.uri,
+          name: data.photo.fileName || 'photo.jpg',
+          type: data.photo.type || 'image/jpeg',
+        } as any);
       }
-
-      body += `--${boundary}--\r\n`;
-
-      const headers: any = {
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetch(`${BASE_URL}/api/v1/auth/register`, {
         method: 'POST',
-        headers,
-        body,
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData,
       });
 
-      const responseData = await res.json();
+      const responseText = await res.text();
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { message: responseText };
+      }
 
       if (!res.ok) {
         const msg = responseData?.message || responseData?.error || `Erreur ${res.status}`;

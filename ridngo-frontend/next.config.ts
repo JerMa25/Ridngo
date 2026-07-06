@@ -18,4 +18,8 @@ const nextConfig: NextConfig = {
   output: 'standalone',
 };
 
+module.exports = {
+  allowedDevOrigins: ['10.2.3.239'],
+};
+
 export default withPWA(nextConfig);

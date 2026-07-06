@@ -150,16 +150,16 @@ var map = L.map('map', {zoomControl: false, attributionControl: false})
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// Marqueur départ : cercle orange
+// Marqueur départ : épingle orange (pin SVG)
 var orangeIcon = L.divIcon({
-  html: '<div style="width:18px;height:18px;border-radius:50%;background:#FF8C00;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5)"></div>',
-  iconSize: [18,18], iconAnchor: [9,9], className: ''
+  html: '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34"><path d="M13 0C5.82 0 0 5.82 0 13c0 9.75 13 21 13 21s13-11.25 13-21C26 5.82 20.18 0 13 0z" fill="#FF8C00" stroke="white" stroke-width="2"/><circle cx="13" cy="13" r="5" fill="white"/></svg>',
+  iconSize: [26,34], iconAnchor: [13,34], className: ''
 });
 
-// Marqueur destination : cercle bleu
+// Marqueur destination : épingle bleue (pin SVG)
 var blueIcon = L.divIcon({
-  html: '<div style="width:18px;height:18px;border-radius:50%;background:#3B82F6;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5)"></div>',
-  iconSize: [18,18], iconAnchor: [9,9], className: ''
+  html: '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34"><path d="M13 0C5.82 0 0 5.82 0 13c0 9.75 13 21 13 21s13-11.25 13-21C26 5.82 20.18 0 13 0z" fill="#3B82F6" stroke="white" stroke-width="2"/><circle cx="13" cy="13" r="5" fill="white"/></svg>',
+  iconSize: [26,34], iconAnchor: [13,34], className: ''
 });
 
 // Marqueur chauffeur : emoji voiture
@@ -746,6 +746,14 @@ export default function RideScreen() {
                 </TouchableOpacity>
               </View>
 
+              {/* Badge Nombre de places */}
+              <View style={[styles.seatsBadge, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
+                <Ionicons name="people" size={16} color={Colors.orange} />
+                <Text style={[styles.seatsBadgeText, { color: Colors.text }]}>
+                  1 à 4 places disponibles
+                </Text>
+              </View>
+
               {/* Info min/distance/durée */}
               {fareEstimate && (
                 <View style={[styles.fareInfoRow, { borderColor: Colors.cardBorder }]}>
@@ -1139,6 +1147,12 @@ const styles = StyleSheet.create({
   priceDisplay: { alignItems: 'center', flex: 1 },
   priceValue: { fontSize: 42, fontWeight: '900', letterSpacing: -1 },
   priceCurrency: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginTop: -4 },
+  seatsBadge: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    borderWidth: 1, marginTop: 12, marginBottom: 8,
+  },
+  seatsBadgeText: { fontWeight: '700', fontSize: 13 },
 
   fareInfoRow: {
     flexDirection: 'row', borderWidth: 1, borderRadius: Radius.md, overflow: 'hidden',

@@ -20,11 +20,19 @@ export default function PassengerLayout() {
         tabBarLabelStyle: { fontWeight: '900', fontSize: 10, letterSpacing: 0.5 },
       }}
     >
+      {/* ── Onglets visibles ── */}
       <Tabs.Screen
         name="ride"
         options={{
           title: 'Commander',
           tabBarIcon: ({ color, size }) => <Ionicons name="car" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -41,6 +49,11 @@ export default function PassengerLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
+
+      {/* ── Écrans cachés (naviguables via router.push) ── */}
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="support" options={{ href: null }} />
+      <Tabs.Screen name="my-offer" options={{ href: null }} />
     </Tabs>
   );
 }
