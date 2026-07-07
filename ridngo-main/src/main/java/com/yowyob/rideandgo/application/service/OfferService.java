@@ -294,6 +294,51 @@ public class OfferService implements
                         }));
     }
 
+    public Mono<Offer> withdrawApplication(UUID offerId, UUID driverId) {
+        return repository.findById(offerId)
+                .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
+                .flatMap(offer -> {
+                    if (offer.state() == OfferState.VALIDATED || offer.state() == OfferState.CANCELLED) {
+                        return Mono.error(new IllegalStateException("Impossible de retirer une candidature après validation ou annulation."));
+                    }
+
+                    if (offer.bids() == null || offer.bids().stream().noneMatch(b -> b.driverId().equals(driverId))) {
+                        return Mono.error(new OfferNotFoundException("Candidature introuvable pour ce chauffeur."));
+                    }
+
+                    List<Bid> remainingBids = new ArrayList<>(offer.bids());
+                    remainingBids.removeIf(b -> b.driverId().equals(driverId));
+                    OfferState newState = remainingBids.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
+                    UUID selectedDriverId = offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)
+                            ? null
+                            : offer.selectedDriverId();
+
+                    Offer updatedOffer = new Offer(
+                            offer.id(),
+                            offer.passengerId(),
+                            selectedDriverId,
+                            offer.startPoint(),
+                            offer.startLat(),
+                            offer.startLon(),
+                            offer.endPoint(),
+                            offer.endLat(),
+                            offer.endLon(),
+                            offer.price(),
+                            offer.numberOfPlaces(),
+                            offer.passengerPhone(),
+                            offer.departureTime(),
+                            newState,
+                            remainingBids,
+                            offer.version(),
+                            offer.createdAt());
+
+                    log.info("🗑️ Driver {} withdrawing application from Offer {}. New state={}", driverId, offerId, newState);
+                    return repository.deleteBid(offerId, driverId)
+                            .flatMap(deleted -> repository.save(updatedOffer))
+                            .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));
+                });
+    }
+
     // ==================================================================================
     // 4. SÉLECTION (PASSAGER)
     // ==================================================================================

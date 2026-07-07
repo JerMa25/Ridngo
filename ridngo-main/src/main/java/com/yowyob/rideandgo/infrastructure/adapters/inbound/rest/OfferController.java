@@ -84,6 +84,19 @@ public class OfferController {
                 .map(mapper::toResponse);
     }
 
+    @DeleteMapping("/{id}/apply")
+    @Operation(summary = "Withdraw application from offer (Driver)")
+    @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
+    public Mono<OfferResponse> withdrawApplication(@PathVariable UUID id) {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(SecurityContext::getAuthentication)
+                .flatMap(auth -> {
+                    UUID driverId = UUID.fromString(auth.getName());
+                    return offerService.withdrawApplication(id, driverId);
+                })
+                .map(mapper::toResponse);
+    }
+
     @GetMapping("/{id}/bids")
     @Operation(summary = "Review enriched bidders (Passenger)")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_PASSENGER')")
