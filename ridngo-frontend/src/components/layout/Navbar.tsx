@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert, LogOut, AlertTriangle, MapPin, Loader2 } from 'lucide-react';
+import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert, LogOut, AlertTriangle, MapPin, Loader2, LayoutDashboard, BadgePercent } from 'lucide-react';
 import { UserLocation } from '@/utils/geolocation';
 import { userService } from '@/lib/userService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -132,17 +132,34 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
         </div>
       
         {/* CENTRE : Liens (Desktop) */}
-        <div className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-widest text-foreground/60">
+        <div className="hidden lg:flex items-center gap-10 text-[11px] font-black uppercase tracking-widest text-foreground/60">
           {user?.role === 'PASSENGER' && (
-            <Link href="/passenger/dashboard" className={`hover:text-orange-btn transition-colors ${pathname === '/passenger/dashboard' ? 'text-orange-btn' : ''}`}>Dashboard</Link>
+            <Link
+              href="/passenger/dashboard"
+              className={`hover:text-orange-btn transition-colors flex items-center gap-2 ${
+                pathname === '/passenger/dashboard' ? 'text-orange-btn' : ''
+              }`}
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Link>
           )}
           {user?.role === 'PASSENGER' && (
-            <Link href="/ride" className="hover:text-orange-btn transition-colors flex items-center gap-2">
+            <Link
+              href="/ride"
+              className="hover:text-orange-btn transition-colors flex items-center gap-2"
+            >
               <Car size={16} /> Commander
             </Link>
           )}
           {user?.role === 'PASSENGER' && (
-            <Link href="/offers" className={`hover:text-orange-btn transition-colors ${pathname === '/offers' ? 'text-orange-btn' : ''}`}>
+            <Link
+              href="/offers"
+              className={`hover:text-orange-btn transition-colors flex items-center gap-2 ${
+                pathname === '/offers' ? 'text-orange-btn' : ''
+              }`}
+            >
+              <BadgePercent size={16} />
               Mes offres
             </Link>
           )}
