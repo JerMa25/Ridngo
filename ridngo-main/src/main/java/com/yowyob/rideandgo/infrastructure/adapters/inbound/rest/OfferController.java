@@ -1,27 +1,28 @@
 package com.yowyob.rideandgo.infrastructure.adapters.inbound.rest;
 
+import com.yowyob.rideandgo.application.service.OfferService;
+import com.yowyob.rideandgo.application.service.RideService;
 import com.yowyob.rideandgo.domain.ports.in.*;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.CreateOfferRequest;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.LandingOfferResponse;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.OfferResponse;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.RideResponse;
+import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.UpdateOfferRequest;
 import com.yowyob.rideandgo.infrastructure.mappers.OfferMapper;
 import com.yowyob.rideandgo.infrastructure.mappers.RideMapper;
-import com.yowyob.rideandgo.application.service.OfferService;
-import com.yowyob.rideandgo.application.service.RideService; // Import ajouté
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-
+import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.UpdateOfferRequest;
 
-import java.util.UUID;
+
 
 @RestController
 @RequiredArgsConstructor

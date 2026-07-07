@@ -12,23 +12,20 @@ import com.yowyob.rideandgo.domain.ports.out.*;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.LandingOfferResponse;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.NotificationType;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.SendNotificationRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+
+
 
 @Slf4j
 @Service
