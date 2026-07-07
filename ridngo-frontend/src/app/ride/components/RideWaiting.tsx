@@ -14,6 +14,7 @@ import DriverProfilePopup from './DriverProfile';
 interface Props {
   offer: any;
   onSelectDriver: (driverId: string) => void;
+  onCancelSearch?: () => void;
 }
 
 /**

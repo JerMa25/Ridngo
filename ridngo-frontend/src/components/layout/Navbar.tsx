@@ -113,7 +113,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
 
           {user && location && (
             <div
-              className="flex items-center gap-1.5 pl-3 ml-1 border-l border-foreground/10 max-w-[180px] sm:max-w-[240px]"
+              className="flex items-center gap-1.5 pl-3 ml-1 border-l border-foreground/10 max-w-45 sm:max-w-60"
               title={`${location.lat.toFixed(5)}, ${location.lon.toFixed(5)}`}
             >
               <MapPin size={14} className="text-orange-btn shrink-0" />
@@ -139,6 +139,11 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
           {user?.role === 'PASSENGER' && (
             <Link href="/ride" className="hover:text-orange-btn transition-colors flex items-center gap-2">
               <Car size={16} /> Commander
+            </Link>
+          )}
+          {user?.role === 'PASSENGER' && (
+            <Link href="/offers" className={`hover:text-orange-btn transition-colors ${pathname === '/offers' ? 'text-orange-btn' : ''}`}>
+              Mes offres
             </Link>
           )}
           {user?.role === 'DRIVER' && (
