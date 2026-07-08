@@ -4,14 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useNetwork } from '../../src/context/NetworkContext';
 import api from '../../src/services/api';
+import { withOfflineFallback, cacheClear, CacheKeys } from '../../src/services/offlineCache';
 import { Spacing, Radius } from '../../src/types/theme';
 
 export default function VehicleScreen() {
   const { Colors } = useTheme();
+  const { isOnline } = useNetwork();
   const [vehicle, setVehicle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [offlineNotice, setOfflineNotice] = useState(false);
   const [editForm, setEditForm] = useState({
     registrationNumber: '',
     color: '',
@@ -28,23 +32,38 @@ export default function VehicleScreen() {
 
   const fetchVehicle = async () => {
     try {
-      const res = await api.get('/api/v1/vehicles/me');
-      setVehicle(res.data);
-      if (res.data) {
-        setEditForm({
-          registrationNumber: res.data.registrationNumber || '',
-          color: res.data.color || '',
-          totalSeatNumber: res.data.totalSeatNumber?.toString() || '4',
-          airConditioned: res.data.airConditioned || false,
-          wifi: res.data.wifi || false,
-          screen: res.data.screen || false,
-          petsAllow: res.data.petsAllow || false,
-        });
-      }
+      const { data, fromCache } = await withOfflineFallback(
+        CacheKeys.driverVehicle,
+        async () => (await api.get('/api/v1/vehicles/me')).data,
+      );
+      applyVehicle(data);
+      if (fromCache) setOfflineNotice(true);
     } catch (err: any) {
-      console.log("No vehicle found or error fetching", err?.response?.data || err.message);
+      // Vraie absence de véhicule (404) → cache aussi ce "vide" pour ne pas laisser
+      // un ancien véhicule fantôme s'afficher après suppression côté serveur.
+      if (err?.response?.status === 404) {
+        await cacheClear(CacheKeys.driverVehicle);
+        setVehicle(null);
+      } else {
+        console.log("Erreur réseau lors du chargement du véhicule", err?.response?.data || err.message);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyVehicle = (data: any) => {
+    setVehicle(data);
+    if (data) {
+      setEditForm({
+        registrationNumber: data.registrationNumber || '',
+        color: data.color || '',
+        totalSeatNumber: data.totalSeatNumber?.toString() || '4',
+        airConditioned: data.airConditioned || false,
+        wifi: data.wifi || false,
+        screen: data.screen || false,
+        petsAllow: data.petsAllow || false,
+      });
     }
   };
 
@@ -86,16 +105,51 @@ export default function VehicleScreen() {
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: Colors.text }]}>Mon Véhicule</Text>
         {vehicle && (
-          <TouchableOpacity onPress={() => isEditing ? handleSave() : setIsEditing(true)}>
-            <Text style={[styles.headerAction, { color: Colors.orange }]}>
-              {isEditing ? "Enregistrer" : "Modifier"}
+          <TouchableOpacity
+            onPress={() => isEditing ? handleSave() : setIsEditing(true)}
+            disabled={!isOnline}
+          >
+            <Text style={[styles.headerAction, { color: !isOnline ? Colors.textSecondary : Colors.orange }]}>
+              {!isOnline ? 'Hors ligne' : (isEditing ? "Enregistrer" : "Modifier")}
             </Text>
           </TouchableOpacity>
         )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {!vehicle ? (
+        {offlineNotice && vehicle && (
+          <View style={[styles.offlineNoticeBox, { backgroundColor: Colors.input, borderColor: Colors.cardBorder }]}>
+            <Ionicons name="cloud-offline-outline" size={16} color={Colors.textSecondary} />
+            <Text style={[styles.offlineNoticeTxt, { color: Colors.textSecondary }]}>
+              Hors ligne — dernières infos connues affichées
+            </Text>
+          </View>
+        )}
+
+        {!vehicle && !isOnline ? (
+          <View style={styles.empty}>
+            <Ionicons name="cloud-offline-outline" size={64} color={Colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>
+              Impossible de vérifier votre véhicule hors ligne.
+            </Text>
+            <TouchableOpacity
+              style={[styles.registerBtn, { backgroundColor: Colors.orange }]}
+              onPress={fetchVehicle}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="refresh" size={18} color="#0D0D0D" />
+              <Text style={styles.registerBtnTxt}>Réessayer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backLinkBtn, { borderColor: Colors.cardBorder }]}
+              onPress={() => router.back()}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="arrow-back" size={16} color={Colors.text} />
+              <Text style={[styles.backLinkTxt, { color: Colors.text }]}>Retour</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !vehicle ? (
           <View style={styles.empty}>
             <Ionicons name="car-sport-outline" size={64} color={Colors.textSecondary} />
             <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>
@@ -294,4 +348,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg, paddingHorizontal: 24, paddingVertical: 12, borderWidth: 1,
   },
   backLinkTxt: { fontWeight: '700', fontSize: 14 },
+  offlineNoticeBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderRadius: Radius.md, borderWidth: 1, paddingVertical: 8, paddingHorizontal: 12, marginBottom: Spacing.md,
+  },
+  offlineNoticeTxt: { fontSize: 12, fontWeight: '600' },
 });

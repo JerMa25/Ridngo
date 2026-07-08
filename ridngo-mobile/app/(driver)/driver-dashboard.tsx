@@ -11,6 +11,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { rideService } from '../../src/services/rideService';
 import { userService, driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 export default function DriverDashboardScreen() {
   const { user } = useAuth();
@@ -27,14 +28,15 @@ export default function DriverDashboardScreen() {
     try {
       const [walletRes, historyRes, reviewsRes, profileRes] = await Promise.allSettled([
         rideService.getMyWallet(),
-        rideService.getEnrichedHistory().catch(() => rideService.getRideHistory()),
+        withOfflineFallback(CacheKeys.driverHistory, () =>
+          rideService.getEnrichedHistory().catch(() => rideService.getRideHistory())),
         rideService.getMyReviews(),
-        driverService.getDriverProfile(),
+        withOfflineFallback(CacheKeys.driverProfile, () => driverService.getDriverProfile()),
       ]);
       if (walletRes.status === 'fulfilled') setWallet(walletRes.value);
-      if (historyRes.status === 'fulfilled') setHistory(Array.isArray(historyRes.value) ? historyRes.value : []);
+      if (historyRes.status === 'fulfilled') setHistory(Array.isArray(historyRes.value.data) ? historyRes.value.data : []);
       if (reviewsRes.status === 'fulfilled') setReviews(Array.isArray(reviewsRes.value) ? reviewsRes.value : []);
-      if (profileRes.status === 'fulfilled') setProfileData(profileRes.value);
+      if (profileRes.status === 'fulfilled') setProfileData(profileRes.value.data);
     } catch { /* silent */ }
     finally { setLoading(false); setRefreshing(false); }
   };

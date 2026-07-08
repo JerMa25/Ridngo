@@ -57,43 +57,52 @@ public class VehicleController {
     @Operation(summary = "Patch Vehicle", description = "Update specific fields of a vehicle.")
     public Mono<Vehicle> patchVehicle(@PathVariable UUID id,
             @RequestBody UpdateVehicleDto dto) {
-        // Mapping partiel : on ne mappe que ce qui est présent
-        Vehicle partial = Vehicle.builder()
-                .vehicleMakeId(dto.makeName())
-                .vehicleModelId(dto.modelName())
-                .transmissionTypeId(dto.transmissionType())
-                .manufacturerId(dto.manufacturerName())
-                .vehicleSizeId(dto.sizeName())
-                .vehicleTypeId(dto.typeName())
-                .fuelTypeId(dto.fuelTypeName())
-                .vehicleSerialNumber(dto.vehicleSerialNumber())
-                .registrationNumber(dto.registrationNumber())
-                .tankCapacity(dto.tankCapacity() != null ? dto.tankCapacity() : 0.0)
-                .luggageMaxCapacity(dto.luggageMaxCapacity() != null ? dto.luggageMaxCapacity() : 0.0)
-                .totalSeatNumber(dto.totalSeatNumber() != null ? dto.totalSeatNumber() : 0)
-                .averageFuelConsumptionPerKm(
-                        dto.averageFuelConsumptionPerKm() != null ? dto.averageFuelConsumptionPerKm() : 0.0)
-                .mileageAtStart(dto.mileageAtStart() != null ? dto.mileageAtStart() : 0.0)
-                .mileageSinceCommissioning(
-                        dto.mileageSinceCommissioning() != null ? dto.mileageSinceCommissioning() : 0.0)
-                .vehicleAgeAtStart(dto.vehicleAgeAtStart() != null ? dto.vehicleAgeAtStart() : 0.0)
-                .brand(dto.makeName())
-                .airConditioned(dto.airConditioned() != null ? dto.airConditioned() : false)
-                .comfortable(dto.comfortable() != null ? dto.comfortable() : false)
-                .soft(dto.soft() != null ? dto.soft() : false)
-                .screen(dto.screen() != null ? dto.screen() : false)
-                .wifi(dto.wifi() != null ? dto.wifi() : false)
-                .tollCharge(dto.tollCharge() != null ? dto.tollCharge() : false)
-                .carParking(dto.carParking() != null ? dto.carParking() : false)
-                .alarm(dto.alarm() != null ? dto.alarm() : false)
-                .stateTax(dto.stateTax() != null ? dto.stateTax() : false)
-                .driverAllowance(dto.driverAllowance() != null ? dto.driverAllowance() : false)
-                .pickupAndDrop(dto.pickupAndDrop() != null ? dto.pickupAndDrop() : false)
-                .internet(dto.internet() != null ? dto.internet() : false)
-                .petsAllow(dto.petsAllow() != null ? dto.petsAllow() : false)
-                .build();
+        // ⚠️ Vraie mise à jour partielle : on part du véhicule EXISTANT et on ne remplace
+        // que les champs réellement présents dans le DTO. Avant ce correctif, tout champ
+        // absent du formulaire (booléens notamment, primitifs donc jamais "null") était
+        // écrasé par une valeur par défaut (false/0), ce qui effaçait silencieusement les
+        // équipements et caractéristiques non renvoyés par le formulaire mobile.
+        return vehicleService.getVehicleById(id)
+                .flatMap(existing -> {
+                    Vehicle merged = Vehicle.builder()
+                            .id(existing.id())
+                            .vehicleMakeId(dto.makeName() != null ? dto.makeName() : existing.vehicleMakeId())
+                            .vehicleModelId(dto.modelName() != null ? dto.modelName() : existing.vehicleModelId())
+                            .transmissionTypeId(dto.transmissionType() != null ? dto.transmissionType() : existing.transmissionTypeId())
+                            .manufacturerId(dto.manufacturerName() != null ? dto.manufacturerName() : existing.manufacturerId())
+                            .vehicleSizeId(dto.sizeName() != null ? dto.sizeName() : existing.vehicleSizeId())
+                            .vehicleTypeId(dto.typeName() != null ? dto.typeName() : existing.vehicleTypeId())
+                            .fuelTypeId(dto.fuelTypeName() != null ? dto.fuelTypeName() : existing.fuelTypeId())
+                            .vehicleSerialNumber(dto.vehicleSerialNumber() != null ? dto.vehicleSerialNumber() : existing.vehicleSerialNumber())
+                            .vehicleSerialPhoto(existing.vehicleSerialPhoto())
+                            .registrationNumber(dto.registrationNumber() != null ? dto.registrationNumber() : existing.registrationNumber())
+                            .registrationPhoto(existing.registrationPhoto())
+                            .tankCapacity(dto.tankCapacity() != null ? dto.tankCapacity() : existing.tankCapacity())
+                            .luggageMaxCapacity(dto.luggageMaxCapacity() != null ? dto.luggageMaxCapacity() : existing.luggageMaxCapacity())
+                            .totalSeatNumber(dto.totalSeatNumber() != null ? dto.totalSeatNumber() : existing.totalSeatNumber())
+                            .averageFuelConsumptionPerKm(dto.averageFuelConsumptionPerKm() != null ? dto.averageFuelConsumptionPerKm() : existing.averageFuelConsumptionPerKm())
+                            .mileageAtStart(dto.mileageAtStart() != null ? dto.mileageAtStart() : existing.mileageAtStart())
+                            .mileageSinceCommissioning(dto.mileageSinceCommissioning() != null ? dto.mileageSinceCommissioning() : existing.mileageSinceCommissioning())
+                            .vehicleAgeAtStart(dto.vehicleAgeAtStart() != null ? dto.vehicleAgeAtStart() : existing.vehicleAgeAtStart())
+                            .brand(dto.makeName() != null ? dto.makeName() : existing.brand())
+                            .illustrationImages(existing.illustrationImages())
+                            .airConditioned(dto.airConditioned() != null ? dto.airConditioned() : existing.airConditioned())
+                            .comfortable(dto.comfortable() != null ? dto.comfortable() : existing.comfortable())
+                            .soft(dto.soft() != null ? dto.soft() : existing.soft())
+                            .screen(dto.screen() != null ? dto.screen() : existing.screen())
+                            .wifi(dto.wifi() != null ? dto.wifi() : existing.wifi())
+                            .tollCharge(dto.tollCharge() != null ? dto.tollCharge() : existing.tollCharge())
+                            .carParking(dto.carParking() != null ? dto.carParking() : existing.carParking())
+                            .alarm(dto.alarm() != null ? dto.alarm() : existing.alarm())
+                            .stateTax(dto.stateTax() != null ? dto.stateTax() : existing.stateTax())
+                            .driverAllowance(dto.driverAllowance() != null ? dto.driverAllowance() : existing.driverAllowance())
+                            .pickupAndDrop(dto.pickupAndDrop() != null ? dto.pickupAndDrop() : existing.pickupAndDrop())
+                            .internet(dto.internet() != null ? dto.internet() : existing.internet())
+                            .petsAllow(dto.petsAllow() != null ? dto.petsAllow() : existing.petsAllow())
+                            .build();
 
-        return vehicleService.patchVehicle(id, partial);
+                    return vehicleService.patchVehicle(id, merged);
+                });
     }
 
     // --- MEDIA MANAGEMENT ---

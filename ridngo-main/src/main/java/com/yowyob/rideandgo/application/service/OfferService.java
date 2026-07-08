@@ -12,20 +12,23 @@ import com.yowyob.rideandgo.domain.ports.out.*;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.LandingOfferResponse;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.NotificationType;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.SendNotificationRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-
-
 
 @Slf4j
 @Service
@@ -173,8 +176,7 @@ public class OfferService implements
                                 .id(Utils.generateUUID())
                                 .userId(user.id())
                                 .title("Nouvelle course disponible")
-                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price()
-                                        + " F est disponible à " + offer.startPoint())
+                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price() + " F est disponible à " + offer.startPoint())
                                 .type("OFFER")
                                 .isRead(false)
                                 .dataJson(json)
@@ -226,8 +228,40 @@ public class OfferService implements
                         }))
                         // FILTRAGE & ENRICHISSEMENT (Commun aux deux cas)
                         .filter(o -> o.state() == OfferState.PENDING || o.state() == OfferState.BID_RECEIVED)
+                        .filter(this::isOfferStillValid) // ✅ Exclut les offres dont l'heure de départ est déjà passée
                         .distinct(Offer::id) // Évite les doublons si une offre est dans les deux flux
-                        .flatMap(this::enrichOffer));
+                        .flatMap(this::enrichOffer)); 
+    }
+
+    /**
+     * Vérifie qu'une offre est toujours "en vigueur".
+     * ⚠️ Beaucoup d'offres sont des demandes "immédiates" : departureTime == heure de création.
+     * Comparer strictement à "maintenant" les faisait disparaître du radar quelques secondes
+     * après leur création. On applique donc une marge de tolérance (le temps qu'un chauffeur
+     * la voie et l'accepte) avant de considérer une offre comme réellement expirée.
+     * Si le champ departureTime est absent ou dans un format non reconnu, l'offre est conservée
+     * par prudence (on ne veut pas masquer des offres valides à cause d'un format inattendu).
+     */
+    private static final java.time.Duration OFFER_GRACE_PERIOD = java.time.Duration.ofMinutes(60);
+
+    private boolean isOfferStillValid(Offer offer) {
+        String dt = offer.departureTime();
+        if (dt == null || dt.isBlank()) {
+            return true;
+        }
+        try {
+            java.time.Instant departure = java.time.Instant.parse(dt);
+            java.time.Instant cutoff = java.time.Instant.now().minus(OFFER_GRACE_PERIOD);
+            return departure.isAfter(cutoff);
+        } catch (Exception ignoredInstant) {
+            try {
+                java.time.LocalDateTime departure = java.time.LocalDateTime.parse(dt);
+                java.time.LocalDateTime cutoff = java.time.LocalDateTime.now().minus(OFFER_GRACE_PERIOD);
+                return departure.isAfter(cutoff);
+            } catch (Exception ignoredLocal) {
+                return true;
+            }
+        }
     }
 
     public Flux<LandingOfferResponse> getLatestPublicOffers(int limit) {
@@ -290,51 +324,6 @@ public class OfferService implements
                                         return Mono.just(saved);
                                     });
                         }));
-    }
-
-    public Mono<Offer> withdrawApplication(UUID offerId, UUID driverId) {
-        return repository.findById(offerId)
-                .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
-                .flatMap(offer -> {
-                    if (offer.state() == OfferState.VALIDATED || offer.state() == OfferState.CANCELLED) {
-                        return Mono.error(new IllegalStateException("Impossible de retirer une candidature après validation ou annulation."));
-                    }
-
-                    if (offer.bids() == null || offer.bids().stream().noneMatch(b -> b.driverId().equals(driverId))) {
-                        return Mono.error(new OfferNotFoundException("Candidature introuvable pour ce chauffeur."));
-                    }
-
-                    List<Bid> remainingBids = new ArrayList<>(offer.bids());
-                    remainingBids.removeIf(b -> b.driverId().equals(driverId));
-                    OfferState newState = remainingBids.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
-                    UUID selectedDriverId = offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)
-                            ? null
-                            : offer.selectedDriverId();
-
-                    Offer updatedOffer = new Offer(
-                            offer.id(),
-                            offer.passengerId(),
-                            selectedDriverId,
-                            offer.startPoint(),
-                            offer.startLat(),
-                            offer.startLon(),
-                            offer.endPoint(),
-                            offer.endLat(),
-                            offer.endLon(),
-                            offer.price(),
-                            offer.numberOfPlaces(),
-                            offer.passengerPhone(),
-                            offer.departureTime(),
-                            newState,
-                            remainingBids,
-                            offer.version(),
-                            offer.createdAt());
-
-                    log.info("🗑️ Driver {} withdrawing application from Offer {}. New state={}", driverId, offerId, newState);
-                    return repository.deleteBid(offerId, driverId)
-                            .flatMap(deleted -> repository.save(updatedOffer))
-                            .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));
-                });
     }
 
     // ==================================================================================
@@ -419,11 +408,11 @@ public class OfferService implements
                 .flatMap(offer -> {
                     double estimatedDistance = 0.0;
                     int estimatedDuration = 0;
-                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null
-                            && offer.endLon() != null) {
+                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null && offer.endLon() != null) {
                         estimatedDistance = trackingCalculatorService.calculateDistance(
                                 offer.startLat(), offer.startLon(),
-                                offer.endLat(), offer.endLon());
+                                offer.endLat(), offer.endLon()
+                        );
                         estimatedDuration = trackingCalculatorService.calculateEtaInMinutes(estimatedDistance);
                     }
 
@@ -488,8 +477,7 @@ public class OfferService implements
      * suffisant.
      */
     private Mono<Void> notifyEligibleDriversWithBalance(Offer offer) {
-        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(),
-                offer.numberOfPlaces(), offer.price());
+        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(), offer.numberOfPlaces(), offer.price());
 
         double requiredBalance = offer.price() * commissionRate;
 
@@ -683,8 +671,7 @@ public class OfferService implements
                             offerDetails.endLat() != null ? offerDetails.endLat() : existing.endLat(),
                             offerDetails.endLon() != null ? offerDetails.endLon() : existing.endLon(),
                             offerDetails.price() > 0 ? offerDetails.price() : existing.price(),
-                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces()
-                                    : existing.numberOfPlaces(),
+                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces() : existing.numberOfPlaces(),
                             offerDetails.passengerPhone() != null ? offerDetails.passengerPhone()
                                     : existing.passengerPhone(),
                             offerDetails.departureTime() != null ? offerDetails.departureTime()

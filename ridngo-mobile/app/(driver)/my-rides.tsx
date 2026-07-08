@@ -28,6 +28,7 @@ import { rideService } from '../../src/services/rideService';
 import { driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../src/types/api';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 function formatDateTime(iso?: string) {
   if (!iso) return '--';
@@ -132,7 +133,7 @@ export default function MyRidesScreen() {
       // et le tableau de bord) : il est rattaché à l'utilisateur authentifié et ne
       // dépend pas d'un driverId potentiellement désynchronisé, contrairement à
       // /trips/driver/{driverId}/history qui pouvait renvoyer une liste vide.
-      const data = await rideService.getEnrichedHistory();
+      const { data } = await withOfflineFallback(CacheKeys.driverHistory, () => rideService.getEnrichedHistory());
       const completed = (Array.isArray(data) ? data : []).filter((r: any) => r.state === 'COMPLETED');
       setHistory(completed);
 

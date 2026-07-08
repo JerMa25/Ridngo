@@ -10,6 +10,7 @@ import { rideService } from '../../src/services/rideService';
 import { useTheme } from '../../src/context/ThemeContext';
 import { Spacing, Radius } from '../../src/types/theme';
 import { RideResponse } from '../../src/types/api';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -51,7 +52,7 @@ export default function HistoryScreen() {
       // ⚠️ rideService.getMyHistory n'existe pas : l'appel échouait silencieusement
       // et affichait toujours une liste vide. On utilise l'historique enrichi,
       // déjà utilisé (et fonctionnel) côté chauffeur.
-      const data = await rideService.getEnrichedHistory();
+      const { data } = await withOfflineFallback(CacheKeys.passengerHistory, () => rideService.getEnrichedHistory());
       setRides(Array.isArray(data) ? data : []);
     } catch { setRides([]); }
     finally { setLoading(false); setRefreshing(false); }

@@ -24,6 +24,7 @@ import { rideService, clearPassengerRideData } from '../../src/services/rideServ
 import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../src/types/api';
 import api from '../../src/services/api';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 type PageState =
   | 'loading' | 'no_offer' | 'waiting_bids' | 'has_bids'
@@ -63,8 +64,6 @@ export default function MyOfferScreen() {
   const [stars, setStars]             = useState(5);
   const [comment, setComment]         = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
-  // Détails chauffeur (modal)
-  const [detailDriverId, setDetailDriverId] = useState<string | null>(null);
 
   const pollRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const offerId  = useRef<string | null>(null);
@@ -85,13 +84,9 @@ export default function MyOfferScreen() {
     } catch { setPageState('no_offer'); }
   };
 
-  // Charger le profil d'un chauffeur (avec cache)
+  // Charger le profil d'un chauffeur
   const loadDriverProfile = useCallback(async (dId: string) => {
-    // Si déjà en cache, retourner immédiatement
-    if (driverProfiles[dId]) {
-      return driverProfiles[dId];
-    }
-
+    if (driverProfiles[dId]) return;
     try {
       const res = await api.get(`/api/v1/users/drivers/${dId}`);
       const d = res.data;
@@ -110,15 +105,16 @@ export default function MyOfferScreen() {
       };
       setDriverProfiles(prev => ({ ...prev, [dId]: profile }));
       return profile;
-    } catch (error) {
-      console.error('[loadDriverProfile] Erreur pour', dId, error);
-      return null;
-    }
+    } catch { return null; }
   }, [driverProfiles]);
 
   const refreshOffer = async (id: string) => {
     try {
-      const data = await rideService.getOfferBids(id);
+      const { data } = await withOfflineFallback(
+        CacheKeys.passengerCurrentOffer,
+        () => rideService.getOfferBids(id),
+        { maxAgeMs: 10 * 60 * 1000 },
+      );
       setOffer(data);
       const state = data.state as string;
 
@@ -140,22 +136,8 @@ export default function MyOfferScreen() {
         setPageState('driver_selected');
         setSelectedDriverId(data.selectedDriverId || null);
         if (data.selectedDriverId) {
-          // On charge le profil (ou on le récupère du cache)
           const p = await loadDriverProfile(data.selectedDriverId);
           if (p) setDriver(p);
-          else {
-            // Si le profil n'a pas pu être chargé, on crée un objet minimal
-            setDriver({
-              name: 'Chauffeur',
-              phone: '',
-              rating: 0,
-              totalTrips: 0,
-              vehicleMake: '',
-              vehicleModel: '',
-              licensePlate: '',
-              isValidated: false,
-            });
-          }
         }
         if ((data.bids?.length || 0) > 0) loadBidProfiles(data.bids || []);
         return;
@@ -167,8 +149,8 @@ export default function MyOfferScreen() {
       } else {
         setPageState('waiting_bids');
       }
-    } catch (e) {
-      console.error('[MyOffer] refreshOffer error:', e);
+    } catch (e: any) {
+      if (!e?.isOffline) console.error('[MyOffer] refreshOffer error:', e);
     } finally { setRefreshing(false); }
   };
 
@@ -208,18 +190,6 @@ export default function MyOfferScreen() {
       setPageState('driver_selected');
       const p = await loadDriverProfile(driverId);
       if (p) setDriver(p);
-      else {
-        setDriver({
-          name: 'Chauffeur',
-          phone: '',
-          rating: 0,
-          totalTrips: 0,
-          vehicleMake: '',
-          vehicleModel: '',
-          licensePlate: '',
-          isValidated: false,
-        });
-      }
     } catch (e: any) {
       Alert.alert('Erreur', e?.response?.data?.message || e?.message || 'Impossible de sélectionner.');
     } finally { setSelectingId(null); }
@@ -403,33 +373,11 @@ export default function MyOfferScreen() {
             </Text>
             {(offer?.bids || []).map(bid => {
               const p = driverProfiles[bid.driverId];
-              // Si le profil n'est pas encore chargé, on affiche un placeholder
-              if (!p) {
-                return (
-                  <View key={bid.driverId}
-                    style={[s.driverCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
-                    <View style={s.driverTop}>
-                      <View style={[s.driverAvatar, { backgroundColor: Colors.input }]}>
-                        <ActivityIndicator size="small" color={Colors.orange} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[s.driverName, { color: Colors.textMuted }]}>Chargement...</Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              }
-
-              const name = p.name || bid.driverName || `Chauffeur #${bid.driverId.slice(-4)}`;
+              const name = p?.name || bid.driverName || `Chauffeur #${bid.driverId.slice(-4)}`;
               const initial = name[0]?.toUpperCase() || 'C';
-
               return (
-                <TouchableOpacity
-                  key={bid.driverId}
-                  activeOpacity={0.8}
-                  onPress={() => setDetailDriverId(bid.driverId)}
-                  style={[s.driverCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}
-                >
+                <View key={bid.driverId}
+                  style={[s.driverCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
                   <View style={s.driverTop}>
                     <View style={[s.driverAvatar, { backgroundColor: Colors.orange }]}>
                       <Text style={s.driverAvatarTxt}>{initial}</Text>
@@ -437,7 +385,7 @@ export default function MyOfferScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={[s.driverName, { color: Colors.text }]}>{name}</Text>
                       <View style={s.driverMeta}>
-                        {p.rating > 0 && (
+                        {p?.rating > 0 && (
                           <View style={s.metaItem}>
                             <Ionicons name="star" size={12} color={Colors.orange} />
                             <Text style={[s.metaTxt, { color: Colors.textMuted }]}>
@@ -445,12 +393,12 @@ export default function MyOfferScreen() {
                             </Text>
                           </View>
                         )}
-                        {p.totalTrips > 0 && (
+                        {p?.totalTrips > 0 && (
                           <Text style={[s.metaTxt, { color: Colors.textMuted }]}>
                             {p.totalTrips} courses
                           </Text>
                         )}
-                        {p.isValidated && (
+                        {p?.isValidated && (
                           <View style={[s.verifiedChip, { backgroundColor: Colors.greenBg }]}>
                             <Ionicons name="shield-checkmark-outline" size={10} color={Colors.green} />
                             <Text style={[s.verifiedTxt, { color: Colors.green }]}>VÉRIFIÉ</Text>
@@ -459,7 +407,7 @@ export default function MyOfferScreen() {
                       </View>
                     </View>
                   </View>
-                  {(p.vehicleMake || p.licensePlate) && (
+                  {(p?.vehicleMake || p?.licensePlate) && (
                     <View style={[s.vehicleRow, { backgroundColor: Colors.input }]}>
                       <Ionicons name="car-outline" size={13} color={Colors.textMuted} />
                       <Text style={[s.vehicleTxt, { color: Colors.textMuted }]} numberOfLines={1}>
@@ -479,7 +427,7 @@ export default function MyOfferScreen() {
                           CHOISIR CE CHAUFFEUR
                         </Text>}
                   </TouchableOpacity>
-                </TouchableOpacity>
+                </View>
               );
             })}
           </>
@@ -588,87 +536,6 @@ export default function MyOfferScreen() {
           </TouchableOpacity>
         )}
       </ScrollView>
-
-      {/* ── Modal de détails du chauffeur ── */}
-      <Modal visible={!!detailDriverId} transparent animationType="slide">
-        <View style={s.modalOverlay}>
-          <View style={[s.modalCard, { backgroundColor: Colors.card }]}>
-            <Text style={[s.modalTitle, { color: Colors.text }]}>Détails du chauffeur</Text>
-            {detailDriverId && driverProfiles[detailDriverId] ? (() => {
-              const p = driverProfiles[detailDriverId];
-              return (
-                <>
-                  <View style={{ alignItems: 'center', marginVertical: 8 }}>
-                    <View style={[s.driverAvatar, { backgroundColor: Colors.orange, width: 72, height: 72, borderRadius: 36 }]}>
-                      <Text style={[s.driverAvatarTxt, { fontSize: 28 }]}>
-                        {p.name[0]?.toUpperCase() || 'C'}
-                      </Text>
-                    </View>
-                    <Text style={[s.driverName, { color: Colors.text, fontSize: 18, marginTop: 8 }]}>{p.name}</Text>
-                    {p.isValidated && (
-                      <View style={[s.verifiedChip, { backgroundColor: Colors.greenBg, marginTop: 4 }]}>
-                        <Ionicons name="shield-checkmark-outline" size={12} color={Colors.green} />
-                        <Text style={[s.verifiedTxt, { color: Colors.green }]}>VÉRIFIÉ</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {p.phone && (
-                    <TouchableOpacity
-                      style={[s.phoneRow, { backgroundColor: Colors.input, marginVertical: 4 }]}
-                      onPress={() => Linking.openURL(`tel:${p.phone}`)}
-                    >
-                      <Ionicons name="call-outline" size={16} color={Colors.orange} />
-                      <Text style={[s.phoneTxt, { color: Colors.text }]}>{p.phone}</Text>
-                      <Text style={[s.phoneAction, { color: Colors.orange }]}>APPELER</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {(p.vehicleMake || p.licensePlate) && (
-                    <View style={[s.vehicleRow, { backgroundColor: Colors.input, marginVertical: 4 }]}>
-                      <Ionicons name="car-outline" size={13} color={Colors.textMuted} />
-                      <Text style={[s.vehicleTxt, { color: Colors.textMuted }]}>
-                        {[p.vehicleMake, p.vehicleModel].filter(Boolean).join(' ')}
-                        {p.licensePlate ? `  ·  ${p.licensePlate}` : ''}
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={{ flexDirection: 'row', gap: 20, marginVertical: 10, justifyContent: 'center' }}>
-                    <Text style={{ color: Colors.textMuted, fontWeight: '600' }}>
-                      ⭐ {p.rating.toFixed(1)}
-                    </Text>
-                    <Text style={{ color: Colors.textMuted, fontWeight: '600' }}>
-                      🏁 {p.totalTrips} courses
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[s.chooseBtn, { backgroundColor: Colors.orange, marginTop: 12 }]}
-                    onPress={() => {
-                      setDetailDriverId(null);
-                      // Option: si on veut directement sélectionner ce chauffeur
-                      if (detailDriverId) handleSelectDriver(detailDriverId);
-                    }}
-                  >
-                    <Text style={[s.chooseBtnTxt, { color: Colors.background }]}>
-                      CHOISIR CE CHAUFFEUR
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              );
-            })() : (
-              <ActivityIndicator color={Colors.orange} size="large" style={{ marginVertical: 20 }} />
-            )}
-            <TouchableOpacity
-              style={{ marginTop: 12, paddingVertical: 10 }}
-              onPress={() => setDetailDriverId(null)}
-            >
-              <Text style={[s.skipTxt, { color: Colors.textMuted }]}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* ── Modal de notation ── */}
       <Modal visible={showReview} transparent animationType="slide">

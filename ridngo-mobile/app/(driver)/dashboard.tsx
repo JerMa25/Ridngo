@@ -16,6 +16,7 @@ import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse } from '../../src/types/api';
 import * as ExpoLocation from 'expo-location';
 import api from '../../src/services/api';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -109,12 +110,17 @@ export default function DriverDashboard() {
 
   const fetchOffers = async () => {
     try {
-      const data = await rideService.getAvailableOffers(0, 100);
+      const { data, stale } = await withOfflineFallback(
+        CacheKeys.driverAvailableOffers,
+        () => rideService.getAvailableOffers(0, 100),
+        { maxAgeMs: 5 * 60 * 1000 }, // au-delà de 5 min hors ligne, mieux vaut ne rien montrer que du très périmé
+      );
+      if (stale) return; // radar trop vieux : on ne fait pas croire au chauffeur que ces offres sont encore là
       const unique = Array.from(
         new Map(data.map((o: OfferResponse) => [o.id, o])).values()
       ) as OfferResponse[];
       setOffers(unique);
-    } catch { /* silent */ }
+    } catch { /* ni réseau ni cache disponible : on garde la dernière liste connue à l'écran */ }
   };
 
   const startGPS = async () => {
