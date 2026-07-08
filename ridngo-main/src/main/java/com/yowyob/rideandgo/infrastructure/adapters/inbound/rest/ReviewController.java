@@ -26,7 +26,7 @@ public class ReviewController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> UUID.fromString(ctx.getAuthentication().getName()))
                 .flatMap(passengerId -> reviewService.submitReview(rideId, passengerId, request.stars(),
-                        request.comment(), request.anonymous()));
+                        request.comment()));
     }
 
     @GetMapping("/me")
@@ -38,6 +38,6 @@ public class ReviewController {
                 .flatMapMany(reviewService::getReviewsForDriver);
     }
 
-    public record ReviewRequest(int stars, String comment, boolean anonymous) {
+    public record ReviewRequest(int stars, String comment) {
     }
 }

@@ -44,12 +44,15 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  const submitReview = async (anonymous = false) => {
+  const submitReview = async () => {
     try {
-      await rideService.postReview(id, rating, comment, anonymous);
-      window.location.href = "/ride";
+      await rideService.postReview(id, rating, comment);
+      window.location.href = "/ride"; // Retour accueil client
     } catch (e) {
-      toast('Merci pour votre note !', { icon: '👏' });
+      //alert("Merci pour votre note !");
+      toast('Merci pour votre note !', {
+        icon: '👏',
+      });
       window.location.href = "/ride";
     }
   };
@@ -124,11 +127,8 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
                 onChange={(e) => setComment(e.target.value)}
                />
 
-               <button onClick={() => submitReview(false)} className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest shadow-xl">
+               <button onClick={submitReview} className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest shadow-xl">
                   Envoyer l&apos;évaluation
-               </button>
-               <button onClick={() => submitReview(true)} className="w-full py-4 bg-foreground/5 text-foreground/60 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-foreground/10 transition-all">
-                  Envoyer de façon anonyme
                </button>
             </motion.div>
           </div>

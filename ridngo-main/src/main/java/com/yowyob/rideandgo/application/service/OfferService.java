@@ -24,7 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.stereotype.Service;
 
 
 @Slf4j
@@ -226,8 +229,17 @@ public class OfferService implements
                         // FILTRAGE & ENRICHISSEMENT (Commun aux deux cas)
                         .filter(o -> o.state() == OfferState.PENDING || o.state() == OfferState.BID_RECEIVED)
                         .distinct(Offer::id) // Évite les doublons si une offre est dans les deux flux
-                        .flatMap(this::enrichOffer)); 
+                        .flatMap(this::enrichOffer)
+                        // ✅ Enrichissement avec le nom du passager
+                        .flatMap(offer -> userRepositoryPort.findUserById(offer.passengerId())
+                                .map(passenger -> {
+                                    String name = ((passenger.firstName() != null ? passenger.firstName() : "") +
+                                            " " + (passenger.lastName() != null ? passenger.lastName() : "")).trim();
+                                    return offer.withPassengerName(name.isEmpty() ? null : name);
+                                })
+                                .defaultIfEmpty(offer)));
     }
+
 
     public Flux<LandingOfferResponse> getLatestPublicOffers(int limit) {
         return repository.findLatestPending(limit)
@@ -327,7 +339,8 @@ public class OfferService implements
                             newState,
                             remainingBids,
                             offer.version(),
-                            offer.createdAt());
+                            offer.createdAt(),
+                            offer.passengerName());
 
                     log.info("🗑️ Driver {} withdrawing application from Offer {}. New state={}", driverId, offerId, newState);
                     return repository.deleteBid(offerId, driverId)
@@ -661,7 +674,8 @@ public class OfferService implements
                             existing.state(),
                             existing.bids(),
                             existing.version(),
-                            existing.createdAt());
+                            existing.createdAt(),
+                            existing.passengerName());
                     return repository.save(updated);
                 })
                 .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));

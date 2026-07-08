@@ -9,6 +9,7 @@ import java.util.UUID;
 public record OfferResponse(
         UUID id,
         UUID passengerId,
+        String passengerName,
         UUID selectedDriverId,
         String startPoint,
         Double startLat, // ✅ AJOUTÉ
@@ -23,3 +24,4 @@ public record OfferResponse(
         OfferState state,
         List<Bid> bids 
 ) {}
+

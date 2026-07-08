@@ -27,8 +27,8 @@ public class ReviewService {
     private final UserRepositoryPort userRepository;
 
     @Transactional
-    public Mono<Review> submitReview(UUID rideId, UUID passengerId, int stars, String comment, boolean anonymous) {
-        log.info("⭐ Process start: Submitting {} stars for ride {} (anonymous={})", stars, rideId, anonymous);
+    public Mono<Review> submitReview(UUID rideId, UUID passengerId, int stars, String comment) {
+        log.info("⭐ Process start: Submitting {} stars for ride {}", stars, rideId);
 
         return rideRepository.findRideById(rideId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Course introuvable")))
@@ -48,7 +48,6 @@ public class ReviewService {
                             .passengerId(passengerId)
                             .rating(stars)
                             .comment(comment)
-                            .anonymous(anonymous)
                             .build();
 
                     // 1. Sauvegarde l'avis 
@@ -91,16 +90,14 @@ public class ReviewService {
     }
 
     private ReviewResponse mapToResponse(Review review, User passenger) {
-        boolean anon = review.anonymous();
         return ReviewResponse.builder()
                 .reviewId(review.id())
                 .rideId(review.rideId())
                 .rating(review.rating())
                 .comment(review.comment())
-                .anonymous(anon)
                 .createdAt(review.createdAt())
-                .passengerName(anon ? "Anonyme" : passenger.firstName() + " " + passenger.lastName())
-                .passengerPhoto(anon ? null : passenger.photoUri())
+                .passengerName(passenger.firstName() + " " + passenger.lastName())
+                .passengerPhoto(passenger.photoUri())
                 .build();
     }
 }

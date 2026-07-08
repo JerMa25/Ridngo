@@ -81,8 +81,8 @@ export const rideService = {
   },
 
   // Noter le chauffeur (Après COMPLETED)
-  postReview: async (rideId: string, stars: number, comment: string, anonymous = false) => {
-    const response = await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment, anonymous });
+  postReview: async (rideId: string, stars: number, comment: string) => {
+    const response = await api.post(`/api/v1/reviews/ride/${rideId}`, { stars, comment });
     return response.data;
   },
 

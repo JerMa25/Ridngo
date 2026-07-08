@@ -14,9 +14,7 @@ public class ReviewResponse {
     private String comment;
     private LocalDateTime createdAt;
 
-    private boolean anonymous;
-
-    // Infos sur celui qui a laissé l'avis (masquées si anonymous = true)
+    // Infos sur celui qui a laissé l'avis
     private String passengerName;
     private String passengerPhoto;
 }

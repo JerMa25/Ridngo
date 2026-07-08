@@ -16,7 +16,6 @@ interface ReviewInfo {
   rating: number;
   comment: string | null;
   createdAt: string;
-  anonymous: boolean;
   passengerName: string;
   passengerPhoto: string | null;
 }
@@ -124,28 +123,6 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
           transition={{ duration: 0.3 }}
           className="border-t border-foreground/5 pt-4"
         >
-          {/* Identité du passager ayant laissé l'avis */}
-          <div className="flex items-center gap-2 mb-3">
-            {review.anonymous ? (
-              <>
-                <div className="w-6 h-6 rounded-lg bg-foreground/10 flex items-center justify-center">
-                  <User size={12} className="opacity-40" />
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Anonyme</span>
-                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-foreground/5 rounded-full opacity-50">Avis anonyme</span>
-              </>
-            ) : (
-              <>
-                <div className="w-6 h-6 rounded-lg bg-foreground/5 overflow-hidden flex items-center justify-center">
-                  {review.passengerPhoto
-                    ? <img src={review.passengerPhoto} className="w-full h-full object-cover" alt="" />
-                    : <User size={12} className="opacity-40" />}
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-50">{review.passengerName}</span>
-              </>
-            )}
-          </div>
-
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             {/* Étoiles + Note */}
             <div className="flex items-center gap-3 bg-foreground/[0.03] px-4 py-2.5 rounded-xl shrink-0">

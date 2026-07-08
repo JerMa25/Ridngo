@@ -12,6 +12,6 @@ public record Review(
     UUID driverId,
     int rating,
     String comment,
-    boolean anonymous,
+
     LocalDateTime createdAt
 ) {}
