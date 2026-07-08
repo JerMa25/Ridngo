@@ -176,7 +176,8 @@ public class OfferService implements
                                 .id(Utils.generateUUID())
                                 .userId(user.id())
                                 .title("Nouvelle course disponible")
-                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price() + " F est disponible à " + offer.startPoint())
+                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price()
+                                        + " F est disponible à " + offer.startPoint())
                                 .type("OFFER")
                                 .isRead(false)
                                 .dataJson(json)
@@ -229,7 +230,7 @@ public class OfferService implements
                         // FILTRAGE & ENRICHISSEMENT (Commun aux deux cas)
                         .filter(o -> o.state() == OfferState.PENDING || o.state() == OfferState.BID_RECEIVED)
                         .distinct(Offer::id) // Évite les doublons si une offre est dans les deux flux
-                        .flatMap(this::enrichOffer)); 
+                        .flatMap(this::enrichOffer));
     }
 
     public Flux<LandingOfferResponse> getLatestPublicOffers(int limit) {
@@ -295,6 +296,34 @@ public class OfferService implements
     }
 
     // ==================================================================================
+    // 3bis. RETRAIT DE CANDIDATURE (CHAUFFEUR)
+    // ==================================================================================
+    public Mono<Offer> withdrawApplication(UUID offerId, UUID driverId) {
+        return repository.findById(offerId)
+                .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
+                .flatMap(offer -> {
+                    if (offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)) {
+                        return Mono.error(new IllegalStateException(
+                                "Vous avez déjà été sélectionné pour cette course, impossible d'annuler votre candidature."));
+                    }
+                    if (offer.bids() == null || offer.bids().stream().noneMatch(b -> b.driverId().equals(driverId))) {
+                        // Rien à retirer, on renvoie l'offre telle quelle
+                        return Mono.just(offer);
+                    }
+
+                    List<Bid> remaining = offer.bids().stream()
+                            .filter(b -> !b.driverId().equals(driverId))
+                            .collect(java.util.stream.Collectors.toList());
+
+                    OfferState newState = remaining.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
+
+                    log.info("↩️ Driver {} withdrawing application from Offer {}.", driverId, offerId);
+
+                    return updateOfferState(offer.withBids(remaining), newState);
+                });
+    }
+
+    // ==================================================================================
     // 4. SÉLECTION (PASSAGER)
     // ==================================================================================
     @Override
@@ -348,11 +377,11 @@ public class OfferService implements
                 .flatMap(offer -> {
                     double estimatedDistance = 0.0;
                     int estimatedDuration = 0;
-                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null && offer.endLon() != null) {
+                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null
+                            && offer.endLon() != null) {
                         estimatedDistance = trackingCalculatorService.calculateDistance(
                                 offer.startLat(), offer.startLon(),
-                                offer.endLat(), offer.endLon()
-                        );
+                                offer.endLat(), offer.endLon());
                         estimatedDuration = trackingCalculatorService.calculateEtaInMinutes(estimatedDistance);
                     }
 
@@ -417,7 +446,8 @@ public class OfferService implements
      * suffisant.
      */
     private Mono<Void> notifyEligibleDriversWithBalance(Offer offer) {
-        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(), offer.numberOfPlaces(), offer.price());
+        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(),
+                offer.numberOfPlaces(), offer.price());
 
         double requiredBalance = offer.price() * commissionRate;
 
@@ -611,7 +641,8 @@ public class OfferService implements
                             offerDetails.endLat() != null ? offerDetails.endLat() : existing.endLat(),
                             offerDetails.endLon() != null ? offerDetails.endLon() : existing.endLon(),
                             offerDetails.price() > 0 ? offerDetails.price() : existing.price(),
-                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces() : existing.numberOfPlaces(),
+                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces()
+                                    : existing.numberOfPlaces(),
                             offerDetails.passengerPhone() != null ? offerDetails.passengerPhone()
                                     : existing.passengerPhone(),
                             offerDetails.departureTime() != null ? offerDetails.departureTime()

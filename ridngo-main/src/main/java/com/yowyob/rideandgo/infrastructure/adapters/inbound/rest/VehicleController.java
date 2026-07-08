@@ -40,7 +40,7 @@ public class VehicleController {
                 .flatMap(driverId -> driverRepositoryPort.findById(driverId))
                 .flatMap(driver -> {
                     if (driver.vehicleId() == null) {
-                        return Mono.error(new IllegalStateException("No vehicle associated with this driver."));
+                        return Mono.empty();
                     }
                     return vehicleService.getVehicleById(driver.vehicleId());
                 });

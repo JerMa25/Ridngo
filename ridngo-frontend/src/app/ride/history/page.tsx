@@ -81,6 +81,12 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
             <p className="text-[8px] font-black uppercase opacity-30 tracking-tighter">Prix total</p>
          </div>
       </div>
+      <div className="pt-3 flex items-center justify-between text-[10px] opacity-60">
+        <div className="flex items-center gap-3">
+          <span className="font-black uppercase tracking-widest">Places:</span>
+          <span className="font-bold">{ride.numberOfPlaces ?? ride.offer?.numberOfPlaces ?? '—'}</span>
+        </div>
+      </div>
 
       <div className="pt-4 border-t border-foreground/5 flex items-center justify-between">
          <div className="flex items-center gap-4">

@@ -9,7 +9,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { rideService } from '../../src/services/rideService';
-import { userService } from '../../src/services/userService';
+import { userService, driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 
 export default function DriverDashboardScreen() {
@@ -29,7 +29,7 @@ export default function DriverDashboardScreen() {
         rideService.getMyWallet(),
         rideService.getEnrichedHistory().catch(() => rideService.getRideHistory()),
         rideService.getMyReviews(),
-        userService.getDriverProfile(),
+        driverService.getDriverProfile(),
       ]);
       if (walletRes.status === 'fulfilled') setWallet(walletRes.value);
       if (historyRes.status === 'fulfilled') setHistory(Array.isArray(historyRes.value) ? historyRes.value : []);
@@ -151,30 +151,96 @@ export default function DriverDashboardScreen() {
           </View>
         </View>
 
+        {/* Dernières courses */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>DERNIÈRES COURSES</Text>
+            <TouchableOpacity onPress={() => router.push('/(driver)/history')}>
+              <Text style={[styles.linkText, { color: Colors.orange }]}>VOIR TOUT</Text>
+            </TouchableOpacity>
+          </View>
+          {completed.slice(0, 3).map((ride: any, index: number) => (
+            <TouchableOpacity 
+              key={ride.id || index} 
+              style={[styles.vehicleCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, marginBottom: 4 }]}
+              onPress={() => router.push('/(driver)/history')}
+            >
+              <View style={[styles.vehicleIcon, { backgroundColor: Colors.input }]}>
+                <Ionicons name="car" size={20} color={Colors.text} />
+              </View>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={[styles.vehicleModel, { color: Colors.text, fontSize: 13 }]} numberOfLines={1}>
+                  {ride.startPoint} 
+                </Text>
+                <Text style={[styles.vehiclePlate, { color: Colors.textMuted, fontSize: 11 }]} numberOfLines={1}>
+                  → {ride.endPoint}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.vehicleModel, { color: Colors.orange }]}>{ride.price?.toLocaleString()} F</Text>
+                {!!ride.numberOfPlaces && (
+                  <Text style={[styles.vehiclePlate, { color: Colors.textMuted, fontSize: 10 }]}>
+                    {ride.numberOfPlaces} place{ride.numberOfPlaces > 1 ? 's' : ''}
+                  </Text>
+                )}
+                <Text style={[styles.vehiclePlate, { color: Colors.textMuted, fontSize: 10 }]}>
+                  {new Date(ride.createdAt || Date.now()).toLocaleDateString('fr-FR')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+          {completed.length === 0 && (
+            <Text style={{ textAlign: 'center', color: Colors.textMuted, fontStyle: 'italic', paddingVertical: 12 }}>
+              Aucune course terminée.
+            </Text>
+          )}
+        </View>
+
         {/* Véhicule */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>MON VÉHICULE</Text>
-            <TouchableOpacity onPress={() => router.push('/(driver)/profile')}>
+            <TouchableOpacity onPress={() => router.push('/(driver)/vehicle')}>
               <Text style={[styles.linkText, { color: Colors.orange }]}>Modifier</Text>
             </TouchableOpacity>
           </View>
-          <View style={[styles.vehicleCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
-            <View style={[styles.vehicleIcon, { backgroundColor: Colors.orangeBg }]}>
-              <Ionicons name="car-sport" size={24} color={Colors.orange} />
+          {profileData?.vehicle ? (
+            <View style={[styles.vehicleCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
+              <View style={[styles.vehicleIcon, { backgroundColor: Colors.orangeBg }]}>
+                <Ionicons name="car-sport" size={24} color={Colors.orange} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.vehicleModel, { color: Colors.text }]}>
+                  {profileData.vehicle.brand || profileData.vehicle.makeName || 'Marque'} {profileData.vehicle.model || profileData.vehicle.modelName || 'Modèle'}
+                </Text>
+                <Text style={[styles.vehiclePlate, { color: Colors.textMuted }]}>
+                  {profileData.vehicle.registrationNumber || 'Non renseignée'}
+                </Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: 'rgba(34,197,94,0.1)' }]}>
+                 <Text style={[styles.statusBadgeText, { color: '#22C55E' }]}>Validé</Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.vehicleModel, { color: Colors.text }]}>
-                {profileData?.vehicle?.brand || 'Marque'} {profileData?.vehicle?.model || 'Modèle'}
-              </Text>
-              <Text style={[styles.vehiclePlate, { color: Colors.textMuted }]}>
-                {profileData?.vehicle?.registrationNumber || 'Non renseignée'}
-              </Text>
-            </View>
-            <View style={[styles.statusBadge, { backgroundColor: 'rgba(34,197,94,0.1)' }]}>
-               <Text style={[styles.statusBadgeText, { color: '#22C55E' }]}>Validé</Text>
-            </View>
-          </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.vehicleCard, { backgroundColor: Colors.card, borderColor: '#F59E0B' }]}
+              onPress={() => router.push('/(driver)/vehicle')}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.vehicleIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
+                <Ionicons name="alert-circle" size={24} color="#F59E0B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.vehicleModel, { color: Colors.text }]}>Aucun véhicule enregistré</Text>
+                <Text style={[styles.vehiclePlate, { color: Colors.textMuted }]}>
+                  Enregistrez votre véhicule pour recevoir des offres
+                </Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
+                 <Text style={[styles.statusBadgeText, { color: '#F59E0B' }]}>À faire</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
       </ScrollView>

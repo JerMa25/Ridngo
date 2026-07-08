@@ -51,6 +51,9 @@ const CompactOfferCard = ({ offer }: { offer: any }) => (
           <p className="font-black text-lg text-orange-btn">{offer.price?.toLocaleString()} <span className="text-[10px]">FCFA</span></p>
           <p className="text-[10px] opacity-50">{offer.distance ? `${offer.distance} km` : ''}</p>
        </div>
+       <div className="ml-4 text-[12px] font-bold text-foreground/80">
+         {offer.numberOfPlaces ?? '—'} places
+       </div>
        <button className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center group-hover:bg-orange-btn group-hover:text-white transition-colors">
           <Link href={`/driver/offers/${offer.id}`} >
             <ChevronRight size={20} />
@@ -128,9 +131,10 @@ export default function DriverDashboard() {
   const fetchOffers = async () => {
     try {
       const data = await rideService.getAvailableOffers(0, 100);
-      
+      // Ne garder que les offres en cours (éviter les offres VALIDATED/CANCELLED)
+      const filteredData = (data || []).filter((o: any) => ['PENDING', 'BID_RECEIVED'].includes(o.state));
       // 1. Déduplication
-      const uniqueData = Array.from(new Map(data.map((item: any) => [item.id, item])).values());
+      const uniqueData = Array.from(new Map(filteredData.map((item: any) => [item.id, item])).values());
       
       // 2. Pré-tri stable pour comparaison (par ID)
       const sortedNewData = (uniqueData as any[]).sort((a, b) => a.id.localeCompare(b.id));

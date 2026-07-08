@@ -5,6 +5,7 @@ import { Colors } from '../../src/types/theme';
 export default function PassengerLayout() {
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {

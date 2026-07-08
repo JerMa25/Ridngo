@@ -81,11 +81,28 @@ export default function DriverRideScreen() {
   const loadRide = async () => {
     try {
       const data = await rideService.getRideDetails(id!);
-      setRide(data);
-      setRideState((data.state as RideState) || 'CREATED');
-      if (data.passengerId) loadPassenger(data.passengerId);
+      const enriched = await enrichWithOffer(data);
+      setRide(enriched);
+      setRideState((enriched.state as RideState) || 'CREATED');
+      if (enriched.passengerId) loadPassenger(enriched.passengerId);
     } catch { Alert.alert('Erreur', 'Impossible de charger la course.'); }
     finally { setLoading(false); }
+  };
+
+  // /trips/{id} ne renvoie pas toujours l'itinéraire, le prix ou le nombre de places
+  // (ces infos vivent sur l'offre) : on les complète depuis l'offre liée si besoin.
+  const enrichWithOffer = async (data: RideResponse): Promise<RideResponse> => {
+    if (!data.offerId || (data.startPoint && data.numberOfPlaces)) return data;
+    try {
+      const offer = await rideService.getOfferById(data.offerId);
+      return {
+        ...data,
+        startPoint: data.startPoint || offer.startPoint,
+        endPoint: data.endPoint || offer.endPoint,
+        price: data.price ?? offer.price,
+        numberOfPlaces: data.numberOfPlaces ?? offer.numberOfPlaces,
+      };
+    } catch { return data; }
   };
 
   const loadPassenger = async (passengerId: string) => {
@@ -115,8 +132,9 @@ export default function DriverRideScreen() {
     pollRef.current = setInterval(async () => {
       try {
         const data = await rideService.getRideDetails(id!);
-        setRideState((data.state as RideState) || 'CREATED');
-        setRide(data);
+        const enriched = await enrichWithOffer(data);
+        setRideState((enriched.state as RideState) || 'CREATED');
+        setRide(enriched);
         if (data.state === 'COMPLETED' || data.state === 'CANCELLED') {
           clearInterval(pollRef.current!);
           if (gpsRef.current) clearInterval(gpsRef.current);
@@ -203,15 +221,27 @@ export default function DriverRideScreen() {
           {rideState === 'COMPLETED' ? 'Course terminée' : 'Course annulée'}
         </Text>
         {rideState === 'COMPLETED' && (
-          <Text style={[s.doneSub, { color: Colors.textMuted }]}>
-            Montant : {ride?.price?.toLocaleString() ?? '--'} FCFA
-          </Text>
+          <>
+            <Text style={[s.doneSub, { color: Colors.textMuted, marginBottom: 20 }]}>
+              Montant à encaisser : {ride?.price?.toLocaleString() ?? '--'} FCFA
+            </Text>
+            <TouchableOpacity
+              style={[s.doneBtn, { backgroundColor: Colors.green, marginBottom: 12, width: '80%', alignItems: 'center' }]}
+              onPress={() => {
+                // TODO: Intégration API de paiement
+                Alert.alert('Paiement Validé', 'Le montant a été ajouté à votre wallet.');
+                router.replace('/(driver)/dashboard');
+              }}
+            >
+              <Text style={[s.doneBtnTxt, { color: '#fff' }]}>ENCAISSER LE PAIEMENT</Text>
+            </TouchableOpacity>
+          </>
         )}
         <TouchableOpacity
-          style={[s.doneBtn, { backgroundColor: Colors.orange }]}
+          style={[s.doneBtn, { backgroundColor: Colors.input, width: '80%', alignItems: 'center' }]}
           onPress={() => router.replace('/(driver)/dashboard')}
         >
-          <Text style={s.doneBtnTxt}>RETOUR AU RADAR</Text>
+          <Text style={[s.doneBtnTxt, { color: Colors.text }]}>RETOUR AU RADAR</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -276,20 +306,50 @@ export default function DriverRideScreen() {
               <Text style={[s.place, { color: Colors.text }]} numberOfLines={2}>{ride?.endPoint}</Text>
             </View>
           </View>
+          {!!ride?.numberOfPlaces && (
+            <View style={[s.placesRow, { borderTopColor: Colors.cardBorder }]}>
+              <Ionicons name="people-outline" size={16} color={Colors.orange} />
+              <Text style={[s.placesTxt, { color: Colors.text }]}>
+                {ride.numberOfPlaces} place{ride.numberOfPlaces > 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Bouton CREATED : J'ai récupéré le client */}
         {rideState === 'CREATED' && (
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: Colors.orange }]}
-            onPress={handlePickedUp} disabled={actionLoading} activeOpacity={0.85}>
-            {actionLoading
-              ? <ActivityIndicator color="#0D0D0D" />
-              : <>
-                  <Ionicons name="person-add" size={18} color="#0D0D0D" />
-                  <Text style={s.actionBtnTxt}>J'AI RÉCUPÉRÉ LE CLIENT</Text>
-                </>}
-          </TouchableOpacity>
+          <View style={{ gap: 10 }}>
+            <TouchableOpacity
+              style={[s.actionBtn, { backgroundColor: Colors.orange }]}
+              onPress={handlePickedUp} disabled={actionLoading} activeOpacity={0.85}>
+              {actionLoading
+                ? <ActivityIndicator color="#0D0D0D" />
+                : <>
+                    <Ionicons name="person-add" size={18} color="#0D0D0D" />
+                    <Text style={s.actionBtnTxt}>J'AI RÉCUPÉRÉ LE CLIENT</Text>
+                  </>}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[s.actionBtn, { backgroundColor: Colors.input, borderColor: Colors.red, borderWidth: 1 }]}
+              onPress={() => {
+                Alert.alert('Annuler la course', 'Voulez-vous vraiment annuler cette course ?', [
+                  { text: 'Non' },
+                  { text: 'Oui, annuler', style: 'destructive', onPress: async () => {
+                    setAction(true);
+                    try {
+                      await rideService.updateRideStatus(id!, 'CANCELLED');
+                      setRideState('CANCELLED');
+                    } catch (e: any) {
+                      Alert.alert('Erreur', e?.response?.data?.message || 'Impossible d\'annuler');
+                    } finally { setAction(false); }
+                  }}
+                ]);
+              }} 
+              disabled={actionLoading} activeOpacity={0.85}>
+              <Text style={[s.actionBtnTxt, { color: Colors.red }]}>ANNULER LA COURSE</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Bouton ONGOING : Terminer */}
@@ -349,6 +409,8 @@ const s = StyleSheet.create({
   dot:        { width: 11, height: 11, borderRadius: 6, marginTop: 12, flexShrink: 0 },
   dotOutline: { width: 11, height: 11, borderRadius: 6, borderWidth: 2, marginTop: 12, flexShrink: 0 },
   vline:      { width: 2, height: 16, marginLeft: 4, marginVertical: 2 },
+  placesRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1 },
+  placesTxt:  { fontSize: 13, fontWeight: '700' },
   place:      { fontSize: 14, fontWeight: '700', marginTop: 2 },
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

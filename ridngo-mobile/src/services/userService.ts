@@ -39,7 +39,10 @@ export const userService = {
     try {
       const token = await SecureStore.getItemAsync('accessToken');
       const formData = new FormData();
-      formData.append('data', JSON.stringify(data));
+      formData.append('data', {
+        string: JSON.stringify(data),
+        type: 'application/json',
+      } as any);
       if (photo) {
         const mimeType = photo.mimeType || photo.type || 'image/jpeg';
         const ext = mimeType.includes('png') ? 'png' : 'jpg';
@@ -53,8 +56,14 @@ export const userService = {
         headers,
         body: formData,
       });
+
       const text = await res.text();
-      try { return JSON.parse(text); } catch { return {}; }
+
+      if (!res.ok) {
+        throw new Error(text || "Erreur lors de la mise à jour");
+      }
+
+      return text ? JSON.parse(text) : {};
     } catch {
       return userService.updateProfile(data);
     }

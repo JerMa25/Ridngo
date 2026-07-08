@@ -48,7 +48,10 @@ export default function HistoryScreen() {
 
   const load = async () => {
     try {
-      const data = await rideService.getMyHistory(0, 20);
+      // ⚠️ rideService.getMyHistory n'existe pas : l'appel échouait silencieusement
+      // et affichait toujours une liste vide. On utilise l'historique enrichi,
+      // déjà utilisé (et fonctionnel) côté chauffeur.
+      const data = await rideService.getEnrichedHistory();
       setRides(Array.isArray(data) ? data : []);
     } catch { setRides([]); }
     finally { setLoading(false); setRefreshing(false); }
@@ -111,6 +114,12 @@ export default function HistoryScreen() {
                 ? new Date(item.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
                 : '—'}
             </Text>
+            {!!item.numberOfPlaces && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
+                <Text style={[styles.dateText, { color: Colors.textMuted }]}>{item.numberOfPlaces}</Text>
+              </View>
+            )}
             <Text style={[styles.priceText, { color: Colors.orange }]}>{item.price?.toLocaleString()} F</Text>
           </View>
         </View>

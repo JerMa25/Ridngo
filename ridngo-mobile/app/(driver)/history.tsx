@@ -136,6 +136,14 @@ export default function DriverHistoryScreen() {
                     <Text style={[styles.routeStart, { color: Colors.text }]} numberOfLines={1}>{ride.startPoint}</Text>
                     <Text style={[styles.routeEnd, { color: Colors.textMuted }]} numberOfLines={1}>Vers : {ride.endPoint?.split(',')[0]}</Text>
                   </View>
+                  {!!ride.numberOfPlaces && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.textMuted }}>
+                        {ride.numberOfPlaces}
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 {/* Avis passager */}

@@ -119,6 +119,7 @@ public class RideService implements UpdateRideStatusUseCase {
                             .price(offer.price())
                             .startPoint(offer.startPoint())
                             .endPoint(offer.endPoint())
+                            .numberOfPlaces(offer.numberOfPlaces())
                             .partnerName(partner.firstName() + " " + partner.lastName())
                             .partnerPhone(partner.telephone())
                             .partnerPhoto(partner.photoUri())

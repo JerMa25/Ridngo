@@ -1,6 +1,4 @@
-
 databaseChangeLog:
-
   - include:
       file: db/changelog/changes/000-initial-schema.sql
 
@@ -9,7 +7,7 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changes/002-create-user-devices.sql
-      
+
   - include:
       file: db/changelog/changes/003-create-notification-settings.sql
 
@@ -51,3 +49,6 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changes/016-add-offer-number-of-places.sql
+
+  - include:
+      file: db/changelog/changes/017-add-anonymous-review.sql

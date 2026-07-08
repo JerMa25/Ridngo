@@ -213,7 +213,8 @@ export default function RideScreen() {
 
   // ── Estimation tarifaire
   const [fareEstimate, setFareEstimate] = useState<FareEstimate | null>(null);
-  const [priceNum, setPriceNum] = useState(0);
+  const [priceNum, setPriceNum] = useState(0); // Price per seat
+  const [seatCount, setSeatCount] = useState(1);
   const [loadingFare, setLoadingFare] = useState(false);
 
   // ── Publication offre
@@ -446,9 +447,10 @@ export default function RideScreen() {
         endPoint: dest.name,
         endLat: parseFloat(String(dest.lat)),
         endLon: parseFloat(String(dest.lon)),
-        price: priceNum,
+        price: priceNum * seatCount,
         passengerPhone: phone,
         departureTime: departureTime,
+        numberOfPlaces: seatCount,
       });
 
       console.log('[Publish] Offre créée :', offer.id);
@@ -549,7 +551,10 @@ export default function RideScreen() {
     if (!activeRideId) return;
     try {
       await rideService.submitReview(activeRideId, stars, comment, anonymous);
-    } catch { /* silent */ }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || "Impossible d'enregistrer votre avis.";
+      Alert.alert('Erreur', msg);
+    }
     await clearPassengerRideData();
     setStep('search');
     setHasActiveOffer(false);
@@ -746,11 +751,37 @@ export default function RideScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Badge Nombre de places */}
-              <View style={[styles.seatsBadge, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
-                <Ionicons name="people" size={16} color={Colors.orange} />
-                <Text style={[styles.seatsBadgeText, { color: Colors.text }]}>
-                  1 à 4 places disponibles
+              {/* Badge Nombre de places — Sélecteur interactif */}
+              <View style={[styles.seatsSelector, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
+                <TouchableOpacity
+                  style={[styles.seatBtn, { backgroundColor: Colors.input }]}
+                  onPress={() => setSeatCount(c => Math.max(1, c - 1))}
+                  disabled={seatCount <= 1}
+                >
+                  <Ionicons name="remove" size={20} color={seatCount <= 1 ? Colors.textMuted : Colors.text} />
+                </TouchableOpacity>
+                
+                <View style={styles.seatInfo}>
+                  <Text style={[styles.seatCountVal, { color: Colors.text }]}>{seatCount}</Text>
+                  <Text style={[styles.seatCountLbl, { color: Colors.textMuted }]}>
+                    {seatCount > 1 ? 'places' : 'place'}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.seatBtn, { backgroundColor: Colors.input }]}
+                  onPress={() => setSeatCount(c => Math.min(4, c + 1))}
+                  disabled={seatCount >= 4}
+                >
+                  <Ionicons name="add" size={20} color={seatCount >= 4 ? Colors.textMuted : Colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Total PRIX affiché grand */}
+              <View style={styles.totalPriceContainer}>
+                <Text style={[styles.totalPriceLabel, { color: Colors.textSecondary }]}>PRIX TOTAL :</Text>
+                <Text style={[styles.totalPriceValue, { color: Colors.orange }]}>
+                  {priceNum * seatCount} FCFA
                 </Text>
               </View>
 
@@ -883,6 +914,11 @@ export default function RideScreen() {
                 <Text style={[styles.offerSummaryPrice, { color: '#FF8C00' }]}>
                   {currentOffer.price} FCFA
                 </Text>
+                {!!currentOffer.numberOfPlaces && (
+                  <Text style={[styles.offerSummaryText, { color: Colors.textMuted }]}>
+                    {currentOffer.numberOfPlaces} place{currentOffer.numberOfPlaces > 1 ? 's' : ''}
+                  </Text>
+                )}
               </View>
 
               {/* Liste des bids */}
@@ -1128,7 +1164,7 @@ const styles = StyleSheet.create({
   },
   anonymousBtnText: {
     fontWeight: '700', fontSize: 12, textTransform: 'uppercase',
-    letterSpacing: 0.8, opacity: 0.5,
+    letterSpacing: 0.8, opacity: 0.5, color: "#FFFFFF"
   },
   // ── Step price styles ──
   priceTitleBlock: { alignItems: 'center', paddingVertical: Spacing.sm },
@@ -1153,6 +1189,14 @@ const styles = StyleSheet.create({
     borderWidth: 1, marginTop: 12, marginBottom: 8,
   },
   seatsBadgeText: { fontWeight: '700', fontSize: 13 },
+  seatsSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 12, borderWidth: 1, marginTop: 12 },
+  seatBtn: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  seatInfo: { alignItems: 'center' },
+  seatCountVal: { fontSize: 24, fontWeight: '900' },
+  seatCountLbl: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  totalPriceContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, padding: 16, backgroundColor: 'rgba(255, 140, 0, 0.1)', borderRadius: 12 },
+  totalPriceLabel: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+  totalPriceValue: { fontSize: 28, fontWeight: '900' },
 
   fareInfoRow: {
     flexDirection: 'row', borderWidth: 1, borderRadius: Radius.md, overflow: 'hidden',

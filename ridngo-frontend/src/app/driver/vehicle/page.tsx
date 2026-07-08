@@ -18,6 +18,7 @@ export default function MyVehiclePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
 
   // État pour le formulaire de modification (PATCH)
   const [editForm, setEditForm] = useState<any>({});
@@ -130,6 +131,7 @@ export default function MyVehiclePage() {
   );
 
   return (
+      <>
     <main className="max-w-6xl mx-auto p-4 md:p-12 space-y-10 pb-32">
       
       {/* HEADER */}
@@ -139,16 +141,15 @@ export default function MyVehiclePage() {
            <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30 mt-2">Gestion des paramètres et services</p>
         </div>
         <div className="flex gap-3">
-          {vehicle && (
-            <></>
-            // <button 
-            //   onClick={() => isEditing ? handlePatchVehicle() : setIsEditing(true)}
-            //   disabled={updateLoading}
-            //   className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-xl ${isEditing ? 'bg-green-500 text-white shadow-green-500/20' : 'bg-orange-btn text-white shadow-orange-btn/20'}`}
-            // >
-            //   {updateLoading ? <Loader2 className="animate-spin" size={16}/> : isEditing ? <><Save size={16}/> Enregistrer</> : <><Edit3 size={16}/> Modifier</>}
-            // </button>
-          )}
+          <button
+            onClick={() => {
+              if (vehicle) setIsEditing(true);
+              else setShowRegisterPrompt(true);
+            }}
+            className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-orange-btn text-white shadow-xl"
+          >
+            <Edit3 size={16}/> Modifier mon véhicule
+          </button>
           {isEditing && (
             <button onClick={() => setIsEditing(false)} className="p-4 bg-foreground/5 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-colors">
               <X size={20} />
@@ -303,5 +304,20 @@ export default function MyVehiclePage() {
         }
       `}</style>
     </main>
+
+    {/* Modal prompt when trying to edit but no vehicle */}
+    {showRegisterPrompt && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="glass p-8 rounded-3xl max-w-md w-full text-center">
+          <h3 className="text-2xl font-black mb-4">Aucun véhicule enregistré</h3>
+          <p className="mb-6">Vous n'avez pas encore enregistré de véhicule. Enregistrez-en un pour pouvoir le modifier.</p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/driver/onboarding" className="px-6 py-3 bg-orange-btn text-white rounded-xl font-black">Enregistrer</Link>
+            <button onClick={() => setShowRegisterPrompt(false)} className="px-6 py-3 bg-foreground rounded-xl font-black">Retour</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

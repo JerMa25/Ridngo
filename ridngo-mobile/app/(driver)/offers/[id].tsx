@@ -110,6 +110,7 @@ export default function OfferDetailScreen() {
   const [viewState, setViewState] = useState<ViewState>('idle');
   const [applying, setApplying]   = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [driverId, setDriverId]   = useState<string | null>(null);
   const [mapKey, setMapKey]       = useState(0);
 
@@ -164,6 +165,23 @@ export default function OfferDetailScreen() {
       Alert.alert('Erreur', msg);
     } finally {
       setApplying(false);
+    }
+  };
+
+  // ── Annulation de la candidature (avant sélection par le passager) ────────
+  const handleWithdraw = async () => {
+    if (!id) return;
+    setCancelling(true);
+    try {
+      await rideService.withdrawApplication(id);
+      if (pollRef.current) clearInterval(pollRef.current);
+      setViewState('idle');
+      await loadOffer();
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Erreur lors de l'annulation.";
+      Alert.alert('Erreur', msg);
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -316,6 +334,15 @@ export default function OfferDetailScreen() {
             </Text>
             <Text style={[s.priceCurrency, { color: Colors.textMuted }]}>FCFA</Text>
           </View>
+
+          {!!offer.numberOfPlaces && (
+            <View style={s.placesInfoRow}>
+              <Ionicons name="people-outline" size={16} color={Colors.textMuted} />
+              <Text style={[s.placesInfoTxt, { color: Colors.textMuted }]}>
+                {offer.numberOfPlaces} place{offer.numberOfPlaces > 1 ? 's' : ''} demandée{offer.numberOfPlaces > 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* ── Itinéraire ── */}
@@ -366,15 +393,31 @@ export default function OfferDetailScreen() {
 
           {/* État applied : en attente */}
           {viewState === 'applied' && (
-            <View style={[s.waitingBlock, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
-              <ActivityIndicator color={Colors.orange} size="small" />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.waitingTitle, { color: Colors.text }]}>Candidature envoyée</Text>
-                <Text style={[s.waitingSub, { color: Colors.textMuted }]}>
-                  En attente du choix du passager...
-                </Text>
+            <>
+              <View style={[s.waitingBlock, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
+                <ActivityIndicator color={Colors.orange} size="small" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.waitingTitle, { color: Colors.text }]}>Candidature envoyée</Text>
+                  <Text style={[s.waitingSub, { color: Colors.textMuted }]}>
+                    En attente du choix du passager...
+                  </Text>
+                </View>
               </View>
-            </View>
+              <TouchableOpacity
+                style={[s.cancelBtn, { borderColor: Colors.red }]}
+                onPress={handleWithdraw}
+                disabled={cancelling}
+                activeOpacity={0.85}
+              >
+                {cancelling
+                  ? <ActivityIndicator color={Colors.red} />
+                  : <>
+                      <Ionicons name="close-circle-outline" size={18} color={Colors.red} />
+                      <Text style={[s.cancelBtnTxt, { color: Colors.red }]}>ANNULER MA CANDIDATURE</Text>
+                    </>
+                }
+              </TouchableOpacity>
+            </>
           )}
 
           {/* État selected : CONFIRMER LA COURSE */}
@@ -491,6 +534,13 @@ const s = StyleSheet.create({
   },
   waitingTitle: { fontWeight: '900', fontSize: 14 },
   waitingSub:   { fontWeight: '600', fontSize: 12, marginTop: 2 },
+  cancelBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, borderRadius: Radius.xl, paddingVertical: 14, borderWidth: 1,
+  },
+  cancelBtnTxt: { fontWeight: '900', fontSize: 13, letterSpacing: 1 },
+  placesInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  placesInfoTxt: { fontSize: 13, fontWeight: '700' },
   selectedBlock: { gap: 10 },
   selectedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 10,

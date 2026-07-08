@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Utilise l'adresse IP de ta machine sur ton réseau local
-export const BASE_URL = 'http://10.2.3.239:8080';
+export const BASE_URL = 'http://192.168.100.15:8080';
 export const VEHICLE_URL = 'https://vehicule-service.pynfi.com'; // À changer s'il y a un service local
 
 const api: AxiosInstance = axios.create({

@@ -95,6 +95,10 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
            </div>
         </div>
 
+         <div className="mt-2 flex items-center justify-end gap-3 text-[10px] opacity-70">
+           <span className="font-black uppercase tracking-widest">Places :</span>
+           <span className="font-bold">{ride.numberOfPlaces ?? ride.offer?.numberOfPlaces ?? '—'}</span>
+         </div>
         <div className="flex-1 space-y-3 px-2">
            <div className="flex items-start gap-3">
               <MapPin size={14} className="text-orange-btn mt-0.5 shrink-0" />

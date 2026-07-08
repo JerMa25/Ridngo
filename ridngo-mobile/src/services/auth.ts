@@ -31,13 +31,19 @@ export const authService = {
         roles: [data.role],
       };
 
-      formData.append('data', JSON.stringify(registerDto));
+      formData.append('data', {
+        string: JSON.stringify(registerDto),
+        type: 'application/json',
+      } as any);
 
       if (data.photo) {
+        const mimeType = data.photo.mimeType || data.photo.type || 'image/jpeg';
+        const ext = mimeType.includes('png') ? 'png' : 'jpg';
+        const fileName = data.photo.fileName || data.photo.name || `photo_${Date.now()}.${ext}`;
         formData.append('file', {
           uri: data.photo.uri,
-          name: data.photo.fileName || 'photo.jpg',
-          type: data.photo.type || 'image/jpeg',
+          name: fileName,
+          type: mimeType,
         } as any);
       }
 

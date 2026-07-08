@@ -121,6 +121,22 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
     }
   };
 
+  const handleCancelApplication = async () => {
+    if (!id) return;
+    setActionLoading(true);
+    try {
+      // Try delete endpoint to cancel application. If not available, catch will show error.
+      await api.delete(`/api/v1/offers/${id}/apply`);
+      const updated = await rideService.getOfferById(id);
+      setOffer(updated);
+      toast.success('Candidature annulée');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Impossible d\'annuler la candidature');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleFinalAccept = async () => {
     setActionLoading(true);
     try {
@@ -249,10 +265,15 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                   </button>
                 </motion.div>
               ) : hasApplied ? (
-                <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 border-2 border-dashed border-orange-btn/20 bg-orange-btn/5 rounded-2xl text-center">
-                   <Loader2 className="animate-spin mx-auto text-orange-btn mb-3" />
+                <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 border-2 border-dashed border-orange-btn/20 bg-orange-btn/5 rounded-2xl text-center space-y-4">
+                   <Loader2 className="animate-spin mx-auto text-orange-btn mb-0" />
                    <p className="font-black uppercase text-[10px] tracking-widest opacity-60">Offre envoyée</p>
                    <p className="text-xs font-bold mt-1">En attente de la réponse du client...</p>
+                   <div className="flex gap-3 justify-center">
+                     <button onClick={handleCancelApplication} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-foreground text-background font-black uppercase text-xs">
+                       {actionLoading ? <Loader2 className="animate-spin" /> : 'Annuler la candidature'}
+                     </button>
+                   </div>
                 </motion.div>
               ) : (
                 <motion.button 

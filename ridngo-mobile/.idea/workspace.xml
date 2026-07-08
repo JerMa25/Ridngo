@@ -5,19 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f24c017-9afa-486f-b9a5-f4e3b601cc8e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../ridngo-frontend/next.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../ridngo-frontend/next.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ridngo-main/src/main/java/com/yowyob/rideandgo/infrastructure/adapters/inbound/rest/VehicleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../ridngo-main/src/main/java/com/yowyob/rideandgo/infrastructure/adapters/inbound/rest/VehicleController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(driver)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/_layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(driver)/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/dashboard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(driver)/my-rides.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/my-rides.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(driver)/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(driver)/driver-dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/driver-dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(driver)/ride/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/ride/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(driver)/vehicle.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(driver)/vehicle.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(passenger)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(passenger)/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(passenger)/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(passenger)/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(passenger)/my-offer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(passenger)/my-offer.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(passenger)/ride.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(passenger)/ride.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/auth.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/rideService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/rideService.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/userService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/userService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/api.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
