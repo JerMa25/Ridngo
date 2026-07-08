@@ -21,7 +21,7 @@ public class ReviewR2dbcAdapter implements ReviewRepositoryPort {
         ReviewEntity entity = new ReviewEntity(
                 domain.id(), domain.rideId(), domain.passengerId(),
                 domain.driverId(), domain.rating(), domain.comment(),
-                LocalDateTime.now(), true);
+                domain.anonymous(), LocalDateTime.now(), true);
         return repository.save(entity).map(this::mapToDomain);
     }
 
@@ -45,6 +45,7 @@ public class ReviewR2dbcAdapter implements ReviewRepositoryPort {
         return Review.builder()
                 .id(e.getId()).rideId(e.getRideId()).passengerId(e.getPassengerId())
                 .driverId(e.getDriverId()).rating(e.getRating()).comment(e.getComment())
+                .anonymous(e.isAnonymous())
                 .createdAt(e.getCreatedAt()).build();
     }
 }

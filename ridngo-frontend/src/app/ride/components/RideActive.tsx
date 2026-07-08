@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle, Phone, Star, Loader2, 
-  CheckCircle2, Check, User, Car, Navigation, Clock, MessageSquare
+  CheckCircle2, Check, User, Car, Navigation, Clock, MessageSquare, Eye, EyeOff
 } from 'lucide-react';
 import { rideService } from '@/lib/rideService';
 import api from '@/lib/api-client';
@@ -20,6 +20,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
   const [showReview, setShowReview] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
   const [fetchingDriver, setFetchingDriver] = useState(true);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -69,7 +70,8 @@ export const RideActive = ({ ride, tracking }: Props) => {
       // Appel à la route backend: POST /api/v1/reviews/ride/{rideId}
       await api.post(`/api/v1/reviews/ride/${ride.id}`, {
         stars: rating,
-        comment: comment
+        comment: comment,
+        anonymous: anonymous
       });
       //alert("Merci pour votre évaluation !");
       toast('Merci pour votre évaluation !', {
@@ -213,6 +215,25 @@ export const RideActive = ({ ride, tracking }: Props) => {
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                   />
+               </div>
+
+               {/* OPTION ANONYME PREMIUM */}
+               <div 
+                 onClick={() => setAnonymous(!anonymous)}
+                 className="flex items-center justify-between mb-8 p-4 bg-foreground/5 rounded-2xl border border-foreground/5 hover:bg-foreground/[0.08] transition-all cursor-pointer select-none"
+               >
+                  <div className="flex items-center gap-3 text-left">
+                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${anonymous ? 'bg-orange-btn text-white shadow-lg shadow-orange-btn/20' : 'bg-foreground/10 text-foreground/40'}`}>
+                        {anonymous ? <EyeOff size={16} /> : <Eye size={16} />}
+                     </div>
+                     <div>
+                        <p className="text-xs font-bold leading-none mb-1">Évaluation anonyme</p>
+                        <p className="text-[10px] opacity-40 leading-none">Masquer votre identité au chauffeur</p>
+                     </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${anonymous ? 'border-orange-btn bg-orange-btn text-white' : 'border-foreground/20'}`}>
+                     {anonymous && <Check size={14} strokeWidth={3} />}
+                  </div>
                </div>
 
                <button 
