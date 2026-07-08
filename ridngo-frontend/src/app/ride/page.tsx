@@ -174,7 +174,7 @@ export default function RidePage() {
 
   return (
     <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
-      <div className="w-full lg:w-[450px] bg-background shadow-2xl z-20 flex flex-col border-r border-foreground/5 overflow-y-auto no-scrollbar">
+      <div className="w-full lg:w-112.5 bg-background shadow-2xl z-20 flex flex-col border-r border-foreground/5 overflow-y-auto no-scrollbar">
         
         {step === 'search' && (
           <div className="p-6 pb-0 flex justify-end">

@@ -38,7 +38,7 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-      className="glass p-6 border-none bg-background shadow-lg hover:shadow-xl transition-all flex flex-col gap-6 rounded-[32px] overflow-hidden relative"
+      className="glass p-6 border-none bg-background shadow-lg hover:shadow-xl transition-all flex flex-col gap-6 rounded-4xl overflow-hidden relative"
     >
       <div className="flex justify-between items-start">
          <div className="flex items-center gap-4">
@@ -69,7 +69,7 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
       <div className="flex gap-4">
          <div className="flex flex-col items-center py-1">
             <div className="w-2 h-2 rounded-full bg-orange-btn" />
-            <div className="w-[1px] flex-1 bg-foreground/10 my-1" />
+            <div className="w-px flex-1 bg-foreground/10 my-1" />
             <div className="w-2 h-2 rounded-full bg-foreground" />
          </div>
          <div className="flex-1 space-y-4">

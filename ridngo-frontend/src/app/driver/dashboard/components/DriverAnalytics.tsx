@@ -115,7 +115,7 @@ export const DriverAnalytics = () => {
   // Si aucune donnée réelle trouvée
   if (earningsData.length === 0 && reviewsData.every((d: any) => d.count === 0)) {
     return (
-      <div className="w-full p-8 rounded-[32px] glass text-center border-none bg-background/40">
+      <div className="w-full p-8 rounded-4xl glass text-center border-none bg-background/40">
         <p className="text-foreground/40 font-black uppercase tracking-widest">Aucune donnée d&apos;activité disponible</p>
       </div>
     );
@@ -125,7 +125,7 @@ export const DriverAnalytics = () => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 max-w-6xl mx-auto">
       
       {/* GRAPHIQUE 1 : REVENUS */}
-      <div className="lg:col-span-2 glass p-6 border-none bg-background/40 shadow-xl rounded-[32px] border border-white/10 flex flex-col justify-between">
+      <div className="lg:col-span-2 glass p-6 border-none bg-background/40 shadow-xl rounded-4xl border border-white/10 flex flex-col justify-between">
         <div className="flex justify-between items-start mb-6">
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
@@ -139,7 +139,7 @@ export const DriverAnalytics = () => {
           </div>
         </div>
 
-        <div className="h-[250px] w-full">
+        <div className="h-62.5 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={earningsData}>
               <defs>
@@ -182,7 +182,7 @@ export const DriverAnalytics = () => {
       </div>
 
       {/* GRAPHIQUE 2 : QUALITÉ / AVIS */}
-      <div className="glass p-6 border-none bg-background/40 shadow-xl rounded-[32px] border border-white/10 flex flex-col">
+      <div className="glass p-6 border-none bg-background/40 shadow-xl rounded-4xl border border-white/10 flex flex-col">
         <div className="flex justify-between items-start mb-6">
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
@@ -193,7 +193,7 @@ export const DriverAnalytics = () => {
           </div>
         </div>
 
-        <div className="h-[250px] w-full flex items-center justify-center">
+        <div className="h-62.5 w-full flex items-center justify-center">
           {reviewsData.every((d: any) => d.count === 0) ? (
             <div className="text-center opacity-40">
                 <p className="text-xs font-bold">Pas encore d&apos;avis</p>

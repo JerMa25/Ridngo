@@ -5,7 +5,7 @@ import { rideService } from '@/lib/rideService';
 import { api } from '@/lib/api-client';
 import { 
   ArrowLeft, Loader2, CheckCircle, Phone, 
-  AlertCircle, ChevronRight, Clock, Check, MapPin
+  AlertCircle, ChevronRight, Clock, Check, MapPin, XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -122,16 +122,23 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   };
 
   const handleCancelApplication = async () => {
-    if (!id) return;
     setActionLoading(true);
     try {
-      // Try delete endpoint to cancel application. If not available, catch will show error.
-      await api.delete(`/api/v1/offers/${id}/apply`);
+      try {
+        await api.delete(`/api/v1/offers/${id}/apply`);
+      } catch (error: any) {
+        if (error?.response?.status === 404 || error?.response?.status === 400) {
+          await api.delete(`/api/v1/offers/${id}`);
+        } else {
+          throw error;
+        }
+      }
+
       const updated = await rideService.getOfferById(id);
       setOffer(updated);
-      toast.success('Candidature annulée');
+      toast.success("Votre candidature a été annulée");
     } catch (e: any) {
-      toast.error(e.response?.data?.message || 'Impossible d\'annuler la candidature');
+      toast.error(e.response?.data?.message || "Erreur lors de l'annulation");
     } finally {
       setActionLoading(false);
     }
@@ -265,15 +272,20 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                   </button>
                 </motion.div>
               ) : hasApplied ? (
-                <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 border-2 border-dashed border-orange-btn/20 bg-orange-btn/5 rounded-2xl text-center space-y-4">
-                   <Loader2 className="animate-spin mx-auto text-orange-btn mb-0" />
-                   <p className="font-black uppercase text-[10px] tracking-widest opacity-60">Offre envoyée</p>
-                   <p className="text-xs font-bold mt-1">En attente de la réponse du client...</p>
-                   <div className="flex gap-3 justify-center">
-                     <button onClick={handleCancelApplication} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-foreground text-background font-black uppercase text-xs">
-                       {actionLoading ? <Loader2 className="animate-spin" /> : 'Annuler la candidature'}
-                     </button>
-                   </div>
+                <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                  <div className="p-6 border-2 border-dashed border-orange-btn/20 bg-orange-btn/5 rounded-2xl text-center">
+                     <Loader2 className="animate-spin mx-auto text-orange-btn mb-3" />
+                     <p className="font-black uppercase text-[10px] tracking-widest opacity-60">Offre envoyée</p>
+                     <p className="text-xs font-bold mt-1">En attente de la réponse du client...</p>
+                  </div>
+                  <button
+                    onClick={handleCancelApplication}
+                    disabled={actionLoading}
+                    className="w-full py-3 border border-red-500/20 bg-red-500/10 text-red-500 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 hover:bg-red-500/20 transition-colors"
+                  >
+                    {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <XCircle size={16} />} 
+                    Annuler
+                  </button>
                 </motion.div>
               ) : (
                 <motion.button 

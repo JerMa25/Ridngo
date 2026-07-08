@@ -12,23 +12,20 @@ import com.yowyob.rideandgo.domain.ports.out.*;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.LandingOfferResponse;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.NotificationType;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.SendNotificationRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+
+
 
 @Slf4j
 @Service
@@ -293,6 +290,51 @@ public class OfferService implements
                                         return Mono.just(saved);
                                     });
                         }));
+    }
+
+    public Mono<Offer> withdrawApplication(UUID offerId, UUID driverId) {
+        return repository.findById(offerId)
+                .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
+                .flatMap(offer -> {
+                    if (offer.state() == OfferState.VALIDATED || offer.state() == OfferState.CANCELLED) {
+                        return Mono.error(new IllegalStateException("Impossible de retirer une candidature après validation ou annulation."));
+                    }
+
+                    if (offer.bids() == null || offer.bids().stream().noneMatch(b -> b.driverId().equals(driverId))) {
+                        return Mono.error(new OfferNotFoundException("Candidature introuvable pour ce chauffeur."));
+                    }
+
+                    List<Bid> remainingBids = new ArrayList<>(offer.bids());
+                    remainingBids.removeIf(b -> b.driverId().equals(driverId));
+                    OfferState newState = remainingBids.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
+                    UUID selectedDriverId = offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)
+                            ? null
+                            : offer.selectedDriverId();
+
+                    Offer updatedOffer = new Offer(
+                            offer.id(),
+                            offer.passengerId(),
+                            selectedDriverId,
+                            offer.startPoint(),
+                            offer.startLat(),
+                            offer.startLon(),
+                            offer.endPoint(),
+                            offer.endLat(),
+                            offer.endLon(),
+                            offer.price(),
+                            offer.numberOfPlaces(),
+                            offer.passengerPhone(),
+                            offer.departureTime(),
+                            newState,
+                            remainingBids,
+                            offer.version(),
+                            offer.createdAt());
+
+                    log.info("🗑️ Driver {} withdrawing application from Offer {}. New state={}", driverId, offerId, newState);
+                    return repository.deleteBid(offerId, driverId)
+                            .flatMap(deleted -> repository.save(updatedOffer))
+                            .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));
+                });
     }
 
     // ==================================================================================
