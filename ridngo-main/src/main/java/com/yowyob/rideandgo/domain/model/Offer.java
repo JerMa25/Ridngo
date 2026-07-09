@@ -24,22 +24,28 @@ public record Offer(
         OfferState state,
         List<Bid> bids,
         Long version,
-        LocalDateTime createdAt // ✅ Ajouté pour la landing page
+        LocalDateTime createdAt, // ✅ Ajouté pour la landing page
+        String passengerName // ✅ Ajouté pour affichage dans la vue chauffeur
 ) {
     public Offer withBids(List<Bid> bids) {
         return new Offer(id, passengerId, selectedDriverId, startPoint, startLat, startLon,
-                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt);
+                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt, passengerName);
     }
 
     public Offer withState(OfferState state) {
         return new Offer(id, passengerId, selectedDriverId, startPoint, startLat, startLon,
-                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt);
+                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt, passengerName);
     }
 
     public Offer withDriverSelected(UUID driverId) {
         return new Offer(id, passengerId, driverId, startPoint, startLat, startLon,
                 endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, OfferState.DRIVER_SELECTED, bids,
-                version, createdAt);
+                version, createdAt, passengerName);
+    }
+
+    public Offer withPassengerName(String name) {
+        return new Offer(id, passengerId, selectedDriverId, startPoint, startLat, startLon,
+                endPoint, endLat, endLon, price, numberOfPlaces, passengerPhone, departureTime, state, bids, version, createdAt, name);
     }
 
     public boolean hasDriverApplied(UUID driverId) {

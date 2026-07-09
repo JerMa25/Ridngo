@@ -129,6 +129,62 @@ export default function DriverDashboard() {
     return () => clearInterval(geoInterval);
   }, [fullProfile?.driver?.isOnline]);
 
+  const loadData = async () => {
+    try {
+      const [profileRes, activeRide] = await Promise.all([
+        api.get('/api/v1/users/me/driver-profile'),
+        rideService.getCurrentRide().catch(() => null)
+      ]);
+      setFullProfile(profileRes.data);
+      setCurrentRide(Array.isArray(activeRide) ? activeRide[0] : activeRide);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  // --- FETCH OFFERS AVEC ANTI-SAUT ---
+  const fetchOffers = async () => {
+    try {
+      const data = await rideService.getAvailableOffers(0, 100);
+      
+      // 1. Déduplication
+      const uniqueData = Array.from(new Map(data.map((item: any) => [item.id, item])).values()) as any[];
+
+      // 2. Enrichissement avec les noms des passagers (parallèle, groupé par passengerId)
+      const uniquePassengerIds = [...new Set(uniqueData.map((o: any) => o.passengerId).filter(Boolean))];
+      const passengerNameMap: Record<string, string> = {};
+
+      await Promise.allSettled(
+        uniquePassengerIds.map(async (passengerId) => {
+          try {
+            const res = await api.get(`/api/v1/users/${passengerId}`);
+            const u = res.data;
+            const name = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.name || u.username || null;
+            if (name) passengerNameMap[passengerId] = name;
+          } catch { /* silencieux si l'utilisateur est introuvable */ }
+        })
+      );
+
+      // 3. Injection du nom dans chaque offre
+      const enriched = uniqueData.map((o: any) => ({
+        ...o,
+        passengerName: o.passengerName || passengerNameMap[o.passengerId] || null,
+      }));
+
+      // 4. Pré-tri stable pour comparaison (par ID)
+      const sortedNewData = enriched.sort((a, b) => a.id.localeCompare(b.id));
+
+      setOffers(prevOffers => {
+        // 5. Comparaison profonde (Deep Compare light sur les IDs et la longueur)
+        if (prevOffers.length === sortedNewData.length) {
+            const prevIds = [...prevOffers].sort((a,b) => a.id.localeCompare(b.id)).map(o => o.id).join(',');
+            const newIds = sortedNewData.map(o => o.id).join(',');
+            if (prevIds === newIds) return prevOffers; // Rien n'a changé, on garde la ref mémoire
+        }
+        return sortedNewData;
+      });
+    } catch (e) { console.error(e); }
+  };
+
+
   const toggleStatus = async () => {
     const newStatus = !fullProfile?.driver?.isOnline;
     try {

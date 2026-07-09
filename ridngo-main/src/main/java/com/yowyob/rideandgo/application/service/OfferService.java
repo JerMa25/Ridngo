@@ -30,6 +30,12 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.stereotype.Service;
+
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -230,7 +236,15 @@ public class OfferService implements
                         .filter(o -> o.state() == OfferState.PENDING || o.state() == OfferState.BID_RECEIVED)
                         .filter(this::isOfferStillValid) // ✅ Exclut les offres dont l'heure de départ est déjà passée
                         .distinct(Offer::id) // Évite les doublons si une offre est dans les deux flux
-                        .flatMap(this::enrichOffer)); 
+                        .flatMap(this::enrichOffer)
+                        // ✅ Enrichissement avec le nom du passager
+                        .flatMap(offer -> userRepositoryPort.findUserById(offer.passengerId())
+                                .map(passenger -> {
+                                    String name = ((passenger.firstName() != null ? passenger.firstName() : "") +
+                                            " " + (passenger.lastName() != null ? passenger.lastName() : "")).trim();
+                                    return offer.withPassengerName(name.isEmpty() ? null : name);
+                                })
+                                .defaultIfEmpty(offer)));
     }
 
     /**
@@ -342,15 +356,37 @@ public class OfferService implements
                         return Mono.just(offer);
                     }
 
-                    List<Bid> remaining = offer.bids().stream()
-                            .filter(b -> !b.driverId().equals(driverId))
-                            .collect(java.util.stream.Collectors.toList());
+                    List<Bid> remainingBids = new ArrayList<>(offer.bids());
+                    remainingBids.removeIf(b -> b.driverId().equals(driverId));
+                    OfferState newState = remainingBids.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
+                    UUID selectedDriverId = offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)
+                            ? null
+                            : offer.selectedDriverId();
 
-                    OfferState newState = remaining.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
+                    Offer updatedOffer = new Offer(
+                            offer.id(),
+                            offer.passengerId(),
+                            selectedDriverId,
+                            offer.startPoint(),
+                            offer.startLat(),
+                            offer.startLon(),
+                            offer.endPoint(),
+                            offer.endLat(),
+                            offer.endLon(),
+                            offer.price(),
+                            offer.numberOfPlaces(),
+                            offer.passengerPhone(),
+                            offer.departureTime(),
+                            newState,
+                            remainingBids,
+                            offer.version(),
+                            offer.createdAt(),
+                            offer.passengerName());
 
-                    log.info("↩️ Driver {} withdrawing application from Offer {}.", driverId, offerId);
-
-                    return updateOfferState(offer.withBids(remaining), newState);
+                    log.info("🗑️ Driver {} withdrawing application from Offer {}. New state={}", driverId, offerId, newState);
+                    return repository.deleteBid(offerId, driverId)
+                            .flatMap(deleted -> repository.save(updatedOffer))
+                            .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));
                 });
     }
 
@@ -679,7 +715,8 @@ public class OfferService implements
                             existing.state(),
                             existing.bids(),
                             existing.version(),
-                            existing.createdAt());
+                            existing.createdAt(),
+                            existing.passengerName());
                     return repository.save(updated);
                 })
                 .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));

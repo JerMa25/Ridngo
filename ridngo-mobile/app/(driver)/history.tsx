@@ -93,9 +93,10 @@ export default function DriverHistoryScreen() {
         ) : (
           rides.map((ride: any) => {
             const review = reviewsMap.get(ride.rideId);
-            const passenger = passengersMap.get(ride.passengerId);
-            const passName = passenger ? `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim() : 'Passager';
-            const passAvatar = passenger?.profilePhotoUrl;
+            const isAnon = !!review?.anonymous;
+            const passenger = isAnon ? null : passengersMap.get(ride.passengerId);
+            const passName = isAnon ? 'Anonyme' : (passenger ? `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim() : 'Passager');
+            const passAvatar = isAnon ? null : passenger?.profilePhotoUrl;
 
             return (
               <View key={ride.rideId} style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>

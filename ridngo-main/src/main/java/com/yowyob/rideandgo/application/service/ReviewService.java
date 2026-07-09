@@ -91,16 +91,17 @@ public class ReviewService {
     }
 
     private ReviewResponse mapToResponse(Review review, User passenger) {
-        boolean anon = review.anonymous();
+        // Si l'évaluation est anonyme, on masque le nom et la photo du passager
+        boolean isAnonymous = review.anonymous();
         return ReviewResponse.builder()
                 .reviewId(review.id())
                 .rideId(review.rideId())
                 .rating(review.rating())
                 .comment(review.comment())
-                .anonymous(anon)
                 .createdAt(review.createdAt())
-                .passengerName(anon ? "Anonyme" : passenger.firstName() + " " + passenger.lastName())
-                .passengerPhoto(anon ? null : passenger.photoUri())
+                .anonymous(isAnonymous)
+                .passengerName(isAnonymous ? "Anonyme" : passenger.firstName() + " " + passenger.lastName())
+                .passengerPhoto(isAnonymous ? null : passenger.photoUri())
                 .build();
     }
 }

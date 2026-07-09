@@ -45,6 +45,7 @@ public class ReviewR2dbcAdapter implements ReviewRepositoryPort {
         return Review.builder()
                 .id(e.getId()).rideId(e.getRideId()).passengerId(e.getPassengerId())
                 .driverId(e.getDriverId()).rating(e.getRating()).comment(e.getComment())
-                .anonymous(e.isAnonymous()).createdAt(e.getCreatedAt()).build();
+                .anonymous(e.isAnonymous())
+                .createdAt(e.getCreatedAt()).build();
     }
 }
