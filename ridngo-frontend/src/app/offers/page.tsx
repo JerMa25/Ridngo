@@ -153,7 +153,41 @@ export default function OffersPage() {
 
   const handleCancelOffer = async () => {
     if (!offer?.id) return;
-    const confirmed = window.confirm('Voulez-vous vraiment annuler cette offre ?');
+    /*const confirmed = window.confirm('Voulez-vous vraiment annuler cette offre ?');
+    if (!confirmed) return;*/
+    const confirmToast = () =>
+    new Promise<boolean>((resolve) => {
+      toast((t) => (
+        <div className="flex flex-col gap-3">
+          <p>Voulez-vous vraiment annulerrr cette offre ?</p>
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                resolve(false);
+              }}
+              className="px-3 py-1 rounded-lg border"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                resolve(true);
+              }}
+              className="px-3 py-1 rounded-lg bg-red-500 text-white"
+            >
+              Yes
+            </button>
+          </div>
+        </div>
+      ), {
+        duration: Infinity,
+      });
+    });
+    const confirmed = await confirmToast();
     if (!confirmed) return;
 
     setIsCancelling(true);

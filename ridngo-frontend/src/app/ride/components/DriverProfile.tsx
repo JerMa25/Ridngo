@@ -74,7 +74,7 @@ useEffect(() => {
           exit={{ opacity: 0, scale: 0.92, y: 12 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative z-10 w-full max-w-xs bg-background rounded-[28px] shadow-2xl border border-foreground/10 overflow-hidden"
+          className="relative z-10 w-full max-w-xs bg-background rounded-[28px] shadow-2xl border border-foreground/10 overflow-hidden max-h-[85vh] overflow-y-auto"
         >
           {/* Bande accent en haut — couleur de l'app */}
           {/*<div className="h-1.5 w-full bg-orange-btn" />*/}
@@ -137,6 +137,45 @@ useEffect(() => {
 
             
           </div>
+
+          {/* ── Confort & Services ── */}
+{(() => {
+  const features = [
+    { key: "airConditioned",   label: "Climatisation" },
+    { key: "comfortable",      label: "Confortable" },
+    { key: "soft",             label: "Sièges moelleux" },
+    { key: "screen",           label: "Écran" },
+    { key: "wifi",             label: "Wi-Fi" },
+    { key: "internet",         label: "Internet" },
+    { key: "tollCharge",       label: "Péage inclus" },
+    { key: "carParking",       label: "Parking" },
+    { key: "alarm",            label: "Alarme" },
+    { key: "stateTax",         label: "Taxes incluses" },
+    { key: "driverAllowance",  label: "Indemnité chauffeur" },
+    { key: "pickupAndDrop",    label: "Prise en charge" },
+    { key: "petsAllow",        label: "Animaux permis" },
+  ].filter(f => !!vehicle?.[f.key]);
+
+  if (features.length === 0) return null;
+
+  return (
+    <div className="w-full">
+      <p className="text-[9px] font-black uppercase opacity-30 tracking-widest px-1 mb-2">
+        Confort & Services
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {features.map(f => (
+          <span
+            key={f.key}
+            className="px-2 py-1 bg-orange-btn/10 text-orange-btn text-[10px] font-black rounded-lg"
+          >
+            {f.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+})()}
 
           < div className="flex items-center gap-2">
                 <StarRating rating={averageRating} />
