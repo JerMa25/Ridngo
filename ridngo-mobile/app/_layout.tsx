@@ -6,6 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { NetworkProvider } from '../src/context/NetworkContext';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,6 +26,7 @@ function AppContent() {
         backgroundColor={Colors.background}
         translucent={false}
       />
+      <OfflineBanner />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -44,11 +47,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* SafeAreaProvider requis par useSafeAreaInsets dans toute l'app */}
       <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </ThemeProvider>
+        <NetworkProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </ThemeProvider>
+        </NetworkProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

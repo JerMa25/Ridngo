@@ -92,6 +92,7 @@ export interface OfferResponse {
   endLat?: number;
   endLon?: number;
   price: number;
+  numberOfPlaces?: number;
   passengerPhone?: string;
   departureTime?: string;
   state: OfferState;
@@ -110,6 +111,7 @@ export interface RideResponse {
   startPoint?: string;
   endPoint?: string;
   price?: number;
+  numberOfPlaces?: number;
   state: RideState;
   rideId?: string;
   createdAt?: string;
@@ -165,6 +167,7 @@ export interface CreateOfferRequest {
   price: number;
   passengerPhone: string;
   departureTime: string;
+  numberOfPlaces?: number;
 }
 
 export interface RideTrackingResponse {

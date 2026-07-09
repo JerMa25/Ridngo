@@ -16,6 +16,7 @@ public class EnrichedRideResponse {
     private Double price;
     private String startPoint;
     private String endPoint;
+    private int numberOfPlaces;
     private LocalDateTime createdAt; // ✅ S'assurer que ce champ est bien là
 
     // Infos sur le partenaire

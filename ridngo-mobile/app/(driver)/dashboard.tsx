@@ -16,6 +16,7 @@ import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse } from '../../src/types/api';
 import * as ExpoLocation from 'expo-location';
 import api from '../../src/services/api';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -109,12 +110,17 @@ export default function DriverDashboard() {
 
   const fetchOffers = async () => {
     try {
-      const data = await rideService.getAvailableOffers(0, 100);
+      const { data, stale } = await withOfflineFallback(
+        CacheKeys.driverAvailableOffers,
+        () => rideService.getAvailableOffers(0, 100),
+        { maxAgeMs: 5 * 60 * 1000 }, // au-delà de 5 min hors ligne, mieux vaut ne rien montrer que du très périmé
+      );
+      if (stale) return; // radar trop vieux : on ne fait pas croire au chauffeur que ces offres sont encore là
       const unique = Array.from(
         new Map(data.map((o: OfferResponse) => [o.id, o])).values()
       ) as OfferResponse[];
       setOffers(unique);
-    } catch { /* silent */ }
+    } catch { /* ni réseau ni cache disponible : on garde la dernière liste connue à l'écran */ }
   };
 
   const startGPS = async () => {
@@ -397,9 +403,11 @@ export default function DriverDashboard() {
 
           {/* Cartes offres — design OfferCard fidèle au screenshot */}
           {isOnline && sortedOffers.map(item => (
-            <View
+            <TouchableOpacity
               key={item.id}
               style={[s.offerCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}
+              onPress={() => router.push(`/(driver)/offers/${item.id}` as any)}
+              activeOpacity={0.85}
             >
               {/* Ligne client + prix */}
               <View style={s.offerTopRow}>
@@ -409,6 +417,14 @@ export default function DriverDashboard() {
                 <View style={{ flex: 1 }}>
                   <Text style={[s.clientLabel, { color: Colors.textMuted }]}>CLIENT</Text>
                   <Text style={[s.clientName, { color: Colors.text }]}>Anonyme</Text>
+                  {!!item.numberOfPlaces && (
+                    <View style={s.placesInline}>
+                      <Ionicons name="people-outline" size={12} color={Colors.textMuted} />
+                      <Text style={[s.placesInlineTxt, { color: Colors.textMuted }]}>
+                        {item.numberOfPlaces} place{item.numberOfPlaces > 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <View style={s.offerPriceBlock}>
                   <Text style={[s.offerPriceLabel, { color: Colors.textMuted }]}>OFFRE</Text>
@@ -451,32 +467,14 @@ export default function DriverDashboard() {
                 </View>
               </View>
 
-              {/* Bouton Consulter */}
-              <TouchableOpacity
-                style={[s.consultBtn, { backgroundColor: Colors.text }]}
-                onPress={() => router.push(`/(driver)/offers/${item.id}` as any)}
-                activeOpacity={0.85}
-              >
+              {/* Bouton Consulter (toute la carte est aussi cliquable) */}
+              <View style={[s.consultBtn, { backgroundColor: Colors.text }]}>
                 <Text style={[s.consultBtnTxt, { color: Colors.background }]}>
                   CONSULTER L'OFFRE
                 </Text>
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
           ))}
-        </View>
-
-
-        {/* ═══════════════════════════════════════════
-            MENU — Déconnexion
-        ═══════════════════════════════════════════ */}
-        <View style={[s.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, marginTop: 8 }]}>
-          <TouchableOpacity style={s.menuItem} onPress={handleLogout}>
-            <View style={[s.menuIcon, { backgroundColor: Colors.redBg }]}>
-              <Ionicons name="log-out-outline" size={18} color={Colors.red} />
-            </View>
-            <Text style={[s.menuLabel, { color: Colors.red }]}>Déconnexion</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.red} />
-          </TouchableOpacity>
         </View>
 
       </ScrollView>
@@ -663,6 +661,8 @@ const s = StyleSheet.create({
   },
   clientLabel:    { fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },
   clientName:     { fontSize: 14, fontWeight: '900', marginTop: 2 },
+  placesInline:   { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  placesInlineTxt: { fontSize: 10, fontWeight: '700' },
   offerPriceBlock: { alignItems: 'flex-end' },
   offerPriceLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },
   offerPriceVal:  { fontSize: 22, fontWeight: '900' },
@@ -690,11 +690,6 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   consultBtnTxt: { fontWeight: '900', fontSize: 12, letterSpacing: 2 },
-
-  // Menu déconnexion
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  menuLabel: { flex: 1, fontWeight: '700', fontSize: 14 },
 });
 
 // ─── Styles du graphique ──────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '@/lib/api-client';
 import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Composants existants
 import { OfferCard } from './components/OfferCard';
@@ -51,6 +52,9 @@ const CompactOfferCard = ({ offer }: { offer: any }) => (
           <p className="font-black text-lg text-orange-btn">{offer.price?.toLocaleString()} <span className="text-[10px]">FCFA</span></p>
           <p className="text-[10px] opacity-50">{offer.distance ? `${offer.distance} km` : ''}</p>
        </div>
+       <div className="ml-4 text-[12px] font-bold text-foreground/80">
+         {offer.numberOfPlaces ?? '—'} places
+       </div>
        <button className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center group-hover:bg-orange-btn group-hover:text-white transition-colors">
           <Link href={`/driver/offers/${offer.id}`} >
             <ChevronRight size={20} />
@@ -65,10 +69,37 @@ type SortMode = 'recent' | 'price_desc' | 'price_asc';
 type ViewMode = 'grid' | 'list';
 
 export default function DriverDashboard() {
-  const [fullProfile, setFullProfile] = useState<any>(null);
-  const [offers, setOffers] = useState<any[]>([]);
-  const [currentRide, setCurrentRide] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: fullProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['driverProfile'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/users/me/driver-profile');
+      return res.data;
+    }
+  });
+
+  const { data: currentRide, isLoading: rideLoading } = useQuery({
+    queryKey: ['currentRide'],
+    queryFn: async () => {
+      const activeRide = await rideService.getCurrentRide().catch(() => null);
+      return Array.isArray(activeRide) ? activeRide[0] : activeRide;
+    }
+  });
+
+  const { data: offers = [] } = useQuery({
+    queryKey: ['availableOffers'],
+    queryFn: async () => {
+      const data = await rideService.getAvailableOffers(0, 100);
+      const filteredData = (data || []).filter((o: any) => ['PENDING', 'BID_RECEIVED'].includes(o.state));
+      const uniqueData = Array.from(new Map(filteredData.map((item: any) => [item.id, item])).values());
+      return (uniqueData as any[]).sort((a, b) => a.id.localeCompare(b.id));
+    },
+    refetchInterval: 5000,
+    enabled: !!fullProfile?.driver?.isOnline,
+  });
+
+  const loading = profileLoading || rideLoading;
   
   // États UI
   const [currentPage, setCurrentPage] = useState(0);
@@ -82,21 +113,6 @@ export default function DriverDashboard() {
 
   // Ref pour le scroll
   const radarSectionRef = useRef<HTMLDivElement>(null);
-
-  // --- INITIALISATION ---
-  useEffect(() => { loadData(); }, []);
-
-  // --- POLLING STABILISÉ ---
-  useEffect(() => {
-    let interval: any;
-    if (fullProfile?.driver?.isOnline) {
-      fetchOffers(); // Premier appel
-      interval = setInterval(fetchOffers, 5000);
-    } else {
-      setOffers([]);
-    }
-    return () => clearInterval(interval);
-  }, [fullProfile?.driver?.isOnline]);
 
   // --- GÉOLOCALISATION ---
   useEffect(() => {
@@ -172,10 +188,20 @@ export default function DriverDashboard() {
   const toggleStatus = async () => {
     const newStatus = !fullProfile?.driver?.isOnline;
     try {
+      // Optimistic UI Update pour être réactif même sans réseau
+      queryClient.setQueryData(['driverProfile'], (old: any) => ({
+        ...old,
+        driver: { ...old?.driver, isOnline: newStatus }
+      }));
       await driverService.toggleOnlineStatus(newStatus);
-      setFullProfile({ ...fullProfile, driver: { ...fullProfile.driver, isOnline: newStatus } });
-      if (newStatus) fetchOffers();
-    } catch (e) { toast.error("Erreur réseau"); }
+    } catch (e) {
+      toast.error("Erreur réseau");
+      // Rollback en cas d'échec
+      queryClient.setQueryData(['driverProfile'], (old: any) => ({
+        ...old,
+        driver: { ...old?.driver, isOnline: !newStatus }
+      }));
+    }
   };
 
   // --- SCROLL ACTION ---

@@ -12,15 +12,21 @@ import com.yowyob.rideandgo.domain.ports.out.*;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.LandingOfferResponse;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.NotificationType;
 import com.yowyob.rideandgo.infrastructure.adapters.inbound.rest.dto.SendNotificationRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -228,6 +234,7 @@ public class OfferService implements
                         }))
                         // FILTRAGE & ENRICHISSEMENT (Commun aux deux cas)
                         .filter(o -> o.state() == OfferState.PENDING || o.state() == OfferState.BID_RECEIVED)
+                        .filter(this::isOfferStillValid) // ✅ Exclut les offres dont l'heure de départ est déjà passée
                         .distinct(Offer::id) // Évite les doublons si une offre est dans les deux flux
                         .flatMap(this::enrichOffer)
                         // ✅ Enrichissement avec le nom du passager
@@ -240,6 +247,36 @@ public class OfferService implements
                                 .defaultIfEmpty(offer)));
     }
 
+    /**
+     * Vérifie qu'une offre est toujours "en vigueur".
+     * ⚠️ Beaucoup d'offres sont des demandes "immédiates" : departureTime == heure de création.
+     * Comparer strictement à "maintenant" les faisait disparaître du radar quelques secondes
+     * après leur création. On applique donc une marge de tolérance (le temps qu'un chauffeur
+     * la voie et l'accepte) avant de considérer une offre comme réellement expirée.
+     * Si le champ departureTime est absent ou dans un format non reconnu, l'offre est conservée
+     * par prudence (on ne veut pas masquer des offres valides à cause d'un format inattendu).
+     */
+    private static final java.time.Duration OFFER_GRACE_PERIOD = java.time.Duration.ofMinutes(60);
+
+    private boolean isOfferStillValid(Offer offer) {
+        String dt = offer.departureTime();
+        if (dt == null || dt.isBlank()) {
+            return true;
+        }
+        try {
+            java.time.Instant departure = java.time.Instant.parse(dt);
+            java.time.Instant cutoff = java.time.Instant.now().minus(OFFER_GRACE_PERIOD);
+            return departure.isAfter(cutoff);
+        } catch (Exception ignoredInstant) {
+            try {
+                java.time.LocalDateTime departure = java.time.LocalDateTime.parse(dt);
+                java.time.LocalDateTime cutoff = java.time.LocalDateTime.now().minus(OFFER_GRACE_PERIOD);
+                return departure.isAfter(cutoff);
+            } catch (Exception ignoredLocal) {
+                return true;
+            }
+        }
+    }
 
     public Flux<LandingOfferResponse> getLatestPublicOffers(int limit) {
         return repository.findLatestPending(limit)
@@ -303,16 +340,20 @@ public class OfferService implements
                         }));
     }
 
+    // ==================================================================================
+    // 3bis. RETRAIT DE CANDIDATURE (CHAUFFEUR)
+    // ==================================================================================
     public Mono<Offer> withdrawApplication(UUID offerId, UUID driverId) {
         return repository.findById(offerId)
                 .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
                 .flatMap(offer -> {
-                    if (offer.state() == OfferState.VALIDATED || offer.state() == OfferState.CANCELLED) {
-                        return Mono.error(new IllegalStateException("Impossible de retirer une candidature après validation ou annulation."));
+                    if (offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)) {
+                        return Mono.error(new IllegalStateException(
+                                "Vous avez déjà été sélectionné pour cette course, impossible d'annuler votre candidature."));
                     }
-
                     if (offer.bids() == null || offer.bids().stream().noneMatch(b -> b.driverId().equals(driverId))) {
-                        return Mono.error(new OfferNotFoundException("Candidature introuvable pour ce chauffeur."));
+                        // Rien à retirer, on renvoie l'offre telle quelle
+                        return Mono.just(offer);
                     }
 
                     List<Bid> remainingBids = new ArrayList<>(offer.bids());

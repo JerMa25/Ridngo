@@ -1,46 +1,54 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, use } from 'react';
 import { rideService } from '@/lib/rideService';
 import MapView from '@/components/home/MapView';
 import { Loader2, CheckCircle2, Phone, MapPin, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api-client';
 import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function ActiveRidePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [ride, setRide] = useState<any>(null);
-  const [tracking, setTracking] = useState<any>(null);
+  const queryClient = useQueryClient();
   const [showReview, setShowReview] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
-  useEffect(() => {
-    // 1. Charger les détails initiaux
-    api.get(`/api/v1/trips/${id}`).then(res => setRide(res.data));
+  const { data: ride } = useQuery({
+    queryKey: ['activeRide', id],
+    queryFn: async () => {
+      const res = await api.get(`/api/v1/trips/${id}`);
+      return res.data;
+    },
+  });
 
-    // 2. Polling position
-    const interval = setInterval(async () => {
-      try {
-        const t = await rideService.getTrackingInfo(id);
-        setTracking(t);
-        
-        // Si la course est terminée côté serveur, on affiche l'avis
-        const check = await api.get(`/api/v1/trips/${id}`);
-        if (check.data.state === 'COMPLETED') setShowReview(true);
-      } catch (e) {}
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [id]);
+  const { data: tracking } = useQuery({
+    queryKey: ['rideTracking', id],
+    queryFn: async () => {
+      const t = await rideService.getTrackingInfo(id);
+      // Vérifier si la course est terminée côté serveur
+      const check = await api.get(`/api/v1/trips/${id}`);
+      if (check.data.state === 'COMPLETED') setShowReview(true);
+      return t;
+    },
+    refetchInterval: 4000,
+  });
 
   const handleCompleteRide = async () => {
     try {
+      // Optimistic UI
+      queryClient.setQueryData(['activeRide', id], (old: any) => ({
+        ...old,
+        state: 'COMPLETED'
+      }));
       await rideService.updateRideStatus(id, 'COMPLETED');
       setShowReview(true);
     } catch (e) {
       toast.error("Erreur lors de la clôture");
+      // Rollback
+      queryClient.invalidateQueries({ queryKey: ['activeRide', id] });
     }
   };
 

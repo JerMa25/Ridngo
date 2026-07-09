@@ -115,6 +115,13 @@ export const rideService = {
     return res.data;
   },
 
+  // Le chauffeur annule la candidature qu'il vient d'envoyer (avant sélection par le passager)
+  withdrawApplication: async (offerId: string): Promise<OfferResponse> => {
+    const res = await api.post<OfferResponse>(`/api/v1/offers/${offerId}/withdraw`);
+    await removeAppliedOffer(offerId);
+    return res.data;
+  },
+
   // Chauffeur confirme pickup → crée le Trip
   // POST /api/v1/offers/{id}/accept?driverId={driverId}
   driverAccepts: async (offerId: string, driverId: string): Promise<RideResponse> => {

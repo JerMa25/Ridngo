@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { NavbarWrapper } from "@/components/layout/NavbarWrapper";
 import { AppBackground } from "@/components/layout/AppBackground";
 import { Toaster } from 'react-hot-toast';
+import { QueryProvider } from "@/components/providers/QueryProvider";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -39,10 +41,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <AppBackground /> 
-          <NavbarWrapper />
-          {children}
-          <Toaster position="top-center" reverseOrder={false} />
+          <QueryProvider>
+            <OfflineBanner />
+            <AppBackground /> 
+            <NavbarWrapper />
+            {children}
+            <Toaster position="top-center" reverseOrder={false} />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

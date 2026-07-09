@@ -5,9 +5,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { vehicleApi } from '../../src/services/api';
-import api from '../../src/services/api';
+import api, { BASE_URL } from '../../src/services/api';
 import { Colors, Spacing, Radius } from '../../src/types/theme';
 import * as SecureStore from 'expo-secure-store';
 import * as Linking from 'expo-linking';
@@ -26,6 +26,8 @@ const FALLBACKS = {
 };
 
 export default function DriverOnboarding() {
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isAddVehicleOnly = mode === 'addVehicle'; // Chauffeur existant sans véhicule : on saute l'étape syndicat
   const [step, setStep] = useState<Step>(0);
   const [loading, setLoading] = useState(false);
   const [driverId, setDriverId] = useState<string | null>(null);
@@ -72,7 +74,10 @@ export default function DriverOnboarding() {
     }
     setLoading(true);
     try {
-      await api.post('/api/v1/users/driver', {
+      // ⚠️ Le backend attend un multipart/form-data avec une partie "data" (JSON)
+      // — un POST JSON classique est rejeté (415). On construit donc le FormData
+      // exactement comme l'endpoint /api/v1/users/driver l'exige.
+      const becomeDriverDto = {
         licenseNumber: form.licenseNumber,
         vehicle: {
           registrationNumber: form.registrationNumber,
@@ -84,21 +89,55 @@ export default function DriverOnboarding() {
           fuelTypeName: form.fuelTypeName,
           transmissionType: form.transmissionType,
           manufacturerName: form.manufacturerName,
-          totalSeatNumber: parseInt(form.totalSeatNumber),
-          tankCapacity: parseInt(form.tankCapacity),
-          luggageMaxCapacity: parseInt(form.luggageMaxCapacity),
-          mileageAtStart: parseInt(form.mileageAtStart),
-          mileageSinceCommissioning: parseInt(form.mileageSinceCommissioning),
-          vehicleAgeAtStart: parseInt(form.vehicleAgeAtStart),
-          averageFuelConsumptionPerKm: parseFloat(form.averageFuelConsumptionPerKm),
+          totalSeatNumber: parseInt(form.totalSeatNumber) || 0,
+          tankCapacity: parseFloat(form.tankCapacity) || 0,
+          luggageMaxCapacity: parseFloat(form.luggageMaxCapacity) || 0,
+          mileageAtStart: parseFloat(form.mileageAtStart) || 0,
+          mileageSinceCommissioning: parseFloat(form.mileageSinceCommissioning) || 0,
+          vehicleAgeAtStart: parseFloat(form.vehicleAgeAtStart) || 0,
+          averageFuelConsumptionPerKm: parseFloat(form.averageFuelConsumptionPerKm) || 0,
           airConditioned: form.airConditioned,
           wifi: form.wifi,
           comfortable: form.comfortable,
+          soft: false, screen: false, tollCharge: false, carParking: false,
+          alarm: false, stateTax: false, driverAllowance: false,
+          pickupAndDrop: false, internet: false, petsAllow: false,
         },
+      };
+
+      const formData = new FormData();
+      formData.append('data', {
+        string: JSON.stringify(becomeDriverDto),
+        type: 'application/json',
+      } as any);
+
+      const token = await SecureStore.getItemAsync('accessToken');
+      const res = await fetch(`${BASE_URL}/api/v1/users/driver`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
       });
+
+      const responseText = await res.text();
+      if (!res.ok) {
+        let msg = `Erreur ${res.status}`;
+        try { msg = JSON.parse(responseText)?.message || msg; } catch {}
+        throw new Error(msg);
+      }
+
+      if (isAddVehicleOnly) {
+        // Le chauffeur existe déjà et a juste besoin d'un véhicule : pas de vérification syndicale à refaire.
+        Alert.alert('Succès', 'Votre véhicule a été enregistré.', [
+          { text: 'OK', onPress: () => router.replace('/(driver)/vehicle' as any) },
+        ]);
+        return;
+      }
       setStep(1);
     } catch (e: any) {
-      Alert.alert('Erreur', e.response?.data?.message || "Impossible d'enregistrer le véhicule.");
+      Alert.alert('Erreur', e?.message || "Impossible d'enregistrer le véhicule.");
     } finally {
       setLoading(false);
     }
@@ -147,11 +186,19 @@ export default function DriverOnboarding() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
       {/* Progress indicator */}
-      <View style={styles.progress}>
-        {[0, 1, 2].map(i => (
-          <View key={i} style={[styles.progressDot, step >= i && styles.progressDotActive]} />
-        ))}
-      </View>
+      {isAddVehicleOnly ? (
+        <View style={styles.addVehicleHeader}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.addVehicleBack}>
+            <Ionicons name="arrow-back" size={20} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.progress}>
+          {[0, 1, 2].map(i => (
+            <View key={i} style={[styles.progressDot, step >= i && styles.progressDotActive]} />
+          ))}
+        </View>
+      )}
 
       {/* Step 0 — Vehicle */}
       {step === 0 && (
@@ -202,8 +249,8 @@ export default function DriverOnboarding() {
           >
             {loading ? <ActivityIndicator color={Colors.dark} /> : (
               <>
-                <Text style={styles.btnText}>Continuer</Text>
-                <Ionicons name="arrow-forward" size={20} color={Colors.dark} />
+                <Text style={styles.btnText}>{isAddVehicleOnly ? 'Enregistrer le véhicule' : 'Continuer'}</Text>
+                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color={Colors.dark} />
               </>
             )}
           </TouchableOpacity>
@@ -275,6 +322,8 @@ export default function DriverOnboarding() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   progress: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
+  addVehicleHeader: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
+  addVehicleBack: { width: 38, height: 38, borderRadius: 12, backgroundColor: Colors.input, alignItems: 'center', justifyContent: 'center' },
   progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.cardBorder },
   progressDotActive: { backgroundColor: Colors.orange, width: 24 },
   scroll: { flexGrow: 1, padding: Spacing.lg, gap: Spacing.md, paddingBottom: 60 },

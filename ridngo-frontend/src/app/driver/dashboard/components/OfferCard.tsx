@@ -1,17 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { MapPin, ChevronRight, User, Clock, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-export const OfferCard = ({ offer }: { offer: any }) => (
+export const OfferCard = ({ offer }: { offer: any }) => {
+  const router = useRouter();
+  return (
   <motion.div 
     layout 
     initial={{ opacity: 0, scale: 0.9 }} 
     animate={{ opacity: 1, scale: 1 }} 
     whileHover={{ y: -5 }} 
-    className="glass p-6 border-none bg-background shadow-xl flex flex-col justify-between rounded-4xl relative overflow-hidden group"
+    onClick={() => router.push(`/driver/offers/${offer.id}`)}
+    role="button"
+    tabIndex={0}
+    className="glass p-6 border-none bg-background shadow-xl flex flex-col justify-between rounded-4xl relative overflow-hidden group cursor-pointer"
   >
     {/* Flèche d'indication d'action au survol */}
     <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -97,11 +103,9 @@ export const OfferCard = ({ offer }: { offer: any }) => (
     </div>
 
     {/* BOUTON D'ACTION */}
-    <Link 
-      href={`/driver/offers/${offer.id}`} 
-      className="w-full py-4 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center hover:bg-orange-btn hover:text-white transition-all shadow-lg active:scale-95"
-    >
+    <div className="w-full py-4 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all shadow-lg active:scale-95">
       Consulter l&apos;offre
-    </Link>
+    </div>
   </motion.div>
-);
+  );
+}

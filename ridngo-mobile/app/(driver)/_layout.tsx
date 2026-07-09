@@ -5,6 +5,7 @@ import { Colors } from '../../src/types/theme';
 export default function DriverLayout() {
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -56,6 +57,12 @@ export default function DriverLayout() {
       <Tabs.Screen name="heatmap" options={{ href: null }} />
       <Tabs.Screen name="history" options={{ href: null }} />
       <Tabs.Screen name="performance" options={{ href: null }} />
+      <Tabs.Screen name="vehicle" options={{ href: null }} />
+      <Tabs.Screen name="onboarding" options={{ href: null }} />
+      <Tabs.Screen name="offers" options={{ href: null }} />
+      <Tabs.Screen name="ride" options={{ href: null }} />
+      <Tabs.Screen name="offers/[id]" options={{ href: null }} />
+      <Tabs.Screen name="ride/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

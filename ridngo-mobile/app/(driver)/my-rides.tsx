@@ -28,6 +28,7 @@ import { rideService } from '../../src/services/rideService';
 import { driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../src/types/api';
+import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
 
 function formatDateTime(iso?: string) {
   if (!iso) return '--';
@@ -128,10 +129,13 @@ export default function MyRidesScreen() {
 
   const loadHistory = async () => {
     try {
-      const myId = driverId || user?.id;
-      if (!myId) return;
-      const data = await rideService.getDriverHistory(myId);
-      setHistory(data.filter(r => r.state === 'COMPLETED'));
+      // On utilise l'historique enrichi (même source que l'écran "Historique" complet
+      // et le tableau de bord) : il est rattaché à l'utilisateur authentifié et ne
+      // dépend pas d'un driverId potentiellement désynchronisé, contrairement à
+      // /trips/driver/{driverId}/history qui pouvait renvoyer une liste vide.
+      const { data } = await withOfflineFallback(CacheKeys.driverHistory, () => rideService.getEnrichedHistory());
+      const completed = (Array.isArray(data) ? data : []).filter((r: any) => r.state === 'COMPLETED');
+      setHistory(completed);
 
       const reviewsRes = await rideService.getMyReviews();
       const reviews = Array.isArray(reviewsRes) ? reviewsRes : (reviewsRes.content || []);
@@ -258,6 +262,14 @@ export default function MyRidesScreen() {
                     </Text>
                     <Text style={[s.priceCurr, { color: Colors.textMuted }]}>FCFA</Text>
                   </View>
+                  {!!offer.numberOfPlaces && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
+                        {offer.numberOfPlaces} place{offer.numberOfPlaces > 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                  )}
                   {/* Route */}
                   <View style={[s.routeBlock, { backgroundColor: Colors.input }]}>
                     <View style={s.routeRow}>
@@ -334,6 +346,14 @@ export default function MyRidesScreen() {
                       </Text>
                       <Text style={[s.priceCurr, { color: Colors.textMuted }]}>FCFA</Text>
                     </View>
+                    {!!trip.numberOfPlaces && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
+                          {trip.numberOfPlaces} place{trip.numberOfPlaces > 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                    )}
                     <View style={[s.routeBlock, { backgroundColor: Colors.input }]}>
                       <Text style={[s.routePlace, { color: Colors.text }]} numberOfLines={1}>
                         {trip.startPoint}
@@ -373,9 +393,10 @@ export default function MyRidesScreen() {
               </View>
             ) : (
               history.map(trip => {
-                const review = reviewsMap[trip.id];
+                const tripKey = trip.rideId || trip.id;
+                const review = reviewsMap[tripKey];
                 return (
-                  <View key={trip.id}
+                  <View key={tripKey}
                     style={[s.histCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
                     <View style={s.histTop}>
                       <View style={[s.badge, { backgroundColor: Colors.greenBg }]}>
@@ -398,6 +419,14 @@ export default function MyRidesScreen() {
                         {trip.price?.toLocaleString()} <Text style={{ fontSize: 11 }}>FCFA</Text>
                       </Text>
                     </View>
+                    {!!trip.numberOfPlaces && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
+                          {trip.numberOfPlaces} place{trip.numberOfPlaces > 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                    )}
 
                     {review && (
                       <View style={[s.reviewBox, { backgroundColor: Colors.input }]}>
