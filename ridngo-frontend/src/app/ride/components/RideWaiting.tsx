@@ -153,8 +153,44 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
 
   const handleCancelOffer = async () => {
     if (!offer?.id) return;
-    const confirmCancel = confirm("Voulez-vous vraiment annuler votre demande ?");
-    if (!confirmCancel) return;
+    /*const confirmCancel = confirm("Voulez-vous vraiment annuler votre demande ?");
+    if (!confirmCancel) return;*/
+    const confirmCancel = () =>
+    new Promise<boolean>((resolve) => {
+      toast((t) => (
+        <div className="flex flex-col gap-3">
+          <p>Voulez-vous vraiment annuler cette offre ?</p>
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                resolve(false);
+              }}
+              className="px-3 py-1 rounded-lg border"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                resolve(true);
+              }}
+              className="px-3 py-1 rounded-lg bg-red-500 text-white"
+            >
+              Yes
+            </button>
+          </div>
+        </div>
+      ), {
+        duration: Infinity,
+      });
+    });
+    const confirmed = await confirmCancel();
+
+    if (!confirmed) return;
+
 
     setIsCancelling(true);
     try {
