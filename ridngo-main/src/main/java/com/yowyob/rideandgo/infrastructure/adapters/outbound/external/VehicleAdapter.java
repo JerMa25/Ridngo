@@ -62,7 +62,9 @@ public class VehicleAdapter implements VehicleRepositoryPort {
 
                 return client.createVehicleSimplified(request)
                                 .map(res -> this.mapResponseToDomain(res, Collections.emptyList()))
-                                .doOnSuccess(v -> log.info("✅ Vehicle created with ID: {}", v.id()));
+                                .doOnSuccess(v -> log.info("✅ Vehicle created with ID: {}", v.id()))
+                                .doOnError(org.springframework.web.reactive.function.client.WebClientResponseException.class, e -> 
+                                        log.error("❌ Vehicle API error: {}", e.getResponseBodyAsString()));
         }
 
         @Override

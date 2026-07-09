@@ -12,4 +12,5 @@ public interface OfferRepositoryPort {
     Mono<Offer> findById(UUID offerId);
     Flux<Offer> findAll(); 
     Flux<Offer> findLatestPending(int limit);
+    Mono<Boolean> deleteBid(UUID offerId, UUID driverId);
 }

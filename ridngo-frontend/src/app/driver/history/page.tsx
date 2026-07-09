@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api-client';
 import { 
   ArrowLeft, User, Loader2, 
@@ -259,7 +259,7 @@ export default function HistoryPage() {
             Aucun trajet trouvé.
           </div>
         ) : (
-          rides.map((ride, idx) => (
+          rides.map((ride: any, idx: number) => (
             <DriverHistoryCard 
               key={ride.rideId} 
               ride={ride} 

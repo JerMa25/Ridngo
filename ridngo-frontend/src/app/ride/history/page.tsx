@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api-client';
 import { 
   ArrowLeft, Calendar, MapPin, Loader2, 
@@ -143,7 +143,7 @@ export default function PassengerHistoryPage() {
             <p className="opacity-30 italic font-bold">Aucune course enregistrée.</p>
           </div>
         ) : (
-          rides.map((ride, idx) => (
+          rides.map((ride: any, idx: number) => (
             <RideHistoryCard key={ride.rideId} ride={ride} idx={idx} />
           ))
         )}
