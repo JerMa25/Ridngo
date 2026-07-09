@@ -105,7 +105,7 @@ application:
     url: https://traefikdev.yowyob.com/ugate
 
   payment:
-    url:
+    url: https://traefikdev.yowyob.com/payment
     commission-rate: 0.10
 
   kafka:
