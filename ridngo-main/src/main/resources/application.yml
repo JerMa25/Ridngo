@@ -35,11 +35,11 @@ spring:
   # Liquibase
   liquibase:
     enabled: true
-    user: fleet_admin
-    password: fleet_password
+    user:  ${DB_LIQUIBASE_USERNAME}
+    password: ${DB_LIQUIBASE_PASSWORD}
     change-log: classpath:db/changelog/db.changelog-master.yaml
-    default-schema: ride_and_go # Force Liquibase à travailler dans ce schéma
-    liquibase-schema: ride_and_go # Stocke les tables de gestion Liquibase ici aussi
+    default-schema: ${DB_SCHEMA:ride_and_go} # Force Liquibase à travailler dans ce schéma
+    liquibase-schema: ${DB_SCHEMA:ride_and_go} # Stocke les tables de gestion Liquibase ici aussi
     url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}
 
   sql:
