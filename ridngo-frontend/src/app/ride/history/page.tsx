@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '@/lib/api-client';
 import { 
   ArrowLeft, Calendar, MapPin, Loader2, 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * SOUS-COMPOSANT : Carte de trajet avec récupération des noms réels
@@ -108,22 +109,13 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
 };
 
 export default function PassengerHistoryPage() {
-  const [rides, setRides] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await api.get('/api/v1/trips/enriched-history?page=0&size=20');
-        setRides(res.data);
-      } catch (e) { 
-        console.error("Erreur historique enrichi:", e); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
-    fetchHistory();
-  }, []);
+  const { data: rides = [], isLoading: loading } = useQuery({
+    queryKey: ['passengerFullHistory'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/trips/enriched-history?page=0&size=20');
+      return res.data;
+    },
+  });
 
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-background gap-4">
