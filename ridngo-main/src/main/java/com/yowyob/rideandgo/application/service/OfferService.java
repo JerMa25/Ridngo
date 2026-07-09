@@ -35,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -182,7 +181,8 @@ public class OfferService implements
                                 .id(Utils.generateUUID())
                                 .userId(user.id())
                                 .title("Nouvelle course disponible")
-                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price() + " F est disponible à " + offer.startPoint())
+                                .message("Une course de " + offer.numberOfPlaces() + " places à " + offer.price()
+                                        + " F est disponible à " + offer.startPoint())
                                 .type("OFFER")
                                 .isRead(false)
                                 .dataJson(json)
@@ -249,12 +249,17 @@ public class OfferService implements
 
     /**
      * Vérifie qu'une offre est toujours "en vigueur".
-     * ⚠️ Beaucoup d'offres sont des demandes "immédiates" : departureTime == heure de création.
-     * Comparer strictement à "maintenant" les faisait disparaître du radar quelques secondes
-     * après leur création. On applique donc une marge de tolérance (le temps qu'un chauffeur
+     * ⚠️ Beaucoup d'offres sont des demandes "immédiates" : departureTime == heure
+     * de création.
+     * Comparer strictement à "maintenant" les faisait disparaître du radar quelques
+     * secondes
+     * après leur création. On applique donc une marge de tolérance (le temps qu'un
+     * chauffeur
      * la voie et l'accepte) avant de considérer une offre comme réellement expirée.
-     * Si le champ departureTime est absent ou dans un format non reconnu, l'offre est conservée
-     * par prudence (on ne veut pas masquer des offres valides à cause d'un format inattendu).
+     * Si le champ departureTime est absent ou dans un format non reconnu, l'offre
+     * est conservée
+     * par prudence (on ne veut pas masquer des offres valides à cause d'un format
+     * inattendu).
      */
     private static final java.time.Duration OFFER_GRACE_PERIOD = java.time.Duration.ofMinutes(60);
 
@@ -356,37 +361,15 @@ public class OfferService implements
                         return Mono.just(offer);
                     }
 
-                    List<Bid> remainingBids = new ArrayList<>(offer.bids());
-                    remainingBids.removeIf(b -> b.driverId().equals(driverId));
-                    OfferState newState = remainingBids.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
-                    UUID selectedDriverId = offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)
-                            ? null
-                            : offer.selectedDriverId();
+                    List<Bid> remaining = offer.bids().stream()
+                            .filter(b -> !b.driverId().equals(driverId))
+                            .collect(java.util.stream.Collectors.toList());
 
-                    Offer updatedOffer = new Offer(
-                            offer.id(),
-                            offer.passengerId(),
-                            selectedDriverId,
-                            offer.startPoint(),
-                            offer.startLat(),
-                            offer.startLon(),
-                            offer.endPoint(),
-                            offer.endLat(),
-                            offer.endLon(),
-                            offer.price(),
-                            offer.numberOfPlaces(),
-                            offer.passengerPhone(),
-                            offer.departureTime(),
-                            newState,
-                            remainingBids,
-                            offer.version(),
-                            offer.createdAt(),
-                            offer.passengerName());
+                    OfferState newState = remaining.isEmpty() ? OfferState.PENDING : OfferState.BID_RECEIVED;
 
-                    log.info("🗑️ Driver {} withdrawing application from Offer {}. New state={}", driverId, offerId, newState);
-                    return repository.deleteBid(offerId, driverId)
-                            .flatMap(deleted -> repository.save(updatedOffer))
-                            .flatMap(saved -> cache.saveInCache(saved).thenReturn(saved));
+                    log.info("↩️ Driver {} withdrawing application from Offer {}.", driverId, offerId);
+
+                    return updateOfferState(offer.withBids(remaining), newState);
                 });
     }
 
@@ -444,11 +427,11 @@ public class OfferService implements
                 .flatMap(offer -> {
                     double estimatedDistance = 0.0;
                     int estimatedDuration = 0;
-                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null && offer.endLon() != null) {
+                    if (offer.startLat() != null && offer.startLon() != null && offer.endLat() != null
+                            && offer.endLon() != null) {
                         estimatedDistance = trackingCalculatorService.calculateDistance(
                                 offer.startLat(), offer.startLon(),
-                                offer.endLat(), offer.endLon()
-                        );
+                                offer.endLat(), offer.endLon());
                         estimatedDuration = trackingCalculatorService.calculateEtaInMinutes(estimatedDistance);
                     }
 
@@ -513,7 +496,8 @@ public class OfferService implements
      * suffisant.
      */
     private Mono<Void> notifyEligibleDriversWithBalance(Offer offer) {
-        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(), offer.numberOfPlaces(), offer.price());
+        log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(),
+                offer.numberOfPlaces(), offer.price());
 
         double requiredBalance = offer.price() * commissionRate;
 
@@ -707,7 +691,8 @@ public class OfferService implements
                             offerDetails.endLat() != null ? offerDetails.endLat() : existing.endLat(),
                             offerDetails.endLon() != null ? offerDetails.endLon() : existing.endLon(),
                             offerDetails.price() > 0 ? offerDetails.price() : existing.price(),
-                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces() : existing.numberOfPlaces(),
+                            offerDetails.numberOfPlaces() > 0 ? offerDetails.numberOfPlaces()
+                                    : existing.numberOfPlaces(),
                             offerDetails.passengerPhone() != null ? offerDetails.passengerPhone()
                                     : existing.passengerPhone(),
                             offerDetails.departureTime() != null ? offerDetails.departureTime()
