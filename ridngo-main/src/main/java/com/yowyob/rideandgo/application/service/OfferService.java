@@ -238,13 +238,16 @@ public class OfferService implements
                         .distinct(Offer::id) // Évite les doublons si une offre est dans les deux flux
                         .flatMap(this::enrichOffer)
                         // ✅ Enrichissement avec le nom du passager
-                        .flatMap(offer -> userRepositoryPort.findUserById(offer.passengerId())
+                        .flatMap(offer -> ensureUserExistsLocally(offer.passengerId())
                                 .map(passenger -> {
                                     String name = ((passenger.firstName() != null ? passenger.firstName() : "") +
                                             " " + (passenger.lastName() != null ? passenger.lastName() : "")).trim();
-                                    return offer.withPassengerName(name.isEmpty() ? null : name);
+                                    if (name.isEmpty()) {
+                                        name = passenger.name() != null && !passenger.name().isEmpty() ? passenger.name() : "Client";
+                                    }
+                                    return offer.withPassengerName(name);
                                 })
-                                .defaultIfEmpty(offer)));
+                                .defaultIfEmpty(offer.withPassengerName("Client"))));
     }
 
     /**

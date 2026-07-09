@@ -240,8 +240,9 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                 <input
                   value={makeQuery}
                   onChange={(e) => {
-                    setMakeQuery(e.target.value);   // 🔥 triggers instant filtering
+                    setMakeQuery(e.target.value);
                     setShowMakeDropdown(true);
+                    handleInputChange({ target: { name: 'makeName', value: e.target.value } });
                   }}
                   onFocus={() => setShowMakeDropdown(true)}
                   onBlur={() => setTimeout(() => setShowMakeDropdown(false), 150)}
@@ -276,8 +277,9 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                 <input
                   value={modelQuery}
                   onChange={(e) => {
-                    setModelQuery(e.target.value);   // 🔥 triggers instant filtering
+                    setModelQuery(e.target.value);
                     setShowModelDropdown(true);
+                    handleInputChange({ target: { name: 'modelName', value: e.target.value } });
                   }}
                   onFocus={() => setShowModelDropdown(true)}
                   onBlur={() => setTimeout(() => setShowModelDropdown(false), 150)}
@@ -312,8 +314,9 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                 <input
                   value={manufacturerQuery}
                   onChange={(e) => {
-                    setManufacturerQuery(e.target.value);   // 🔥 triggers instant filtering
+                    setManufacturerQuery(e.target.value);
                     setShowManufacturerDropdown(true);
+                    handleInputChange({ target: { name: 'manufacturerName', value: e.target.value } });
                   }}
                   onFocus={() => setShowManufacturerDropdown(true)}
                   onBlur={() => setTimeout(() => setShowManufacturerDropdown(false), 150)}

@@ -100,6 +100,9 @@ export interface RideResponse {
   offerId: string;
   driverId: string;
   passengerId: string;
+  startPoint?: string;
+  endPoint?: string;
+  price?: number;
   distance: number;
   duration: number;
   state: RideState;

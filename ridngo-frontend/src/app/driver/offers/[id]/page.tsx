@@ -140,16 +140,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   const handleCancelApplication = async () => {
     setActionLoading(true);
     try {
-      try {
-        await api.delete(`/api/v1/offers/${id}/apply`);
-      } catch (error: any) {
-        if (error?.response?.status === 404 || error?.response?.status === 400) {
-          await api.delete(`/api/v1/offers/${id}`);
-        } else {
-          throw error;
-        }
-      }
-
+      await api.post(`/api/v1/offers/${id}/withdraw`);
       const updated = await rideService.getOfferById(id);
       setOffer(updated);
       toast.success("Votre candidature a été annulée");

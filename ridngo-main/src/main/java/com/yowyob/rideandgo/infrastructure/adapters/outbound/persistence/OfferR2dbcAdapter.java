@@ -151,4 +151,11 @@ public class OfferR2dbcAdapter implements OfferRepositoryPort {
     public Mono<Boolean> exists(Offer offer) {
         return offerRepository.existsById(offer.id());
     }
+
+    @Override
+    public Mono<Boolean> deleteBid(UUID offerId, UUID driverId) {
+        return offerAgreementRepository.findByOfferIdAndDriverId(offerId, driverId)
+                .flatMap(agreement -> offerAgreementRepository.delete(agreement).thenReturn(true))
+                .defaultIfEmpty(false);
+    }
 }

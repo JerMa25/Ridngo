@@ -226,7 +226,7 @@ export default function RidePage() {
             {step === 'waiting' && (
               <RideWaiting 
                 offer={offer} 
-                onSelectDriver={(id) => rideService.selectDriver(offer.id, id)} 
+                onSelectDriver={(id) => rideService.selectDriver(offer!.id, id)} 
                 onCancelSearch={() => setStep('search')}
               />
             )}
