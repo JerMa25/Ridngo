@@ -30,7 +30,14 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
       const t = await rideService.getTrackingInfo(id);
       // Vérifier si la course est terminée côté serveur
       const check = await api.get(`/api/v1/trips/${id}`);
-      if (check.data.state === 'COMPLETED') setShowReview(true);
+      if (check.data.state === 'COMPLETED') {
+        const reviewedRides = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+        if (!reviewedRides[id]) {
+          setShowReview(true);
+        } else {
+          window.location.href = "/ride";
+        }
+      }
       return t;
     },
     refetchInterval: 4000,
@@ -44,7 +51,12 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
         state: 'COMPLETED'
       }));
       await rideService.updateRideStatus(id, 'COMPLETED');
-      setShowReview(true);
+      const reviewedRides = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+      if (!reviewedRides[id]) {
+        setShowReview(true);
+      } else {
+        window.location.href = "/ride";
+      }
     } catch (e) {
       toast.error("Erreur lors de la clôture");
       // Rollback
@@ -55,12 +67,17 @@ export default function ActiveRidePage({ params }: { params: Promise<{ id: strin
   const submitReview = async () => {
     try {
       await rideService.postReview(id, rating, comment);
+      const reviewed = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+      reviewed[id] = true;
+      localStorage.setItem('reviewedRides', JSON.stringify(reviewed));
       window.location.href = "/ride"; // Retour accueil client
     } catch (e) {
-      //alert("Merci pour votre note !");
       toast('Merci pour votre note !', {
         icon: '👏',
       });
+      const reviewed = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+      reviewed[id] = true;
+      localStorage.setItem('reviewedRides', JSON.stringify(reviewed));
       window.location.href = "/ride";
     }
   };

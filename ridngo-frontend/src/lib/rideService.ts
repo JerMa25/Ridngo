@@ -117,8 +117,18 @@ export const rideService = {
     try {
       const response = await api.get<RideResponse[]>('/api/v1/trips/history?page=0&size=1');
       const latest = response.data[0];
-      if (latest && (latest.state === 'CREATED' || latest.state === 'ONGOING')) {
+      if (!latest) return null;
+      
+      if (latest.state === 'CREATED' || latest.state === 'ONGOING') {
         return latest;
+      }
+      
+      if (latest.state === 'COMPLETED') {
+        // Vérifier si cette course a déjà été notée
+        const reviewedRides = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+        if (!reviewedRides[latest.id]) {
+          return latest;
+        }
       }
       return null;
     } catch (e) { console.error(e); return null; }

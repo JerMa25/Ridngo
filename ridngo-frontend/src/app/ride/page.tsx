@@ -70,7 +70,7 @@ export default function RidePage() {
       }
       return null;
     },
-    refetchInterval: step === 'active' ? 4000 : false,
+    refetchInterval: (step === 'active' || step === 'waiting') ? 3000 : false,
   });
 
   // QUERY 2 : Récupérer les statuts de l'offre en cours (polled si en attente)
@@ -112,11 +112,12 @@ export default function RidePage() {
         setStep('search');
       } else if (offer.state === 'VALIDATED') {
         // React Query va récupérer la course lors du prochain cycle
+        queryClient.invalidateQueries({ queryKey: ['passengerCurrentRide'] });
       } else {
         setStep('waiting');
       }
     }
-  }, [ride, offer, loadingRide, loadingOffer]);
+  }, [ride, offer, loadingRide, loadingOffer, queryClient]);
 
   // --- ENVOI GPS CLIENT (COURSE ACTIVE UNIQUEMENT) ---
   useEffect(() => {

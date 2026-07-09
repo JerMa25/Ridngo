@@ -73,14 +73,19 @@ export const RideActive = ({ ride, tracking }: Props) => {
         comment: comment,
         anonymous: anonymous
       });
-      //alert("Merci pour votre évaluation !");
       toast('Merci pour votre évaluation !', {
-      icon: '👏',
-    });
+        icon: '👏',
+      });
+      const reviewed = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+      reviewed[ride.id] = true;
+      localStorage.setItem('reviewedRides', JSON.stringify(reviewed));
       window.location.href = "/ride"; // Reset de l'interface client
     } catch (e) {
       console.error("Erreur review", e);
-      // En cas d'erreur, on redirige quand même pour ne pas bloquer l'utilisateur
+      // En cas d'erreur, on enregistre quand même pour éviter d'être bloqué
+      const reviewed = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
+      reviewed[ride.id] = true;
+      localStorage.setItem('reviewedRides', JSON.stringify(reviewed));
       window.location.href = "/ride";
     } finally {
       setSubmittingReview(false);
