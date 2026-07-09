@@ -9,6 +9,7 @@ import { Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { RideSearch } from './components/RideSearch';
 import { RidePriceSetting } from './components/RidePriceSetting';
@@ -31,90 +32,91 @@ export default function RidePage() {
     new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   );
   const [numberOfPlaces, setNumberOfPlaces] = useState(1);
-  const [offer, setOffer] = useState<any>(null);
-  const [ride, setRide] = useState<any>(null);
-  const [tracking, setTracking] = useState<any>(null);
+  const queryClient = useQueryClient();
+  const [activeOfferId, setActiveOfferId] = useState<string | null>(null);
 
+  // Initialisation : Auth + Tel + OfferId
   useEffect(() => {
-    const init = async () => {
-      // 1. Guard : Authentification
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      // Initialisation du téléphone par défaut de l'utilisateur
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const u = JSON.parse(storedUser);
-        if (u.phone) setPassengerPhone(u.phone);
-      }
-
-      // 2. Vérifier si une course est déjà en cours
-      const currentRide = await rideService.getCurrentPassengerRide();
-      if (currentRide) {
-        setRide(currentRide);
-        setStep('active');
-        return;
-      }
-
-      // 3. Vérifier si une offre est en attente
-      const savedOfferId = localStorage.getItem('activeOfferId');
-      if (savedOfferId) {
-        try {
-          const offerData = await rideService.getOfferBids(savedOfferId);
-          if (offerData.state === 'CANCELLED') {
-            localStorage.removeItem('activeOfferId');
-            setStep('search');
-          } else if (offerData.state === 'VALIDATED') {
-            const rideData = await rideService.getRideByOffer(offerData.id);
-            setRide(rideData);
-            setStep('active');
-          } else {
-            setOffer(offerData);
-            setStep('waiting');
-          }
-        } catch (e) { setStep('search'); }
-      } else {
-        setStep('search');
-      }
-    };
-    init();
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const u = JSON.parse(storedUser);
+      if (u.phone) setPassengerPhone(u.phone);
+    }
+    const savedOffer = localStorage.getItem('activeOfferId');
+    if (savedOffer) {
+      setActiveOfferId(savedOffer);
+    } else if (step === 'loading') {
+      setStep('search'); // Pas d'offre = on affiche la recherche directement
+    }
   }, [router]);
 
-  useEffect(() => {
-    let interval: any;
-    
-    // Polling pendant l'attente de chauffeur
-    if (step === 'waiting' && offer) {
-      interval = setInterval(async () => {
-        const updated = await rideService.getOfferBids(offer.id);
-        setOffer(updated);
-        if (updated.state === 'VALIDATED') {
-          const rideData = await rideService.getRideByOffer(offer.id);
-          setRide(rideData);
-          setStep('active');
-          localStorage.removeItem('activeOfferId');
+  // QUERY 1 : Récupérer la course active du passager (polled si active)
+  const { data: ride, isLoading: loadingRide } = useQuery({
+    queryKey: ['passengerCurrentRide'],
+    queryFn: async () => {
+      const r = await rideService.getCurrentPassengerRide();
+      if (r) return r;
+      // Si une offre est en cours, peut-être qu'elle a été validée
+      if (activeOfferId) {
+        const offerBids = await rideService.getOfferBids(activeOfferId);
+        if (offerBids.state === 'VALIDATED') {
+          return await rideService.getRideByOffer(activeOfferId);
         }
-      }, 3500);
+      }
+      return null;
+    },
+    refetchInterval: step === 'active' ? 4000 : false,
+  });
+
+  // QUERY 2 : Récupérer les statuts de l'offre en cours (polled si en attente)
+  const { data: offer, isLoading: loadingOffer } = useQuery({
+    queryKey: ['passengerOfferBids', activeOfferId],
+    queryFn: async () => {
+      if (!activeOfferId) return null;
+      return await rideService.getOfferBids(activeOfferId);
+    },
+    enabled: !!activeOfferId && step !== 'active',
+    refetchInterval: step === 'waiting' ? 3500 : false,
+  });
+
+  // QUERY 3 : Tracking GPS du chauffeur (polled si active)
+  const { data: tracking } = useQuery({
+    queryKey: ['rideTracking', ride?.id],
+    queryFn: async () => {
+      if (!ride?.id) return null;
+      return await rideService.getTrackingInfo(ride.id);
+    },
+    enabled: !!ride?.id && step === 'active',
+    refetchInterval: 4000,
+  });
+
+  // Orchestration du Workflow basée sur le Cache React Query
+  useEffect(() => {
+    if (loadingRide || loadingOffer) return;
+
+    if (ride) {
+      setStep('active');
+      localStorage.removeItem('activeOfferId');
+      return;
     }
 
-    // Polling pendant la course
-    if (step === 'active' && ride) {
-      interval = setInterval(async () => {
-        try {
-          const [t, r] = await Promise.all([
-            rideService.getTrackingInfo(ride.id),
-            api.get(`/api/v1/trips/${ride.id}`)
-          ]);
-          setTracking(t);
-          setRide(r.data); 
-        } catch (e) {}
-      }, 4000);
+    if (offer) {
+      if (offer.state === 'CANCELLED') {
+        localStorage.removeItem('activeOfferId');
+        setActiveOfferId(null);
+        setStep('search');
+      } else if (offer.state === 'VALIDATED') {
+        // React Query va récupérer la course lors du prochain cycle
+      } else {
+        setStep('waiting');
+      }
     }
-    return () => clearInterval(interval);
-  }, [step, offer, ride]);
+  }, [ride, offer, loadingRide, loadingOffer]);
 
   // --- ENVOI GPS CLIENT (COURSE ACTIVE UNIQUEMENT) ---
   useEffect(() => {
@@ -161,8 +163,9 @@ export default function RidePage() {
         passengerPhone: passengerPhone,
         departureTime: departureTime
       });
-      setOffer(data);
       localStorage.setItem('activeOfferId', data.id);
+      setActiveOfferId(data.id);
+      queryClient.setQueryData(['passengerOfferBids', data.id], data);
       setStep('waiting');
     } catch (e: any) {
       console.error("Erreur publication:", e.response?.data);

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import api from '@/lib/api-client';
 import { UserResponse, UpdateUserProfileRequest } from '@/types/api';
 import { 
@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function ProfilePage() {
-  const [fullProfile, setFullProfile] = useState<any>(null); // Contient l'objet complet du backend
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'parameters' | 'security'>('parameters');
@@ -33,38 +33,34 @@ export default function ProfilePage() {
   });
   const [changingPassword, setChangingPassword] = useState(false);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
+  const { data: fullProfile, isLoading: loading } = useQuery({
+    queryKey: ['userProfileData'],
+    queryFn: async () => {
       const stored = localStorage.getItem('user');
       const isDriver = stored ? JSON.parse(stored).role === 'DRIVER' : false;
 
-      // On appelle la route spécifique selon le rôle
       const endpoint = isDriver ? '/api/v1/users/me/driver-profile' : '/api/v1/users/me';
       const res = await api.get(endpoint);
-
-      // Le format diffère : res.data (Passager) vs res.data.user (Chauffeur)
-      const userData = isDriver ? res.data.user : res.data;
-      
-      setFullProfile(res.data);
-
-      // On parse le nom complet pour remplir firstname/lastname si le backend ne les donne pas séparément
-      // Note: Normalement res.data a firstName/lastName suite à la MAJ du registre
-      setEditData({
-        firstName: userData.firstName || userData.name?.split(' ')[0] || '',
-        lastName: userData.lastName || userData.name?.split(' ').slice(1).join(' ') || '',
-        phone: userData.telephone || ''
-      });
-
-    } catch (err) {
-      console.error("Erreur profile:", err);
-    } finally {
-      setLoading(false);
+      return res.data;
     }
-  };
+  });
+
+  // Extract safe user data dynamically
+  const user = fullProfile?.user || fullProfile || {};
+  const driverData = fullProfile?.driver;
+  const vehicle = fullProfile?.vehicle;
+
+  // Initialisation du form au clic ou si ça change
+  React.useEffect(() => {
+    if (fullProfile) {
+      const userData = fullProfile?.user || fullProfile || {};
+      setEditData({
+        firstName: userData?.firstName || userData?.name?.split(' ')[0] || '',
+        lastName: userData?.lastName || userData?.name?.split(' ').slice(1).join(' ') || '',
+        phone: userData?.telephone || ''
+      });
+    }
+  }, [fullProfile]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +73,7 @@ export default function ProfilePage() {
       };
       await api.put('/api/v1/users/profile', updateReq);
       toast.success("Profil mis à jour !");
-      fetchProfile();
+      queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
     } catch (err) {
       toast.error("Erreur lors de la mise à jour");
     } finally {
@@ -120,11 +116,6 @@ export default function ProfilePage() {
     </div>
   );
 
-  // Extraction propre des infos selon la structure
-  const user = fullProfile?.user || fullProfile; // Gère le nesting driver-profile
-  const driverData = fullProfile?.driver;
-  const vehicle = fullProfile?.vehicle;
-
   return (
     <main className="max-w-6xl mx-auto p-6 md:py-12 text-foreground">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -149,7 +140,7 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-black tracking-tight">{user?.name || `${user?.firstName} ${user?.lastName}`}</h2>
               <div className="flex items-center justify-center gap-2 mt-1">
                  <span className="text-[10px] font-black uppercase text-orange-btn tracking-[0.2em]">
-                    {user?.roles[0]?.replace('RIDE_AND_GO_', '')}
+                    {(user?.roles || [])[0]?.replace('RIDE_AND_GO_', '') || 'UTILISATEUR'}
                  </span>
                  {driverData?.isProfileValidated && <CheckCircle2 size={14} className="text-green-500" />}
               </div>

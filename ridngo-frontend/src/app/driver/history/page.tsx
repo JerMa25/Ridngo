@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '@/lib/api-client';
 import { 
   ArrowLeft, User, Loader2, 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 
 // Interface pour les avis
 interface ReviewInfo {
@@ -217,37 +218,29 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
 };
 
 export default function HistoryPage() {
-  const [rides, setRides] = useState<any[]>([]);
-  const [reviewsMap, setReviewsMap] = useState<Map<string, ReviewInfo>>(new Map());
-  const [loading, setLoading] = useState(true);
+  const { data: rides = [], isLoading: ridesLoading } = useQuery({
+    queryKey: ['driverHistory'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/trips/enriched-history?page=0&size=50');
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        // Fetch rides et reviews en parallèle
-        const [historyRes, reviewsRes] = await Promise.all([
-          api.get('/api/v1/trips/enriched-history?page=0&size=50'),
-          api.get('/api/v1/reviews/me').catch(() => ({ data: [] }))
-        ]);
+  const { data: reviewsMap = new Map(), isLoading: reviewsLoading } = useQuery({
+    queryKey: ['driverReviews'],
+    queryFn: async () => {
+      const reviewsRes = await api.get('/api/v1/reviews/me').catch(() => ({ data: [] }));
+      const map = new Map<string, ReviewInfo>();
+      (reviewsRes.data as ReviewInfo[]).forEach(review => {
+        if (review.rideId) {
+          map.set(review.rideId, review);
+        }
+      });
+      return map;
+    },
+  });
 
-        setRides(historyRes.data);
-
-        // Créer un Map rideId -> review pour lookup rapide
-        const map = new Map<string, ReviewInfo>();
-        (reviewsRes.data as ReviewInfo[]).forEach(review => {
-          if (review.rideId) {
-            map.set(review.rideId, review);
-          }
-        });
-        setReviewsMap(map);
-      } catch (e) { 
-        console.error("Erreur historique enrichi:", e); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
-    fetchHistory();
-  }, []);
+  const loading = ridesLoading || reviewsLoading;
 
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center gap-4">

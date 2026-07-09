@@ -11,6 +11,7 @@ import {
   ChevronRight, CheckCircle2, XCircle, 
   AlertCircle, Play
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 // --- COMPOSANT : Carte Statistique ---
 const StatCard = ({ icon: Icon, label, value, suffix, color, delay }: {
@@ -140,35 +141,26 @@ const RecentRideCard = ({ ride, idx }: { ride: any; idx: number }) => {
 // --- PAGE PRINCIPALE ---
 export default function PassengerDashboard() {
   const [user, setUser] = useState<any>(null);
-  const [rides, setRides] = useState<any[]>([]);
-  const [activeRide, setActiveRide] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) setUser(JSON.parse(savedUser));
-    loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
-    try {
-      const [historyRes, currentRide] = await Promise.allSettled([
-        api.get('/api/v1/trips/enriched-history?page=0&size=10'),
-        rideService.getCurrentPassengerRide().catch(() => null),
-      ]);
+  const { data: rides = [], isLoading: ridesLoading } = useQuery({
+    queryKey: ['passengerHistory'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/trips/enriched-history?page=0&size=10');
+      return res.data || [];
+    },
+  });
 
-      if (historyRes.status === 'fulfilled') {
-        setRides(historyRes.value.data || []);
-      }
-      if (currentRide.status === 'fulfilled' && currentRide.value) {
-        setActiveRide(currentRide.value);
-      }
-    } catch (e) {
-      console.error('Dashboard load error:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: activeRide = null, isLoading: rideLoading } = useQuery({
+    queryKey: ['passengerActiveRide'],
+    queryFn: () => rideService.getCurrentPassengerRide().catch(() => null),
+  });
+
+  const loading = ridesLoading || rideLoading;
 
   // Calculs statistiques
   const completedRides = rides.filter((r: any) => r.state === 'COMPLETED');
