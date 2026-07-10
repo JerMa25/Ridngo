@@ -167,8 +167,11 @@ public class UserR2dbcAdapter implements UserRepositoryPort {
                 .map(tuple -> User.builder()
                         .id(entity.getId())
                         .name(entity.getName())
+                        .firstName(entity.getFirstName())
+                        .lastName(entity.getLastName())
                         .email(entity.getEmail())
                         .telephone(entity.getTelephone())
+                        .photoUri(entity.getPhotoUri())
                         .roles(tuple.getT1())
                         .directPermissions(tuple.getT2())
                         .build());

@@ -84,10 +84,14 @@ public class ReviewService {
 
     public Flux<ReviewResponse> getReviewsForDriver(UUID driverId) {
         return reviewRepository.findAllByDriverId(driverId)
-                .flatMap(review -> userRepository.findUserById(review.passengerId())
-                        .map(user -> mapToResponse(review, user))
-                        .defaultIfEmpty(mapToResponse(review, User.builder().firstName("Client").lastName("Anonyme").build()))
-                );
+                .flatMap(review -> {
+                    if (review.passengerId() == null) {
+                        return Mono.just(mapToResponse(review, User.builder().firstName("Client").lastName("Anonyme").build()));
+                    }
+                    return userRepository.findUserById(review.passengerId())
+                            .map(user -> mapToResponse(review, user))
+                            .defaultIfEmpty(mapToResponse(review, User.builder().firstName("Client").lastName("Anonyme").build()));
+                });
     }
 
     private ReviewResponse mapToResponse(Review review, User passenger) {
