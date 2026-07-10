@@ -13,9 +13,9 @@ spring:
 
   # POSTGRESQL (R2DBC)
   r2dbc:
-    url: r2dbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}?schema=ride_and_go
-    username: ${DB_USERNAME:fleet_admin}
-    password: ${DB_PASSWORD:fleet_password}
+    url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?schema=${DB_SCHEMA}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     pool:
       enabled: true
       initial-size: 1
@@ -27,9 +27,9 @@ spring:
       validation-query: SELECT 1
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}?currentSchema=ride_and_go
-    username: ${DB_USERNAME:fleet_admin}
-    password: ${DB_PASSWORD:fleet_password}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?currentSchema=${DB_SCHEMA}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   # Liquibase
@@ -38,9 +38,9 @@ spring:
     user:  ${DB_LIQUIBASE_USERNAME}
     password: ${DB_LIQUIBASE_PASSWORD}
     change-log: classpath:db/changelog/db.changelog-master.yaml
-    default-schema: ${DB_SCHEMA:ride_and_go} # Force Liquibase à travailler dans ce schéma
-    liquibase-schema: ${DB_SCHEMA:ride_and_go} # Stocke les tables de gestion Liquibase ici aussi
-    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:yowyob_db}
+    default-schema: ${DB_SCHEMA} # Force Liquibase à travailler dans ce schéma
+    liquibase-schema: ${DB_SCHEMA} # Stocke les tables de gestion Liquibase ici aussi
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
 
   sql:
     init:
@@ -49,15 +49,15 @@ spring:
   # REDIS CLUSTER
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:password}
+      password: ${REDIS_PASSWORD}
       cluster:
         enabled: false
 
   # KAFKA
   kafka:
-    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT:9092}
     consumer:
       group-id: ride-and-go-group
       auto-offset-reset: earliest
@@ -105,7 +105,7 @@ application:
     url: https://traefikdev.yowyob.com/ugate
 
   payment:
-    url: https://traefikdev.yowyob.com/payment
+    url: 
     commission-rate: 0.10
 
   kafka:

@@ -16,19 +16,19 @@ spring:
   # DATABASE — Liquibase
   # ------------------------------------------------------------------
   liquibase:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:yowyob}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
     user: ${DB_LIQUIBASE_USERNAME}
     password: ${DB_LIQUIBASE_PASSWORD}
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
-    default-schema: ${DB_SCHEMA:ride_and_go}
-    liquibase-schema: ${DB_SCHEMA:ride_and_go}
+    default-schema: ${DB_SCHEMA}
+    liquibase-schema: ${DB_SCHEMA}
 
   # ------------------------------------------------------------------
   # DATABASE — Datasource JDBC
   # ------------------------------------------------------------------
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:yowyob}?currentSchema=${DB_SCHEMA:ride_and_go}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?currentSchema=${DB_SCHEMA}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -37,7 +37,7 @@ spring:
   # DATABASE — R2DBC réactif
   # ------------------------------------------------------------------
   r2dbc:
-    url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:yowyob}?schema=${DB_SCHEMA:ride_and_go}
+    url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?schema=${DB_SCHEMA}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     pool:
@@ -56,42 +56,16 @@ spring:
   # ------------------------------------------------------------------
   data:
     redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       username: ${REDIS_USERNAME}
       password: ${REDIS_PASSWORD}
-      cluster:
-        nodes:
-          - redis-node-1:6379
-          - redis-node-2:6379
-          - redis-node-3:6379
-          - redis-node-4:6379
-          - redis-node-5:6379
-          - redis-node-6:6379
-        max-redirects: 3
-      lettuce:
-        pool:
-          max-active: 16
-          max-idle: 8
-          min-idle: 2
-        cluster:
-          refresh:
-            adaptive: true
-            period: 30s
-            dynamic-refresh-sources: false
 
   # ------------------------------------------------------------------
   # KAFKA — Connexion sécurisée SASL/SCRAM-SHA-256
   # ------------------------------------------------------------------
   kafka:
     bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT:29092}
-
-    # ── Authentification SASL/SCRAM-SHA-256 ────────────────────────
-    properties:
-      security.protocol: SASL_PLAINTEXT
-      sasl.mechanism: SCRAM-SHA-256
-      sasl.jaas.config: >
-        org.apache.kafka.common.security.scram.ScramLoginModule required
-        username="${KAFKA_BACKEND_USER}"
-        password="${KAFKA_BACKEND_PASSWORD}";
 
     # ── Consumer ────────────────────────────────────────────────────
     consumer:
@@ -162,7 +136,7 @@ application:
     url: https://traefikdev.yowyob.com/ugate
 
   payment:
-    url: https://traefikdev.yowyob.com/payment
+    url: 
     commission-rate: 0.10
 
   kafka:

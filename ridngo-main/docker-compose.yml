@@ -3,14 +3,20 @@ services:
   postgres:
     image: postgres:16
     container_name: ride-go-db
-    ports:
-      - "5433:5432"
+
     environment:
       POSTGRES_DB: yowyob_db
       POSTGRES_USER: fleet_admin
       POSTGRES_PASSWORD: fleet_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5433:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleet_admin -d yowyob_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # 2. Cache Redis pour le tracking GPS
   redis:
@@ -38,38 +44,43 @@ services:
       - --advertise-kafka-addr plaintext://redpanda:29092,external://localhost:9092
 
   backend:
-      image: ridngo-backend
-      container_name: ride-go-api
 
-      depends_on:
-        - postgres
-        - redis
-        - redpanda
+    image: ridngo-backend
 
-      ports:
-        - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
-      environment:
+    environment:
 
-        SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: prod
 
-        DB_HOST: postgres
-        DB_PORT: 5432
-        DB_NAME: yowyob_db
-        DB_SCHEMA: ride_and_go
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: yowyob_db
+      DB_SCHEMA: ride_and_go
 
-        DB_USERNAME: fleet_admin
-        DB_PASSWORD: fleet_password
+      DB_USERNAME: fleet_admin
+      DB_PASSWORD: fleet_password
 
-        DB_LIQUIBASE_USERNAME: fleet_admin
-        DB_LIQUIBASE_PASSWORD: fleet_password
+      DB_LIQUIBASE_USERNAME: fleet_admin
+      DB_LIQUIBASE_PASSWORD: fleet_password
 
-        REDIS_HOST: redis
-        REDIS_PORT: 6379
-        REDIS_PASSWORD: password
+      REDIS_USERNAME: ""
+      REDIS_PASSWORD: password
 
-        KAFKA_HOST: redpanda
-        KAFKA_PORT: 29092
+      KAFKA_HOST: redpanda
+      KAFKA_PORT: 29092
+
+      KAFKA_BACKEND_USER: backend
+      KAFKA_BACKEND_PASSWORD: backend123
+
+      NOTIFICATION_SERVICE_TOKEN: ton-token
+
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: tonmail@gmail.com
+      SMTP_PASSWORD: tonpassword
 
 volumes:
   postgres_data:
