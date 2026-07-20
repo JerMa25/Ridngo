@@ -3,6 +3,47 @@
 import React, { useEffect, useRef, useState } from 'react';
 import NavigooMap from 'navigoo';
 
+// ─────────────────────────────────────────────
+// CONSTANTES POI (Idem Mobile)
+// ─────────────────────────────────────────────
+const POI_LOCAUX = [
+  { nom: "Dispensaire Messassi", latitude: 3.9463, longitude: 11.5221 },
+  { nom: "Hôpital Central de Yaoundé", latitude: 3.8681, longitude: 11.5135 },
+  { nom: "Hôpital Gynéco-Obstétrique (Ngousso)", latitude: 3.9015, longitude: 11.5401 },
+  { nom: "CHU de Yaoundé", latitude: 3.8628, longitude: 11.4961 },
+  { nom: "Hôpital Jamot", latitude: 3.8824, longitude: 11.5303 },
+  { nom: "Hôpital de District de Djoungolo", latitude: 3.8817, longitude: 11.5225 },
+  { nom: "Monument de la Réunification", latitude: 3.8506, longitude: 11.5131 },
+  { nom: "Musée National du Cameroun", latitude: 3.8633, longitude: 11.5175 },
+  { nom: "Palais des Congrès de Yaoundé", latitude: 3.8936, longitude: 11.5039 },
+  { nom: "Stade Ahmadou Ahidjo (Omnisports)", latitude: 3.8847, longitude: 11.5414 },
+  { nom: "Palais Polyvalent des Sports (Warda)", latitude: 3.8739, longitude: 11.5119 },
+  { nom: "Complexe Sportif d'Olembe", latitude: 3.9514, longitude: 11.5369 },
+  { nom: "Parcours Vita", latitude: 3.9031, longitude: 11.4965 },
+  { nom: "Université de Yaoundé I (Ngoa-Ekellé)", latitude: 3.8595, longitude: 11.5002 },
+  { nom: "Université de Yaoundé II (Soa)", latitude: 3.9833, longitude: 11.6000 },
+  { nom: "Hôtel de Ville de Yaoundé", latitude: 3.8617, longitude: 11.5208 },
+  { nom: "Palais de l'Unité (Présidence)", latitude: 3.8961, longitude: 11.5136 },
+  { nom: "Gare Voyageurs de Yaoundé (Camrail)", latitude: 3.8689, longitude: 11.5244 },
+  { nom: "Aéroport de Yaoundé-Ville", latitude: 3.8364, longitude: 11.5208 },
+  { nom: "Marché Central", latitude: 3.8647, longitude: 11.5233 },
+  { nom: "Marché Mokolo", latitude: 3.8725, longitude: 11.4981 },
+  { nom: "Carrefour Mvog Mbi", latitude: 3.8512, longitude: 11.5219 },
+  { nom: "Carrefour Coron", latitude: 3.8471, longitude: 11.5207 },
+  { nom: "Carrefour Bastos", latitude: 3.8945, longitude: 11.5112 },
+  { nom: "Carrefour Obili", latitude: 3.8614, longitude: 11.4915 },
+  { nom: "Carrefour Biyem-Assi", latitude: 3.8415, longitude: 11.4884 },
+  { nom: "Bastos (Ambassades)", latitude: 3.8967, longitude: 11.5125 },
+  { nom: "Biyem-Assi", latitude: 3.8392, longitude: 11.4851 },
+  { nom: "Etoudi (Quartier Présidence)", latitude: 3.9156, longitude: 11.5292 },
+  { nom: "Nsam", latitude: 3.8292, longitude: 11.5090 },
+  { nom: "Messassi (Sortie Nord)", latitude: 3.9463, longitude: 11.5221 },
+  { nom: "Essos", latitude: 3.8735, longitude: 11.5365 },
+  { nom: "Mimboman", latitude: 3.8658, longitude: 11.5512 },
+  { nom: "Rond-point Poste Centrale", latitude: 3.8641, longitude: 11.5195 },
+  { nom: "Carrefour Carrière", latitude: 3.8852, longitude: 11.4919 },
+];
+
 interface MapProps {
   pickup?: { lat: number | string; lon: number | string; name?: string };
   destination?: { lat: number | string; lon: number | string; name?: string };
@@ -77,6 +118,45 @@ export default function MapView({ pickup, destination, partnerPos, heatmapPoints
       }
     };
   }, []); // [] : On ne ré-initialise jamais la carte sauf démontage complet
+
+  // --- 1.5. LOGIQUE POI (Intégration Mobile -> Web) ---
+  useEffect(() => {
+    if (!isMapReady || !mapInstance.current || !mapInstance.current.map) return;
+    
+    // Importation dynamique de leaflet côté client
+    let L: any;
+    try {
+      L = require('leaflet');
+    } catch (e) {
+      console.warn("Leaflet non disponible pour les POI");
+      return;
+    }
+
+    const map = mapInstance.current.map;
+    const poiMarkers: any[] = [];
+
+    const poiIcon = L.divIcon({
+      html: '<div style="width:12px;height:12px;border-radius:3px;background:#8B5CF6;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.6);"></div>',
+      iconSize: [12, 12],
+      iconAnchor: [6, 6],
+      className: ''
+    });
+
+    POI_LOCAUX.forEach(poi => {
+      try {
+        const marker = L.marker([poi.latitude, poi.longitude], { icon: poiIcon })
+          .bindPopup(`<b>${poi.nom}</b>`)
+          .addTo(map);
+        poiMarkers.push(marker);
+      } catch (e) {}
+    });
+
+    return () => {
+      poiMarkers.forEach(m => {
+        try { m.remove(); } catch (e) {}
+      });
+    };
+  }, [isMapReady]);
 
   // --- 2. LOGIQUE HEATMAP ---
   useEffect(() => {
