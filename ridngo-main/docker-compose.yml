@@ -1,17 +1,18 @@
+version: '3.8'
+
 services:
   # 1. Base de données PostgreSQL
   postgres:
     image: postgres:16
     container_name: ride-go-db
-
     environment:
       POSTGRES_DB: yowyob_db
       POSTGRES_USER: fleet_admin
       POSTGRES_PASSWORD: fleet_password
-
     ports:
       - "5433:5432"
-
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fleet_admin -d yowyob_db"]
       interval: 10s
@@ -43,40 +44,43 @@ services:
       - --kafka-addr plaintext://0.0.0.0:29092,external://0.0.0.0:9092
       - --advertise-kafka-addr plaintext://redpanda:29092,external://localhost:9092
 
+  # 4. Application Backend Spring Boot
   backend:
-
     image: ridngo-backend
-
+    container_name: ridngo-main-backend-1
+    build: .
     depends_on:
       postgres:
         condition: service_healthy
-
+    ports:
+      - "8080:8080"
     environment:
-
       SPRING_PROFILES_ACTIVE: prod
 
+      # Base de données
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: yowyob_db
       DB_SCHEMA: ride_and_go
-
       DB_USERNAME: fleet_admin
       DB_PASSWORD: fleet_password
-
       DB_LIQUIBASE_USERNAME: fleet_admin
       DB_LIQUIBASE_PASSWORD: fleet_password
 
+      # Cache Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       REDIS_USERNAME: ""
       REDIS_PASSWORD: password
 
+      # Broker Kafka (Redpanda)
       KAFKA_HOST: redpanda
       KAFKA_PORT: 29092
-
       KAFKA_BACKEND_USER: backend
       KAFKA_BACKEND_PASSWORD: backend123
 
+      # Services tiers & Emails
       NOTIFICATION_SERVICE_TOKEN: ton-token
-
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: 587
       SMTP_USERNAME: tonmail@gmail.com
