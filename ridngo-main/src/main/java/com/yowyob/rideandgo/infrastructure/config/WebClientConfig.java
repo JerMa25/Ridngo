@@ -30,10 +30,23 @@ public class WebClientConfig {
 
     private final HttpClient httpClient = HttpClient.create().wiretap(true);
 
+    @Value("${application.kernel.client-id}")
+    private String kernelClientId;
+
+    @Value("${application.kernel.api-key}")
+    private String kernelApiKey;
+
+    @Value("${application.kernel.tenant-id:}")
+    private String kernelTenantId;
+
     @Bean
     public PaymentApiClient paymentApiClient(WebClient.Builder builder,
             @Value("${application.payment.url}") String url) {
-        WebClient webClient = builder.baseUrl(url).build();
+        WebClient webClient = builder
+                .baseUrl(url)
+                .filter(kernelAuthFilter())
+                .filter(addBearerToken())
+                .build();
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
         return HttpServiceProxyFactory.builderFor(adapter).build().createClient(PaymentApiClient.class);
     }
@@ -55,13 +68,13 @@ public class WebClientConfig {
     @Bean
     public AuthApiClient authApiClient(WebClient.Builder builder,
             @Value("${application.auth.url}") String url) {
-        
-        // On applique le connector Netty au builder
+
         WebClient webClient = builder
                 .baseUrl(url)
-                .clientConnector(new ReactorClientHttpConnector(httpClient)) // Injection Netty
-                .filter(addBearerToken()) 
-                .filter(logRequest()) 
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .filter(kernelAuthFilter())
+                .filter(addBearerToken())
+                .filter(logRequest())
                 .build();
 
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
@@ -71,11 +84,11 @@ public class WebClientConfig {
 
     private ExchangeFilterFunction logRequest() {
         return (request, next) -> {
-            // ✅ LOG ÉLARGI : On loggue tout ce qui va vers le service Auth pour debug
             log.info("🚀 [WebClient Outbound] {} {}", request.method(), request.url());
-            request.headers().forEach((name, values) -> 
+            request.headers().forEach((name, values) ->
                 values.forEach(value -> {
-                    String maskedValue = name.equalsIgnoreCase("Authorization") ? "Bearer ********" : value;
+                    String maskedValue = (name.equalsIgnoreCase("Authorization") || name.equalsIgnoreCase("X-Api-Key"))
+                            ? "********" : value;
                     log.info("   🧩 Header: {}={}", name, maskedValue);
                 })
             );
@@ -85,11 +98,12 @@ public class WebClientConfig {
 
     @Bean
     public NotificationApiClient notificationApiClient(WebClient.Builder builder,
-            @Value("${application.notification.url}") String url,
-            @Value("${application.notification.service-token}") String serviceToken) {
+            @Value("${application.notification.url}") String url) {
+        // X-Service-Token retiré : le Kernel Core utilise X-Client-Id + X-Api-Key + Bearer
         WebClient webClient = builder
                 .baseUrl(url)
-                .defaultHeader("X-Service-Token", serviceToken)
+                .filter(kernelAuthFilter())
+                .filter(addBearerToken())
                 .build();
 
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
@@ -99,7 +113,7 @@ public class WebClientConfig {
     @Bean
     public SyndicateApiClient syndicateApiClient(WebClient.Builder builder,
             @Value("${application.syndicate.url}") String url) {
-        WebClient webClient = builder.baseUrl(url).filter(addBearerToken()).build(); 
+        WebClient webClient = builder.baseUrl(url).filter(addBearerToken()).build();
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
         return HttpServiceProxyFactory.builderFor(adapter).build().createClient(SyndicateApiClient.class);
     }
@@ -107,9 +121,29 @@ public class WebClientConfig {
     @Bean
     public VehicleApiClient vehicleApiClient(WebClient.Builder builder,
             @Value("${application.vehicle.url}") String url) {
-        WebClient webClient = builder.baseUrl(url).filter(addBearerToken()).build();
+        WebClient webClient = builder
+                .baseUrl(url)
+                .filter(kernelAuthFilter())
+                .filter(addBearerToken())
+                .build();
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
         return HttpServiceProxyFactory.builderFor(adapter).build().createClient(VehicleApiClient.class);
+    }
+
+    /**
+     * Injecte les credentials d'application cliente Kernel Core sur chaque requête :
+     * X-Client-Id + X-Api-Key (lus depuis application.kernel.client-id / api-key).
+     */
+    private ExchangeFilterFunction kernelAuthFilter() {
+        return (request, next) -> {
+            ClientRequest newRequest = ClientRequest.from(request)
+                    .headers(headers -> {
+                        headers.set("X-Client-Id", kernelClientId);
+                        headers.set("X-Api-Key", kernelApiKey);
+                    })
+                    .build();
+            return next.exchange(newRequest);
+        };
     }
 
     private ExchangeFilterFunction addBearerToken() {
@@ -117,8 +151,9 @@ public class WebClientConfig {
             URI url = request.url();
             String path = url.getPath();
 
-            // Ne pas ajouter de token pour les routes publiques d'auth
-            if (path.contains("/auth/login") || path.contains("/auth/register") || path.contains("/auth/refresh")) {
+            // Pas de Bearer token sur les routes publiques d'auth
+            if (path.contains("/auth/login") || path.contains("/auth/sign-up") || path.contains("/auth/refresh")
+                    || path.contains("/auth/discover-contexts") || path.contains("/auth/select-context")) {
                 return next.exchange(request);
             }
 
@@ -134,7 +169,6 @@ public class WebClientConfig {
                         }
                         return next.exchange(request);
                     })
-                    // ✅ CRITIQUE : Si le contexte est vide (ex: appel swagger sans login), on loggue l'absence de token
                     .switchIfEmpty(Mono.defer(() -> {
                         log.warn("⚠️ [WebClient] No Security Context found for path: {}. Sending without token.", path);
                         return next.exchange(request);

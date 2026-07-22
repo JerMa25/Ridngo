@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. Base de données PostgreSQL
   postgres:
@@ -8,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: yowyob_db
       POSTGRES_USER: fleet_admin
-      POSTGRES_PASSWORD: fleet_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -25,7 +23,7 @@ services:
     container_name: ride-go-redis
     ports:
       - "6379:6379"
-    command: redis-server --requirepass password
+    command: redis-server --requirepass ${REDIS_PASSWORD}
 
   # 3. Kafka (Redpanda) pour les notifications
   redpanda:
@@ -46,6 +44,10 @@ services:
 
   # 4. Application Backend Spring Boot
   backend:
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
     image: ridngo-backend
     container_name: ridngo-main-backend-1
     build: .
@@ -55,7 +57,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
 
       # Base de données
       DB_HOST: postgres
@@ -63,28 +65,32 @@ services:
       DB_NAME: yowyob_db
       DB_SCHEMA: ride_and_go
       DB_USERNAME: fleet_admin
-      DB_PASSWORD: fleet_password
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_LIQUIBASE_USERNAME: fleet_admin
-      DB_LIQUIBASE_PASSWORD: fleet_password
+      DB_LIQUIBASE_PASSWORD: ${DB_PASSWORD}
 
       # Cache Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_USERNAME: ""
-      REDIS_PASSWORD: password
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # Broker Kafka (Redpanda)
       KAFKA_HOST: redpanda
       KAFKA_PORT: 29092
       KAFKA_BACKEND_USER: backend
-      KAFKA_BACKEND_PASSWORD: backend123
+      KAFKA_BACKEND_PASSWORD: ${KAFKA_BACKEND_PASSWORD}
 
       # Services tiers & Emails
-      NOTIFICATION_SERVICE_TOKEN: ton-token
+      NOTIFICATION_SERVICE_TOKEN: ${NOTIFICATION_SERVICE_TOKEN}
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: 587
-      SMTP_USERNAME: tonmail@gmail.com
-      SMTP_PASSWORD: tonpassword
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      KERNEL_CLIENT_ID: ${KERNEL_CLIENT_ID}
+      KERNEL_API_KEY: ${KERNEL_API_KEY}
+      APPLICATION_KERNEL_TENANT_ID: ${APPLICATION_KERNEL_TENANT_ID}
+      FARE_API_KEY: ${FARE_API_KEY}
 
 volumes:
   postgres_data:

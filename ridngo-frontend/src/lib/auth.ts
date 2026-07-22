@@ -11,7 +11,7 @@ export const handleAuthSubmit = async (
   try {
     if (type === 'login') {
       const response = await api.post<AuthResponse>('/api/v1/auth/login', {
-        identifier: data.email,
+        principal: data.email,
         password: data.password
       });
       return await finalizeSession(response.data);
@@ -72,7 +72,7 @@ const finalizeSession = async (authData: AuthResponse) => {
     username: userProfile.username || userProfile.name?.split(' ')[0] || userProfile.firstName,
     email: userProfile.email,
     phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
-    role: userProfile.roles[0].replace('RIDE_AND_GO_', '')
+    role: userProfile.roles?.[0]?.replace('RIDE_AND_GO_', '') || 'PASSENGER'
   };
   
   localStorage.setItem('user', JSON.stringify(userObj));

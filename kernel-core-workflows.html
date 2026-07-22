@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kernel Core — Workflows, endpoints et intégration des applications clientes</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'base', securityLevel: 'loose', themeVariables: { primaryColor: '#dbeafe', primaryTextColor: '#0f172a', primaryBorderColor: '#2563eb', lineColor: '#334155', secondaryColor: '#ecfdf5', tertiaryColor: '#fff7ed', fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif' }});</script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #cbd5e1;
+      --blue: #2563eb;
+      --green: #059669;
+      --amber: #d97706;
+      --red: #dc2626;
+      --violet: #7c3aed;
+      --code: #0f172a;
+      --code-bg: #e2e8f0;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }
+    header { padding: 44px 56px 30px; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 54%, #0f766e 100%); color: white; }
+    header h1 { margin: 0 0 10px; font-size: 34px; letter-spacing: -0.03em; }
+    header p { margin: 0; max-width: 1050px; color: #dbeafe; font-size: 16px; }
+    main { max-width: 1440px; margin: 0 auto; padding: 28px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 26px; margin: 0 0 22px; box-shadow: 0 8px 24px rgba(15,23,42,.06); }
+    h2 { margin: 0 0 14px; font-size: 24px; letter-spacing: -0.02em; }
+    h3 { margin: 22px 0 10px; font-size: 17px; }
+    p { margin: 8px 0; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: #fff; }
+    .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; } .span-6 { grid-column: span 6; } .span-12 { grid-column: span 12; }
+    .tag { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; margin: 0 5px 6px 0; }
+    .tag.blue { background:#dbeafe; color:#1d4ed8; } .tag.green { background:#dcfce7; color:#047857; } .tag.amber { background:#fef3c7; color:#b45309; } .tag.red { background:#fee2e2; color:#b91c1c; } .tag.violet { background:#ede9fe; color:#6d28d9; }
+    code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    code { background: var(--code-bg); color: var(--code); border-radius: 6px; padding: 1px 5px; }
+    pre { background: #0f172a; color: #e5e7eb; padding: 14px; border-radius: 12px; overflow:auto; font-size: 13px; }
+    table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; vertical-align: top; }
+    th { background:#f1f5f9; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color:#334155; }
+    .mermaid { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin: 16px 0; overflow-x:auto; }
+    .note { border-left: 4px solid var(--blue); background:#eff6ff; padding: 12px 14px; border-radius: 10px; color:#1e3a8a; }
+    .warn { border-left: 4px solid var(--amber); background:#fffbeb; padding: 12px 14px; border-radius: 10px; color:#78350f; }
+    .danger { border-left: 4px solid var(--red); background:#fef2f2; padding: 12px 14px; border-radius: 10px; color:#7f1d1d; }
+    ul { margin-top: 8px; }
+    @media (max-width: 900px) { header { padding: 30px 22px; } main { padding: 16px; } .span-3,.span-4,.span-6 { grid-column: span 12; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Kernel Core — Workflows complets</h1>
+  <p>Document de référence pour les développeurs : sécurité transverse, création de comptes, business actors, tenants, organisations, gouvernance (business actors, identity-onboarding, fusion), rôles, services, documents &amp; KYC/VerifID, recherche globale, paiement et intégration des applications clientes.</p>
+</header>
+<main>
+<section>
+  <h2>1. Concepts structurants</h2>
+  <div class="grid">
+    <div class="card span-3"><span class="tag blue">Tenant</span><p>Frontière d’isolation. Un tenant peut contenir une ou plusieurs organisations si elles appartiennent au même espace client. Un client indépendant doit idéalement avoir son propre tenant.</p></div>
+    <div class="card span-3"><span class="tag green">Organisation</span><p>Structure métier qui consomme les services : accounting, HRM, file, treasury, etc. Les modules organisationnels exigent <code>X-Organization-Id</code>.</p></div>
+    <div class="card span-3"><span class="tag amber">BusinessActor</span><p>Profil business lié à un utilisateur. <code>role=OWNER</code> est un rôle métier, pas un rôle technique RBAC.</p></div>
+    <div class="card span-3"><span class="tag violet">ClientApplication</span><p>Identité d’une application cliente : <code>clientId</code> + <code>apiKey</code> + <code>allowedServices</code> + quotas.</p></div>
+  </div>
+  <div class="note"><strong>Règle de sécurité :</strong> toute requête <code>/api/**</code> passe d’abord par la ClientApplication. Les endpoints utilisateur protégés exigent ensuite un <code>Authorization: Bearer</code>. Les endpoints organisationnels vérifient aussi l’organisation et son abonnement au service ciblé.</div>
+</section>
+
+<section>
+  <h2>2. Chaîne d’accès API — toutes les applications clientes</h2>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant App as Application cliente / BFF
+  participant Kernel as Kernel Security Filters
+  participant CA as kernel.client_application
+  participant JWT as JWT / permissions
+  participant Org as Organization entitlement
+  participant Core as Core métier
+
+  App->>Kernel: HTTP api request\nClientId ApiKey Tenant Organization Bearer
+  Kernel->>CA: Vérifier clientId + apiKey hash + status ACTIVE
+  CA-->>Kernel: allowedServices + quotas app
+  alt Endpoint public auth ou callback whitelisté
+    Kernel->>Core: laisse passer avec contexte client
+  else Endpoint user protégé
+    Kernel->>JWT: Décoder Bearer, denylist, userId, actorId
+    JWT-->>Kernel: tenant/session/permissions
+    Kernel->>Org: si route org-scoped, vérifier X-Organization-Id + abonnement service + quota
+    Org-->>Kernel: autorisé / refusé
+    Kernel->>Core: injecte TenantContext et poursuit
+  end
+  Core-->>App: ApiResponse
+  </div>
+  <table>
+    <tr><th>Élément</th><th>Obligatoire quand ?</th><th>Rôle</th></tr>
+    <tr><td><code>X-Client-Id</code></td><td>Tous les <code>/api/**</code></td><td>Identifie l’application cliente.</td></tr>
+    <tr><td><code>X-Api-Key</code></td><td>Tous les <code>/api/**</code></td><td>Authentifie l’application cliente. Jamais stockée en clair ; seul le hash reste en DB.</td></tr>
+    <tr><td><code>X-Tenant-Id</code></td><td>Auth ciblée, appels tenant-scoped, app externe</td><td>Définit l’espace dans lequel la requête agit.</td></tr>
+    <tr><td><code>Authorization: Bearer</code></td><td>Endpoints utilisateur protégés</td><td>Porte userId, actorId, permissions, tenant actif.</td></tr>
+    <tr><td><code>X-Organization-Id</code></td><td>Modules organisationnels</td><td>Scopage organisation + contrôle abonnement/quota service.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>3. Cycle de vie d’une ClientApplication</h2>
+  <div class="mermaid">
+flowchart LR
+  Admin["Admin plateforme"] -->|"Créer app"| Create["POST client-applications"]
+  Create --> DB["kernel.client_application"]
+  DB --> Secret["apiKey affichée une seule fois"]
+  Admin -->|"Mettre à jour"| Update["PATCH client-applications by id"]
+  Admin -->|"Rotation clé"| Rotate["POST rotate-secret"]
+  Admin -->|"Révocation"| Revoke["POST revoke"]
+  App["Application cliente"] -->|"Introspection"| Me["GET client-applications me"]
+  App -->|"Autoriser service"| Authz["POST authorize service"]
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th><th>Autorisation</th></tr>
+    <tr><td><code>GET /api/client-applications/me</code></td><td>L’app voit son id, tenant, organisation, agence, allowedServices.</td><td>ClientApplication authentifiée.</td></tr>
+    <tr><td><code>GET /api/platform-services</code></td><td>Catalogue des services natifs + externes allocables.</td><td>ClientApplication authentifiée.</td></tr>
+    <tr><td><code>POST /api/platform-services</code></td><td>Enregistrer un service externe.</td><td>Admin client-apps.</td></tr>
+    <tr><td><code>GET /api/client-applications</code></td><td>Lister les applications clientes.</td><td>Admin client-apps.</td></tr>
+    <tr><td><code>POST /api/client-applications</code></td><td>Créer une app et recevoir l’apiKey en clair une seule fois.</td><td>Admin client-apps.</td></tr>
+    <tr><td><code>PATCH /api/client-applications/{clientApplicationId}</code></td><td>Mettre à jour nom, plan, allowedServices, quotas.</td><td>Admin client-apps.</td></tr>
+    <tr><td><code>POST /api/client-applications/{clientApplicationId}/rotate-secret</code></td><td>Régénérer la clé.</td><td>Admin client-apps.</td></tr>
+    <tr><td><code>POST /api/client-applications/{clientApplicationId}/revoke</code></td><td>Désactiver l’application.</td><td>Admin client-apps.</td></tr>
+    <tr><td><code>POST /api/client-applications/me/authorize?service=ACCOUNTING</code></td><td>Autorisation coopérative pour backend externe.</td><td>ClientApplication authentifiée.</td></tr>
+  </table>
+  <pre>{
+  "clientId": "business-core",
+  "name": "Business Core",
+  "description": "Backend Business Core",
+  "planCode": "STANDARD",
+  "allowedServices": ["AUTH", "ORGANIZATION", "ACTOR", "FILE", "PAYMENT"],
+  "requestQuotaLimit": 10000,
+  "requestQuotaWindowSeconds": 3600
+}</pre>
+  <div class="note"><strong>Catalogue & recherche :</strong> à la création/mise à jour, une application cliente (non <code>systemManaged</code>) est publiée dans la recherche <code>yowyob-search</code> (collection <code>client_application</code>) avec des champs <strong>sûrs uniquement</strong> — jamais le secret. Voir §8ter. L'endpoint <code>GET /api/client-applications</code> reste réservé aux admins ; un catalogue user-facing passe par le BFF ou la recherche.</div>
+</section>
+
+<section>
+  <h2>4. Flux Auth : inscription, vérification, login, refresh</h2>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant Front as Front/BFF
+  participant Auth as Auth Core
+  participant Mail as Email/OTP
+  participant Roles as Roles Core
+  participant Kernel as JWT Service
+
+  Front->>Auth: POST /api/auth/sign-up\nX-Client-Id + X-Api-Key\nbody user
+  Auth->>Mail: envoie vérification email si LOCAL strict
+  Auth-->>Front: 201 EMAIL_VERIFICATION_REQUIRED
+  Front->>Auth: POST /api/auth/email-verification/confirm
+  Auth-->>Front: emailVerified=true
+  Front->>Auth: POST /api/auth/discover-contexts ou /login
+  Auth->>Roles: resolvePermissions(tenant actif, user)
+  alt MFA requis
+    Auth-->>Front: 202 CONFIRM_MFA
+    Front->>Auth: POST /api/auth/login/mfa/confirm
+  end
+  Auth->>Kernel: issue accessToken + refreshToken
+  Kernel-->>Front: accessToken 15min + refreshToken rotatif
+  Front->>Auth: POST /api/auth/refresh
+  Auth-->>Front: nouveau accessToken + nouveau refreshToken
+  Front->>Auth: POST /api/auth/logout
+  Auth-->>Front: access denylisted + refresh révoqué
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Rôle</th></tr>
+    <tr><td><code>POST /api/auth/identify</code></td><td>Identifier un compte à partir d’un principal.</td></tr>
+    <tr><td><code>POST /api/auth/sign-up</code></td><td>Créer un compte public. Sans <code>tenantId</code>/<code>selectionToken</code>, peut créer un nouvel espace selon le flux applicatif.</td></tr>
+    <tr><td><code>POST /api/auth/email-verification/resend</code></td><td>Renvoyer une vérification email pour un compte non connecté.</td></tr>
+    <tr><td><code>POST /api/auth/email-verification/confirm</code></td><td>Valider l’email.</td></tr>
+    <tr><td><code>POST /api/auth/discover-contexts</code></td><td>Lister les tenants/organisations accessibles avant choix de contexte.</td></tr>
+    <tr><td><code>POST /api/auth/login</code></td><td>Se connecter dans le tenant demandé.</td></tr>
+    <tr><td><code>POST /api/auth/select-context</code></td><td>Choisir un contexte après découverte.</td></tr>
+    <tr><td><code>POST /api/auth/login/mfa/confirm</code></td><td>Confirmer MFA login.</td></tr>
+    <tr><td><code>POST /api/auth/refresh</code></td><td>Rotation refresh token + nouvel access token.</td></tr>
+    <tr><td><code>POST /api/auth/logout</code></td><td>Révoquer session.</td></tr>
+    <tr><td><code>POST /api/auth/me/spaces</code></td><td>Créer un nouvel espace/tenant possédé par le user connecté.</td></tr>
+    <tr><td><code>GET /api/users/me</code></td><td>Profil du user connecté. Expose <code>firstName</code>, <code>lastName</code>, <code>profession</code> (dérivés de l'Actor), ainsi que <code>businessActorId</code> + <code>businessActorStatus</code> (<code>APPROVED</code>/<code>PENDING_REVIEW</code>/…) dérivés en direct — le front en déduit le rôle « business actor approuvé » sans dépendre du seul <code>accountType</code>.</td></tr>
+    <tr><td><code>PUT /api/actors/me/identity</code></td><td>Mise à jour <strong>self-service</strong> de l'identité de base du user (prénom, nom, téléphone, photo) — sans permission d'organisation. À distinguer de <code>PUT /api/actors/{actorId}</code> (réservé à la gestion d'employés d'une org) et de <code>PUT /api/actors/me</code> (met à jour le profil business actor).</td></tr>
+  </table>
+  <div class="note"><strong>Session (B2) :</strong> tous les chemins de login (login direct, confirmation MFA, sélection de contexte) émettent un <code>refreshToken</code> rotatif (TTL 14 jours) en plus de l'<code>accessToken</code> (~15 min). Le front prolonge la session via <code>POST /api/auth/refresh</code> sans re-login.</div>
+</section>
+
+<section>
+  <h2>5. Flux tenant / espace / organisation</h2>
+  <div class="mermaid">
+flowchart TD
+  U["Utilisateur connecté"] --> Choice{"Tenant existant sélectionné"}
+  Choice -->|"Oui autorisé"| Existing["Agir dans ce tenant"]
+  Choice -->|"Non champ vide"| New["POST auth me spaces"]
+  Existing --> BA["POST actors onboarding"]
+  New --> BA
+  BA --> Org["POST organizations"]
+  Org --> Gov{"Validation plateforme requise"}
+  Gov -->|"Oui"| Admin["Admin plateforme"]
+  Admin -->|"Lister"| ListAll["GET governance organizations all"]
+  Admin -->|"Décider"| Approve["APPROVE ou REJECT"]
+  Gov -->|"Non"| Active["Organisation utilisable"]
+  Approve --> Active
+  Active --> Roles2["POST roles defaults"]
+  Roles2 --> Assign["POST users roles ORGANIZATION_ADMIN"]
+  Assign --> Ready["Owner technique prêt"]
+  </div>
+  <div class="warn"><strong>Décision produit :</strong> le user choisit un tenant existant parmi ceux auxquels il a droit. S’il laisse le champ vide, le système crée un nouveau tenant. Le système ne doit jamais accepter un <code>targetTenantId</code> arbitraire sans vérifier l’accès.</div>
+  <table>
+    <tr><th>Étape</th><th>Endpoint</th><th>Annotation</th></tr>
+    <tr><td>Créer espace</td><td><code>POST /api/auth/me/spaces</code></td><td>Crée un nouveau tenant/espace possédé par l’utilisateur courant.</td></tr>
+    <tr><td>Business actor</td><td><code>POST /api/actors/onboarding</code></td><td><code>role=OWNER</code> = propriétaire métier, pas permission RBAC.</td></tr>
+    <tr><td>Voir business actor</td><td><code>GET /api/actors/me</code></td><td>Retourne le businessActor du user dans le tenant actif.</td></tr>
+    <tr><td>Créer organisation</td><td><code>POST /api/organizations</code></td><td>Self-service : le owner est dérivé du user connecté ; l’admin plateforme peut provisionner pour un businessActor explicite.</td></tr>
+    <tr><td>Mes organisations</td><td><code>GET /api/organizations/my</code></td><td>Liste les organisations possédées par le businessActor courant.</td></tr>
+    <tr><td>Gouvernance locale</td><td><code>POST /api/organizations/{id}/approve</code> ou <code>/reject</code></td><td>Validation dans le tenant courant.</td></tr>
+    <tr><td>Gouvernance cross-tenant</td><td><code>GET /api/administration/governance/organizations/all</code><br><code>POST /api/administration/governance/organizations/{id}/all</code></td><td>Admin plateforme, pour les orgs self-service créées dans leurs propres tenants.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5bis. Parcours complet : personne, business actor, espaces, organisations et employés</h2>
+  <div class="mermaid">
+flowchart TD
+  Start["Personne arrive"] --> Signup["POST auth sign-up"]
+  Signup --> Verify["POST email verification confirm"]
+  Verify --> Simple["User simple"]
+  Simple --> Login["POST auth login"]
+  Login --> Contexts["GET auth me memberships"]
+  Simple --> BA["POST actors onboarding"]
+  BA --> BAPending["BusinessActor pending"]
+  PlatformAdmin["Admin plateforme"] --> BAList["GET governance business actors"]
+  BAList --> BAApprove["POST governance business actor"]
+  BAApprove --> BAOk["BusinessActor approved"]
+  BAOk --> SpaceChoice{"Créer ou choisir espace"}
+  SpaceChoice -->|"Nouveau tenant"| NewSpace["POST auth me spaces"]
+  SpaceChoice -->|"Tenant existant autorisé"| ExistingTenant["Session avec X-Tenant-Id"]
+  NewSpace --> OrgA["POST organizations - Org A"]
+  ExistingTenant --> OrgA
+  OrgA --> OrgAPending["Org A pending"]
+  PlatformAdmin --> OrgAll["GET governance organizations all"]
+  OrgAll --> OrgApprove["POST governance organization all"]
+  OrgApprove --> OrgAOk["Org A approved"]
+  OrgAOk --> Roles["POST roles defaults"]
+  Roles --> OwnerRole["POST users roles owner"]
+  OrgAOk --> OrgB["POST organizations - Org B même tenant"]
+  OrgB --> OrgBApprove["Admin valide Org B"]
+  OrgAOk --> OtherTenant["User choisit autre tenant autorisé"]
+  OtherTenant --> OrgC["POST organizations - Org C autre tenant"]
+  OrgC --> OrgCApprove["Admin valide Org C"]
+  OrgAOk --> HRM["POST organization services HRM"]
+  HRM --> EmpMode{"Ajouter employé"}
+  EmpMode -->|"Création directe"| DirectEmp["POST employees invite avec password"]
+  DirectEmp --> DirectDone["Compte + actor + membership + rôle"]
+  EmpMode -->|"Invitation / inscription"| Invite["POST employees invite sans password"]
+  Invite --> Join["POST discover sign-up contexts"]
+  Join --> SignUpSelection["POST sign-up avec selectionToken"]
+  SignUpSelection --> Member["User rejoint tenant/org"]
+  Member --> EmployeeRole["Membership + rôle appliqués"]
+  </div>
+  <div class="note"><strong>Lecture du flux :</strong> une personne reste un seul compte utilisateur global. Elle peut agir dans plusieurs espaces/tenants via ses memberships. Chaque organisation reste isolée par <code>tenant_id</code> et <code>organization_id</code>.</div>
+  <table>
+    <tr><th>Action</th><th>Endpoint exact</th><th>Ce qui doit se passer</th></tr>
+    <tr><td>Créer compte simple</td><td><code>POST /api/auth/sign-up</code></td><td>Crée <code>auth_core.user_account</code>. Email à vérifier si compte LOCAL.</td></tr>
+    <tr><td>Vérifier email</td><td><code>POST /api/auth/email-verification/confirm</code></td><td>Active la connexion du compte.</td></tr>
+    <tr><td>Se connecter</td><td><code>POST /api/auth/login</code></td><td>Émet <code>accessToken</code> + <code>refreshToken</code> dans le tenant demandé.</td></tr>
+    <tr><td>Voir ses espaces</td><td><code>GET /api/auth/me/memberships</code></td><td>Liste les tenants/orgs/rôles accessibles par la personne.</td></tr>
+    <tr><td>Devenir business actor</td><td><code>POST /api/actors/onboarding</code></td><td>Crée le profil business. <code>role=OWNER</code> est métier, pas encore RBAC.</td></tr>
+    <tr><td>Valider business actor</td><td><code>GET /api/administration/governance/business-actors</code><br><code>POST /api/administration/governance/business-actors/{businessActorId}</code></td><td>L’admin plateforme applique <code>APPROVE</code> ou <code>REJECT</code>.</td></tr>
+    <tr><td>Créer nouvel espace</td><td><code>POST /api/auth/me/spaces</code></td><td>Crée un nouveau tenant/espace possédé par le compte courant.</td></tr>
+    <tr><td>Créer organisation dans tenant existant</td><td><code>POST /api/organizations</code> avec session dans le tenant choisi</td><td>Le user ne peut utiliser qu’un tenant présent dans ses memberships.</td></tr>
+    <tr><td>Créer plusieurs organisations même tenant</td><td><code>POST /api/organizations</code> répété avec le même <code>X-Tenant-Id</code></td><td>Chaque org a son propre <code>organizationId</code>, mêmes frontières tenant.</td></tr>
+    <tr><td>Créer organisation autre tenant</td><td><code>POST /api/organizations</code> avec un autre <code>X-Tenant-Id</code> autorisé</td><td>Isolation par autre tenant ; validation admin si requise.</td></tr>
+    <tr><td>Valider organisations cross-tenant</td><td><code>GET /api/administration/governance/organizations/all</code><br><code>POST /api/administration/governance/organizations/{organizationId}/all</code></td><td>Admin plateforme valide les demandes même si l’org est dans un autre tenant.</td></tr>
+    <tr><td>Activer HRM</td><td><code>POST /api/organizations/{organizationId}/services</code></td><td>Abonne l’organisation au service <code>HRM</code>, nécessaire pour <code>/api/employees/*</code>.</td></tr>
+    <tr><td>Créer employé directement</td><td><code>POST /api/employees/invite?organizationId={organizationId}</code></td><td>Avec <code>email</code>, infos profil, <code>roleId</code> et éventuellement <code>password</code> : crée compte/actor/membership/rôle.</td></tr>
+    <tr><td>Inviter / faire rejoindre</td><td><code>POST /api/employees/invite?organizationId={organizationId}</code><br><code>POST /api/auth/discover-sign-up-contexts</code><br><code>POST /api/auth/sign-up</code> avec <code>signUpSelectionToken</code> + <code>contextId</code></td><td>Le nouvel utilisateur s’inscrit dans le contexte organisationnel sélectionné.</td></tr>
+  </table>
+  <div class="warn"><strong>À standardiser ensuite :</strong> le body de <code>POST /api/organizations</code> devrait accepter explicitement <code>targetTenantId</code> ou le dériver d’une sélection validée. Aujourd’hui le tenant effectif vient surtout du contexte de session / header.</div>
+</section>
+
+<section>
+  <h2>6. BusinessActor et validation plateforme</h2>
+  <div class="mermaid">
+flowchart LR
+  User["Owner candidat"] --> BA["POST actors onboarding"]
+  BA --> Pending["BusinessActor en attente"]
+  Admin["Admin plateforme"] --> List["GET governance business actors"]
+  List --> Decision{"Décision admin"}
+  Decision -->|"APPROVE"| Approved["BusinessActor validé"]
+  Decision -->|"REJECT"| Rejected["BusinessActor rejeté"]
+  Approved --> Me["GET actors me"]
+  Me --> Profile["Profil business actor courant"]
+  </div>
+  <pre>{
+  "code": "AUTO_ECOLE_OWNER",
+  "isIndividual": false,
+  "isAvailable": true,
+  "isVerified": false,
+  "isActive": true,
+  "type": "BUSINESS_ACTOR",
+  "role": "OWNER",
+  "name": "Auto École Owner",
+  "businessId": "BUS-AUTO-ECOLE-001"
+}</pre>
+  <div class="danger"><strong>Norme :</strong> un business actor et une organisation doivent être <strong>approuvés</strong> pour exister. On ne peut pas créer d'organisation sans business actor <strong>approuvé</strong> — <code>POST /api/organizations</code> renvoie <code>409 BUSINESS_ACTOR_NOT_APPROVED</code> sinon.</div>
+  <div class="note"><strong>Modèle d'autorisation (important pour le front) :</strong> <strong>approuver un business actor lui accorde la permission <code>organizations:write</code></strong> (dérivée à la résolution des droits, sans mutation d'état). Conséquence : après son approbation, le business actor doit <strong>se reconnecter (ou rafraîchir son token)</strong> pour que son JWT porte cette permission et puisse créer son organisation. Un simple user sans BA approuvé reste en <code>403</code> sur <code>POST /api/organizations</code>.</div>
+  <div class="note"><strong>Notification admin (B14) :</strong> à chaque nouvelle demande de business actor (statut <code>PENDING_REVIEW</code>), les admins habilités à la gouvernance sont notifiés automatiquement — plus besoin de consulter la file proactivement.</div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th><th>Autorisation</th></tr>
+    <tr><td><code>GET /api/administration/governance/business-actors</code></td><td>Lister les demandes de business actors (filtrable par statut).</td><td>Admin gouvernance BA.</td></tr>
+    <tr><td><code>POST /api/administration/governance/business-actors/{businessActorId}</code></td><td>Décision <code>APPROVE</code> / <code>REJECT</code> / <code>SUSPEND</code> / <code>BLOCK</code> / <code>REACTIVATE</code>. Tolère l'<code>id</code> du profil BA <strong>ou</strong> l'<code>actorId</code>.</td><td>Admin gouvernance BA.</td></tr>
+    <tr><td><code>POST /api/administration/governance/business-actors/{primaryId}/merge/{duplicateId}</code></td><td>Fusionner un business actor doublon dans un principal : ré-attache ses organisations au principal puis bloque le doublon (résout les doubles profils créés par les apps clientes).</td><td>Admin gouvernance BA.</td></tr>
+    <tr><td><code>POST /api/administration/governance/identity-onboarding/{userId}</code></td><td>Décision <code>APPROVE</code> / <code>REJECT</code> sur une demande d'identity-onboarding (KYC identité) — transitionne l'<code>onboardingStatus</code> du compte.</td><td>Admin gouvernance BA.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>7. Rôles, permissions et scopes</h2>
+  <div class="mermaid">
+flowchart LR
+  Admin["Admin ou owner technique"] --> Defaults["POST roles defaults"]
+  Defaults --> Roles["roles_core.role"]
+  Admin --> List["GET administration roles"]
+  List --> Pick["Choisir un rôle"]
+  Pick --> Assign["POST users roles"]
+  Assign --> A["roles_core.user_role_assignment"]
+  A --> JWT["Login ou refresh porte les permissions"]
+  JWT --> API["Accès aux endpoints métier"]
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th></tr>
+    <tr><td><code>GET /api/administration/permissions</code></td><td>Catalogue des permissions disponibles.</td></tr>
+    <tr><td><code>GET /api/administration/role-templates</code></td><td>Templates par défaut.</td></tr>
+    <tr><td><code>POST /api/administration/roles/defaults</code></td><td>Provisionner les rôles standard du tenant/org.</td></tr>
+    <tr><td><code>GET /api/administration/roles</code></td><td>Lister les rôles.</td></tr>
+    <tr><td><code>POST /api/administration/roles</code></td><td>Créer un rôle custom.</td></tr>
+    <tr><td><code>PUT /api/administration/roles/{roleId}/permissions</code></td><td>Remplacer les permissions d’un rôle.</td></tr>
+    <tr><td><code>POST /api/administration/users/{userId}/roles</code></td><td>Assigner un rôle scoped <code>TENANT</code>, <code>ORGANIZATION</code> ou <code>AGENCY</code>.</td></tr>
+    <tr><td><code>DELETE /api/administration/users/{userId}/roles/{assignmentId}</code></td><td>Retirer un rôle.</td></tr>
+  </table>
+  <pre>{
+  "roleId": "<ORGANIZATION_ADMIN_ROLE_ID>",
+  "scopeType": "ORGANIZATION",
+  "scopeId": "<ORGANIZATION_ID>",
+  "scope": "ORGANIZATION"
+}</pre>
+</section>
+
+<section>
+  <h2>8. Services d’organisation, plans et quotas</h2>
+  <div class="mermaid">
+flowchart TD
+  Owner["Owner organisation"] --> Catalog["GET services catalog"]
+  Owner --> Packs["GET services packs"]
+  Owner --> Plans["GET commercial subscriptions catalog"]
+  Owner --> Manual["POST organization services"]
+  Owner --> Plan["POST commercial subscriptions"]
+  Manual --> Entitlement["organization_service_subscription"]
+  Plan --> Entitlement
+  Entitlement --> Quota["PATCH service quota"]
+  Entitlement --> Runtime["Filtre Kernel autorise ou refuse"]
+  Owner --> Unsub["DELETE organization service"]
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th></tr>
+    <tr><td><code>GET /api/organizations/services/catalog</code></td><td>Catalogue des services de plateforme.</td></tr>
+    <tr><td><code>GET /api/organizations/services/packs</code></td><td>Packs de services.</td></tr>
+    <tr><td><code>GET /api/organizations/commercial-subscriptions/catalog</code></td><td>Plans commerciaux + add-ons.</td></tr>
+    <tr><td><code>POST /api/organizations/{organizationId}/services</code></td><td>Allouer un service à une organisation.</td></tr>
+    <tr><td><code>GET /api/organizations/{organizationId}/services</code></td><td>Voir les services actifs de l’organisation.</td></tr>
+    <tr><td><code>PATCH /api/organizations/{organizationId}/services/{serviceCode}/quota</code></td><td>Ajuster le quota organisation-service.</td></tr>
+    <tr><td><code>DELETE /api/organizations/{organizationId}/services/{serviceCode}</code></td><td>Désallouer un service.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>8bis. Documents, KYC / VerifID et gouvernance documentaire</h2>
+  <div class="mermaid">
+flowchart TD
+  User["Utilisateur"] -->|"Upload CNI"| Up["POST files (targetType USER/ACTOR/BA)"]
+  Up --> Quarantine["Fichier PENDING (quarantaine)"]
+  Quarantine --> VerifID["Analyse VerifID async"]
+  VerifID -->|"OK"| Accepted["ACCEPTED (téléchargeable)"]
+  VerifID -->|"KO / injoignable"| Blocked["REJECTED / reste PENDING"]
+  Admin["Admin"] -->|"Relancer"| Reanalyze["POST files id reanalyze"]
+  Reanalyze --> Quarantine
+  Admin -->|"Tous les docs d'un compte"| Agg["GET document-hub accounts userId"]
+  Admin -->|"Pièces obligatoires"| Checklist["GET document-hub checklist"]
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th><th>Autorisation</th></tr>
+    <tr><td><code>POST /api/files</code></td><td>Upload d'un document. Un document <strong>personnel</strong> (<code>targetType=USER/ACTOR/BUSINESS_ACTOR</code>, ex : CNI) s'attache <strong>sans organisation</strong> (corrige l'ancien 500 quand aucune org n'était en contexte).</td><td>User authentifié.</td></tr>
+    <tr><td><code>POST /api/document-hub/links</code></td><td>Rattacher un fichier à une cible (USER/ACTOR/BA/ORGANIZATION/AGENCY).</td><td>User authentifié.</td></tr>
+    <tr><td><code>GET /api/document-hub/accounts/{userId}</code></td><td>Tous les documents d'un compte en une route : union de ses cibles <code>USER</code> + <code>ACTOR</code> + <code>BUSINESS_ACTOR</code> + organisations possédées (plus besoin d'agréger côté front).</td><td>Admin (lecture audit).</td></tr>
+    <tr><td><code>GET /api/document-hub/organizations/{orgId}/checklist/{targetType}/{targetId}</code></td><td>Checklist des pièces <strong>obligatoires</strong> imposée par le backend (policies mandatory) + présence de chacune ; <code>complete=true</code> si tout est fourni.</td><td>User authentifié.</td></tr>
+    <tr><td><code>POST /api/files/{fileId}/reanalyze</code></td><td>Relancer l'analyse VerifID d'un document bloqué en <code>PENDING</code>/<code>REJECTED</code> (remise en quarantaine + re-vérification).</td><td>Admin (lecture audit).</td></tr>
+    <tr><td><code>GET /api/files/{fileId}/review</code></td><td>Consulter le binaire d'un document en quarantaine.</td><td>Admin (lecture audit).</td></tr>
+  </table>
+  <div class="note"><strong>VerifID :</strong> l'analyse KYC est asynchrone (quarantaine → verdict <code>ACCEPTED</code>/<code>REJECTED</code>). Elle ne s'applique qu'aux documents KYC d'une organisation abonnée au service <code>KYC</code> ; sinon le fichier est accepté directement.</div>
+</section>
+
+<section>
+  <h2>8ter. Recherche globale (yowyob-search)</h2>
+  <p>La plateforme consolide toute la recherche sur le service externe <code>yowyob-search</code>. Chaque événement métier du kernel (tous modules) y est poussé automatiquement : collection = type d'agrégat, ré-hydratation des champs sûrs (ou fallback sur le payload). Chaque module ne publie que des champs non sensibles.</p>
+  <table>
+    <tr><th>Élément</th><th>Détail</th></tr>
+    <tr><td>Couverture</td><td>Les 17 modules du kernel (organisations, business actors, produits, tiers, ressources, factures…) alimentent la recherche sans données critiques.</td></tr>
+    <tr><td>Catalogue de services</td><td>Les <strong>client-applications</strong> sont indexées (collection <code>client_application</code>) avec <strong>uniquement</strong> <code>clientId</code>, <code>name</code>, <code>description</code>, <code>status</code>, <code>allowedServiceCodes</code> — <strong>jamais</strong> le secret. Les apps <code>systemManaged</code> sont exclues ; une app révoquée est retirée.</td></tr>
+    <tr><td>Applications externes</td><td>Les apps déployées à part (yowpainter, rental, caisse…) doivent intégrer le client <code>yowyob-search</code> dans leur propre dépôt pour apparaître dans les résultats — le kernel ne pousse que ses données.</td></tr>
+  </table>
+  <div class="warn"><strong>Config déploiement :</strong> l'envoi vers <code>yowyob-search</code> est conditionné par <code>iwm.search.yowyob.enabled=true</code> (variable d'environnement du déploiement). Sans elle, les événements restent dans l'outbox sans être indexés.</div>
+</section>
+
+<section>
+  <h2>9. Paiement : plans, bundles, wallet, provider callbacks</h2>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant Front as Front/BFF
+  participant Pay as Payment Core
+  participant Gateway as MyCoolPay / Stripe
+  participant Org as Organization Core
+  participant Notif as Notification
+
+  Front->>Pay: POST commercial plan quote
+  Pay-->>Front: montant calculé par le serveur
+  Front->>Pay: POST commercial plan checkout\norganizationId provider method payerReference
+  Pay->>Gateway: initier encaissement
+  Gateway-->>Pay: redirectUrl / providerReference
+  Pay-->>Front: orderId + paymentOrderId + redirectUrl
+  Gateway->>Pay: POST payment callback provider
+  Pay->>Pay: vérifier signature/statut
+  Pay->>Org: activer plan/services si SUCCESS
+  Pay->>Notif: notifier client
+  Front->>Pay: POST commercial plan order refresh
+  Pay-->>Front: statut final
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th></tr>
+    <tr><td><code>POST /api/payments/orders</code></td><td>Initier un paiement générique.</td></tr>
+    <tr><td><code>GET /api/payments/orders/{id}</code></td><td>Lire un ordre de paiement.</td></tr>
+    <tr><td><code>POST /api/payments/orders/{id}/refresh</code></td><td>Rafraîchir le statut auprès du provider.</td></tr>
+    <tr><td><code>POST payment callback provider</code></td><td>Webhook public provider, vérifié côté gateway.</td></tr>
+    <tr><td><code>POST commercial plan quote</code></td><td>Calculer serveur le prix d’un plan + add-ons.</td></tr>
+    <tr><td><code>POST /api/commercial-plans/{planCode}/checkout</code></td><td>Payer un plan commercial.</td></tr>
+    <tr><td><code>POST /api/service-bundles/quote</code></td><td>Calculer un ensemble libre de services.</td></tr>
+    <tr><td><code>POST /api/service-bundles/checkout</code></td><td>Payer un ensemble libre de services.</td></tr>
+    <tr><td><code>POST /api/plans/{planCode}/auto-renewal</code></td><td>Activer renouvellement automatique.</td></tr>
+    <tr><td><code>DELETE /api/plans/{planCode}/auto-renewal</code></td><td>Désactiver renouvellement automatique.</td></tr>
+    <tr><td><code>GET /api/plans/renewal-orders</code></td><td>Voir les ordres de renouvellement.</td></tr>
+  </table>
+  <div class="danger"><strong>Règle paiement :</strong> le client ne fixe jamais le prix final. Il envoie le plan ou les services demandés ; le Kernel calcule le montant via le catalogue/pricing, crée l’ordre, puis applique les services seulement après paiement confirmé.</div>
+</section>
+
+<section>
+  <h2>10. Wallets</h2>
+  <div class="mermaid">
+flowchart LR
+  Owner["Owner user ou organisation"] --> Create["POST payments wallets"]
+  Create --> Wallet["payment_core.wallet"]
+  Wallet --> Recharge["POST wallet recharge"]
+  Recharge --> ROrder["Recharge order"]
+  ROrder --> Refresh["POST recharge order refresh"]
+  Refresh --> Credit["Crédit wallet si succès provider"]
+  Wallet --> Pay["POST wallet pay"]
+  Pay --> Tx["Transaction débit"]
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th>Usage</th></tr>
+    <tr><td><code>POST /api/payments/wallets</code></td><td>Créer un wallet pour un owner.</td></tr>
+    <tr><td><code>GET /api/payments/wallets/{walletId}</code></td><td>Lire un wallet.</td></tr>
+    <tr><td><code>GET /api/payments/wallets/owner/{ownerId}</code></td><td>Wallets d’un owner.</td></tr>
+    <tr><td><code>POST /api/payments/wallets/{walletId}/recharge</code></td><td>Démarrer recharge provider sécurisée.</td></tr>
+    <tr><td><code>POST /api/payments/wallets/recharge-orders/{orderId}/refresh</code></td><td>Confirmer provider et créditer si succès.</td></tr>
+    <tr><td><code>POST /api/payments/wallets/{walletId}/pay</code></td><td>Payer depuis le solde wallet.</td></tr>
+    <tr><td><code>GET /api/payments/wallets/{walletId}/transactions</code></td><td>Historique wallet.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>11. Applications clientes externes : comment elles doivent venir</h2>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant Dev as Dev app cliente
+  participant Admin as Admin Kernel
+  participant Kernel as Kernel Core
+  participant App as Backend/BFF client
+  participant Front as Front client
+
+  Dev->>Admin: Demande clientId + services nécessaires\nex: AUTH, ORGANIZATION, FILE, PAYMENT
+  Admin->>Kernel: POST /api/client-applications
+  Kernel-->>Admin: clientId + apiKey une seule fois
+  Admin-->>Dev: Variables env sécurisées
+  Dev->>App: Configure variables Kernel côté serveur
+  Front->>App: Appel front normal
+  App->>Kernel: X-Client-Id + X-Api-Key + X-Tenant-Id + Bearer user si besoin
+  Kernel-->>App: autorisé/refusé selon client app + user + org service
+  </div>
+  <h3>Variables recommandées côté backend/BFF client</h3>
+  <pre>KERNEL_BASE_URL=https://kernel-core.yowyob.com/kernel-api
+KERNEL_CLIENT_ID=<client-id>
+KERNEL_API_KEY=<api-key>
+KERNEL_TENANT_ID=<tenant-id-si-app-scopée>
+KERNEL_ORGANIZATION_ID=<organization-id-si-app-organisationnelle>
+KERNEL_FORWARD_AUTH_URL=https://kernel-core.yowyob.com/kernel-api/api/client-applications/me/authorize</pre>
+  <h3>Contrat minimal d’appel</h3>
+  <pre>curl -X GET "https://kernel-core.yowyob.com/kernel-api/api/client-applications/me" \
+  -H "X-Client-Id: <client-id>" \
+  -H "X-Api-Key: <api-key>"</pre>
+  <div class="warn"><strong>Ne jamais exposer l’API key dans un front pur.</strong> Un front Next/React public doit passer par un BFF ou backend qui garde <code>KERNEL_API_KEY</code> côté serveur. Le front peut porter le Bearer utilisateur, pas la clé d’application.</div>
+</section>
+
+<section>
+  <h2>12. Routage recommandé des apps déployées</h2>
+  <div class="mermaid">
+flowchart LR
+  Browser["Navigateur"] --> Traefik["Traefik / Reverse Proxy"]
+  Traefik -->|"racine"| Front["Frontend"]
+  Traefik -->|"service-api"| BFF["Backend ou BFF"]
+  BFF -->|"Kernel API"| Kernel["kernel-core.yowyob.com/kernel-api"]
+  Kernel --> DB["PostgreSQL kernel-core"]
+  Kernel --> Redis["Redis quotas sessions"]
+  Kernel --> Kafka["Kafka events"]
+  Kernel --> Minio["MinIO files"]
+  </div>
+  <table>
+    <tr><th>Type app</th><th>Racine</th><th>Backend</th><th>Remarque</th></tr>
+    <tr><td>Frontend classique</td><td><code>https://app.yowyob.com/</code></td><td><code>https://app.yowyob.com/app-api/</code></td><td>Le frontend ne garde pas l’apiKey Kernel.</td></tr>
+    <tr><td>BFF</td><td><code>https://app.yowyob.com/</code></td><td><code>/app-api</code> ou routes serveur Next</td><td>Le BFF signe les appels Kernel avec la ClientApplication.</td></tr>
+    <tr><td>Backend externe autonome</td><td>—</td><td><code>https://backend.yowyob.com/api</code></td><td>Utilise <code>/me/authorize</code> ou forwardAuth/gateway pour vérifier les droits.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>13. Tables DB à connaître</h2>
+  <table>
+    <tr><th>Table</th><th>Contenu</th></tr>
+    <tr><td><code>kernel.client_application</code></td><td>Client apps, clientId, secret hash, allowed services, quotas.</td></tr>
+    <tr><td><code>kernel.client_application_plan</code></td><td>Plans de ClientApplication.</td></tr>
+    <tr><td><code>auth_core.user_account</code></td><td>Comptes utilisateurs.</td></tr>
+    <tr><td><code>auth_core.refresh_token</code></td><td>Refresh tokens hashés/rotatifs.</td></tr>
+    <tr><td><code>actor.actor</code></td><td>Identité personne/acteur.</td></tr>
+    <tr><td><code>actor.business_actor_profile</code></td><td>Business actors.</td></tr>
+    <tr><td><code>organization.organization</code></td><td>Organisations.</td></tr>
+    <tr><td><code>organization.organization_service_subscription</code></td><td>Services actifs par organisation.</td></tr>
+    <tr><td><code>file_core.stored_file</code></td><td>Fichiers stockés + statut d'analyse VerifID (PENDING/ACCEPTED/REJECTED).</td></tr>
+    <tr><td><code>file_core.document_link</code></td><td>Rattachement document ↔ cible (<code>organization_id</code> nullable pour les docs personnels).</td></tr>
+    <tr><td><code>file.document_governance_policy</code></td><td>Policies documentaires (pièces obligatoires par type de cible) → checklist.</td></tr>
+    <tr><td><code>notification.delivery</code></td><td>Notifications (<code>organization_id</code> nullable pour les notifs de niveau plateforme, ex : gouvernance BA).</td></tr>
+    <tr><td><code>roles_core.role</code></td><td>Rôles RBAC.</td></tr>
+    <tr><td><code>roles_core.user_role_assignment</code></td><td>Affectations de rôles aux users.</td></tr>
+    <tr><td><code>payment_core.payment_order</code></td><td>Ordres de paiement génériques.</td></tr>
+    <tr><td><code>payment_core.commercial_plan_order</code></td><td>Commandes de plans commerciaux.</td></tr>
+    <tr><td><code>payment_core.service_bundle_order</code></td><td>Commandes d’ensembles libres de services.</td></tr>
+    <tr><td><code>payment_core.wallet</code></td><td>Wallets.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>14. Checklists pour développeurs</h2>
+  <div class="grid">
+    <div class="card span-6">
+      <h3>Créer une nouvelle app cliente</h3>
+      <ul>
+        <li>Définir si l’app est front pur, BFF ou backend autonome.</li>
+        <li>Lister les services nécessaires : <code>AUTH</code>, <code>ORGANIZATION</code>, <code>FILE</code>, <code>PAYMENT</code>, etc.</li>
+        <li>Créer la ClientApplication via <code>POST /api/client-applications</code>.</li>
+        <li>Stocker l’apiKey uniquement côté serveur/secrets.</li>
+        <li>Tester <code>GET /api/client-applications/me</code>.</li>
+      </ul>
+    </div>
+    <div class="card span-6">
+      <h3>Créer un client/organisation</h3>
+      <ul>
+        <li>User choisit un tenant accessible ou laisse vide pour nouveau tenant.</li>
+        <li>Créer l’espace si nécessaire avec <code>POST /api/auth/me/spaces</code>.</li>
+        <li>Créer businessActor avec <code>POST /api/actors/onboarding</code>.</li>
+        <li>Créer organisation avec <code>POST /api/organizations</code>.</li>
+        <li>Faire valider par gouvernance plateforme si requis.</li>
+        <li>Provisionner/assigner <code>ORGANIZATION_ADMIN</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+</body>
+</html>

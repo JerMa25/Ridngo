@@ -23,7 +23,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public Mono<AuthPort.AuthResponse> login(@RequestBody LoginRequest request) {
-        return authUseCase.login(request.identifier(), request.password());
+        return authUseCase.login(request.principal(), request.password());
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -48,7 +48,7 @@ public class AuthController {
         return authUseCase.refreshToken(request.refreshToken());
     }
 
-    public record LoginRequest(String identifier, String password) {
+    public record LoginRequest(String principal, String password) {
     }
 
     public record RefreshTokenDto(String refreshToken) {

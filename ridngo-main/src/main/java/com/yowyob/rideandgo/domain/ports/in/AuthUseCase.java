@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 public interface AuthUseCase {
-    Mono<AuthPort.AuthResponse> login(String identifier, String password);
+    Mono<AuthPort.AuthResponse> login(String principal, String password);
 
     Mono<AuthPort.AuthResponse> refreshToken(String refreshToken);
     

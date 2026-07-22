@@ -81,8 +81,8 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const res = await api.get('/api/v1/auth/refresh', {
-        params: { refreshToken }  // passe le token comme paramètre URL
+      const res = await api.post('/api/v1/auth/refresh', {
+        refreshToken
       });
 
       const { accessToken, refreshToken: newRefreshToken } = res.data;

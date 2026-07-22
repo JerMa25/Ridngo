@@ -108,14 +108,18 @@ spring:
 # ------------------------------------------------------------------
 application:
 
+  kernel:
+    client-id: ${KERNEL_CLIENT_ID}
+    api-key: ${KERNEL_API_KEY}
+
   auth:
     mode: remote
-    url: https://traefikdev.yowyob.com/auth
+    url: https://kernel-core.yowyob.com/kernel-api
 
   fare:
     mode: remote
     url: https://traefikdev.yowyob.com/fare-calculator
-    api-key: 974e9428-6ce2-48e7-b74b-93f572007ef8
+    api-key: ${FARE_API_KEY}
 
   notification:
     mode: http

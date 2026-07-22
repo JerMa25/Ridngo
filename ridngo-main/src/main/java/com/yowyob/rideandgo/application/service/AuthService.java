@@ -24,8 +24,8 @@ public class AuthService implements AuthUseCase {
     private final DriverRepositoryPort driverRepositoryPort;
 
     @Override
-    public Mono<AuthPort.AuthResponse> login(String identifier, String password) {
-        return authPort.login(identifier, password);
+    public Mono<AuthPort.AuthResponse> login(String principal, String password) {
+        return authPort.login(principal, password);
     }
 
     @Override

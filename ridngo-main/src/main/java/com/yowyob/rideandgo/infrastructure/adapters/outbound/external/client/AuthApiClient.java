@@ -1,7 +1,5 @@
 package com.yowyob.rideandgo.infrastructure.adapters.outbound.external.client;
 
-import org.springframework.http.MediaType;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.service.annotation.DeleteExchange;
@@ -10,81 +8,164 @@ import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.annotation.PostExchange;
 import org.springframework.web.service.annotation.PutExchange;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Client HTTP vers le Kernel Core (auth, users, roles).
+ * Base URL : https://kernel-core.yowyob.com/kernel-api
+ * Headers injectés par kernelAuthFilter() : X-Client-Id + X-Api-Key
+ * Headers injectés par addBearerToken()  : Authorization: Bearer <token>
+ */
 @HttpExchange("/api")
 public interface AuthApiClient {
 
-        // --- AUTH ---
-        @PostExchange("/auth/login")
-        Mono<TraMaSysResponse> login(@RequestBody LoginRequest request);
+    // ─── AUTH ─────────────────────────────────────────────────────────────────
 
-        @PostExchange(url = "/auth/register", contentType = MediaType.MULTIPART_FORM_DATA_VALUE)
-        Mono<TraMaSysResponse> register(@RequestBody MultiValueMap<String, ?> parts);
+    /** POST /api/auth/login — connexion dans le tenant par défaut */
+    @PostExchange("/auth/login")
+    Mono<KernelAuthResponse> login(@RequestBody KernelLoginRequest request);
 
-        @PostExchange(url = "/auth/refresh", contentType = "application/json")
-        Mono<TraMaSysResponse> refresh(@RequestBody RefreshTokenRequest request);
+    @PostExchange("/auth/discover-contexts")
+    Mono<KernelDiscoverContextsResponse> discoverContexts(@RequestBody KernelDiscoverContextsRequest request);
 
-        // --- USERS READ ---
-        @GetExchange("/users/service/{serviceName}")
-        Flux<UserDetail> getUsersByService(@PathVariable String serviceName);
+    @PostExchange("/auth/select-context")
+    Mono<KernelSelectContextResponse> selectContext(@RequestBody KernelSelectContextRequest request);
 
-        @GetExchange("/users/{id}")
-        Mono<UserDetail> getUserById(@PathVariable String id);
+    /** POST /api/auth/sign-up — création de compte (JSON pur) */
+    @PostExchange("/auth/sign-up")
+    Mono<KernelSignUpResponse> signUp(@RequestBody KernelSignUpRequest request);
 
-        // --- USERS WRITE (Propagation) ---
+    /** POST /api/auth/refresh — rotation du refreshToken */
+    @PostExchange("/auth/refresh")
+    Mono<KernelAuthResponse> refresh(@RequestBody KernelRefreshRequest request);
 
-        // Ajout de rôle (POST /api/users/{id}/roles/{roleName})
-        @PostExchange("/users/{id}/roles/{roleName}")
-        Mono<Void> addRole(@PathVariable String id, @PathVariable String roleName);
+    // ─── USERS ────────────────────────────────────────────────────────────────
 
-        // Suppression de rôle (DELETE /api/users/{id}/roles/{roleName})
-        @DeleteExchange("/users/{id}/roles/{roleName}")
-        Mono<Void> removeRole(@PathVariable String id, @PathVariable String roleName);
+    /** GET /api/users/me — profil du user connecté (nécessite Bearer) */
+    @GetExchange("/users/me")
+    Mono<KernelUserDetail> getMe();
 
-        // Mise à jour profil (PUT /api/users/{id})
-        @PutExchange("/users/{id}")
-        Mono<UserDetail> updateProfile(@PathVariable String id, @RequestBody UpdateProfileDto dto);
+    /** GET /api/users/{id} — profil d'un user par ID (admin) */
+    @GetExchange("/users/{id}")
+    Mono<KernelUserDetail> getUserById(@PathVariable String id);
 
-        // Changement mot de passe (PUT /api/users/{id}/password)
-        @PutExchange("/users/{id}/password")
-        Mono<Void> changePassword(@PathVariable String id, @RequestBody ChangePasswordDto dto);
+    // ─── ROLES ────────────────────────────────────────────────────────────────
 
-        // --- DTOs Internes pour le Client ---
+    /** POST /api/administration/users/{userId}/roles — assigner un rôle RBAC */
+    @PostExchange("/administration/users/{userId}/roles")
+    Mono<Void> assignRole(@PathVariable String userId, @RequestBody KernelAssignRoleRequest request);
 
-        record LoginRequest(String identifier, String password) {
-        }
+    /** DELETE /api/administration/users/{userId}/roles/{assignmentId} — retirer un rôle */
+    @DeleteExchange("/administration/users/{userId}/roles/{assignmentId}")
+    Mono<Void> removeRole(@PathVariable String userId, @PathVariable String assignmentId);
 
-        record RegisterRequest(
-                        String username, String password, String email, String phone,
-                        String firstName, String lastName, String service, List<String> roles) {
-        }
+    // ─── ACTOR (profil self-service) ──────────────────────────────────────────
 
-        record RefreshTokenRequest(String refreshToken) {}
+    /** PUT /api/actors/me/identity — mise à jour self-service des infos de base */
+    @PutExchange("/actors/me/identity")
+    Mono<KernelUserDetail> updateMyIdentity(@RequestBody KernelUpdateIdentityRequest request);
 
-        record TraMaSysResponse(String accessToken, String refreshToken, UserDetail user) {
-        }
+    // =========================================================================
+    // DTOs — Requêtes
+    // =========================================================================
 
-        record UserDetail(
-                        String id,
-                        String username,
-                        String email,
-                        String phone,
-                        String firstName,
-                        String lastName,
-                        String service,
-                        List<String> roles,
-                        List<String> permissions,
-                        UUID photoId,
-                        String photoUri) {
-        }
+    record KernelLoginRequest(String principal, String password) {}
 
-        record UpdateProfileDto(String firstName, String lastName, String phone) {
-        }
+    record KernelSignUpRequest(
+            String email,
+            String password,
+            String firstName,
+            String lastName,
+            String phone
+    ) {}
 
-        record ChangePasswordDto(String currentPassword, String newPassword) {
-        }
+    record KernelRefreshRequest(String refreshToken) {}
+
+    record KernelAssignRoleRequest(
+            String roleId,
+            String scopeType,
+            String scopeId,
+            String scope
+    ) {}
+
+    record KernelUpdateIdentityRequest(
+            String firstName,
+            String lastName,
+            String phone
+    ) {}
+
+    // =========================================================================
+    // DTOs — Réponses
+    // =========================================================================
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelDiscoverContextsRequest(String principal, String password) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelLoginContext(String contextId, String tenantId, String userId, String actorId) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelDiscoverContextsData(String selectionToken, Integer expiresInSeconds, List<KernelLoginContext> contexts) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelDiscoverContextsResponse(boolean success, KernelDiscoverContextsData data, String message, String errorCode) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelSelectContextRequest(String selectionToken, String contextId) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelSession(
+            String id, String tenantId, String actorId, String username, String email,
+            String status, String accountType, Boolean emailVerified,
+            String accessToken, String refreshToken, String tokenType,
+            Integer expiresInSeconds, List<String> authorities
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelSelectContextData(String selectedTenantId, String selectedOrganizationId, KernelSession session) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelSelectContextResponse(boolean success, KernelSelectContextData data, String message, String errorCode) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelAuthResponse(
+            String accessToken,
+            String refreshToken,
+            KernelUserDetail user
+    ) {}
+
+    /**
+     * La réponse sign-up peut retourner EMAIL_VERIFICATION_REQUIRED (201)
+     * sans tokens. On capture les champs communs de manière flexible.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelSignUpResponse(
+            String status,         // ex: "EMAIL_VERIFICATION_REQUIRED"
+            String message,
+            KernelUserDetail user
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record KernelUserDetail(
+            String id,
+            String email,
+            String firstName,
+            String lastName,
+            String username,
+            String phone,
+            List<String> roles,
+            List<String> permissions,
+            String businessActorId,
+            String businessActorStatus
+    ) {}
+
+    // ─── Compatibilité : alias pratiques pour les anciens champs mappés ────────
+
+    /** DTO de mise à jour de profil (utilisé par RemoteUserAdapter) */
+    record UpdateProfileDto(String firstName, String lastName, String phone) {}
+
+    /** DTO de changement de mot de passe (non supporté nativement Kernel Core) */
+    record ChangePasswordDto(String currentPassword, String newPassword) {}
 }

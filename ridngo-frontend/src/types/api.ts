@@ -3,6 +3,7 @@ export type OfferState = 'PENDING' | 'BID_RECEIVED' | 'DRIVER_SELECTED' | 'VALID
 export type RideState = 'CREATED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 
 export interface AuthResponse {
+  userId?: string;
   accessToken: string;
   refreshToken: string;
   username: string;
