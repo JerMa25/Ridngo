@@ -5,8 +5,8 @@ import java.util.UUID;
 
 @Builder
 public record Wallet(
-        UUID id,
-        UUID ownerId,
-        String ownerName,
-        double balance) {
+                UUID id,
+                UUID ownerId,
+                String ownerName,
+                double balance) {
 }

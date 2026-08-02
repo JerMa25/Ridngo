@@ -45,6 +45,14 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    @ExceptionHandler(com.yowyob.rideandgo.domain.exception.InvalidRegistrationDataException.class)
+    public ProblemDetail handleInvalidRegistrationData(
+            com.yowyob.rideandgo.domain.exception.InvalidRegistrationDataException e) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+        problemDetail.setTitle("Données d'inscription invalides");
+        return problemDetail;
+    }
+
     @ExceptionHandler(com.yowyob.rideandgo.domain.exception.WalletNotFoundException.class)
     public ProblemDetail handleWalletNotFound(com.yowyob.rideandgo.domain.exception.WalletNotFoundException e) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
@@ -53,7 +61,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(com.yowyob.rideandgo.domain.exception.DriverProfileNotValidatedException.class)
-    public ProblemDetail handleDriverNotValidated(com.yowyob.rideandgo.domain.exception.DriverProfileNotValidatedException e) {
+    public ProblemDetail handleDriverNotValidated(
+            com.yowyob.rideandgo.domain.exception.DriverProfileNotValidatedException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
     }
 }

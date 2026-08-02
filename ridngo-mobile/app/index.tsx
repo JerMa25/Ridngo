@@ -5,20 +5,25 @@ import { useAuth } from '../src/context/AuthContext';
 import { Colors } from '../src/types/theme';
 
 export default function Index() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isGuest, setAsGuest } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
-    if (!user) {
-      router.replace('/(auth)/landing');
+    
+    // Auto-guest si pas d'utilisateur et pas en train de charger
+    if (!user && !isGuest) {
+      setAsGuest();
+      return;
+    }
+
+    if (!user || isGuest) {
+      router.replace('/(passenger)/ride');
     } else if (user.role === 'DRIVER') {
       router.replace('/(driver)/dashboard');
-    } else if (user.role === 'ADMIN') {
-      router.replace('/(passenger)/ride');
     } else {
       router.replace('/(passenger)/ride');
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, isGuest, setAsGuest]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.dark, justifyContent: 'center', alignItems: 'center' }}>

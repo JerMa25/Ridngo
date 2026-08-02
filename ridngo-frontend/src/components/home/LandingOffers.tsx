@@ -49,7 +49,7 @@ export const LandingOffers = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-4">
-            <h2 className="text-orange-btn font-black tracking-[0.3em] text-xs uppercase">Opportunités Chauffeurs</h2>
+            <h2 className="text-orange-btn font-black tracking-[0.3em] text-xs uppercase">Courses disponibles</h2>
             <p className="text-4xl font-black text-foreground">Dernières offres publiées</p>
           </div>
           {renderCTA()}

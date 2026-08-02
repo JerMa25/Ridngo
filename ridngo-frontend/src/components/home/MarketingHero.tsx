@@ -7,12 +7,30 @@ import { rideService } from '@/lib/rideService';
 
 export const MarketingHero = () => {
   const [activeOffersCount, setActiveOffersCount] = useState(0);
+  const [userLocation, setUserLocation] = useState({ country: 'Cameroun', city: 'Douala', flag: '🇨🇲' });
 
   useEffect(() => {
     // On récupère le nombre réel de courses disponibles pour le mockup "Live"
     rideService.getLandingOffers().then(offers => {
       setActiveOffersCount(offers.length);
     }).catch(() => setActiveOffersCount(12)); // Fallback
+
+    // Récupération de la localisation par IP
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if (data.country_name) {
+          const code = data.country_code;
+          // Génération du drapeau emoji à partir du code pays (ex: 'CM' -> '🇨🇲')
+          const flag = code ? String.fromCodePoint(...[...code.toUpperCase()].map(c => c.charCodeAt(0) + 127397)) : '📍';
+          setUserLocation({
+            country: data.country_name,
+            city: data.city || 'Votre ville',
+            flag
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -25,7 +43,7 @@ export const MarketingHero = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 bg-orange-btn/10 text-orange-btn px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest"
           >
-            <MapPin size={14} /> Disponible à Douala & Yaoundé
+            <MapPin size={14} /> {userLocation.flag} {userLocation.country} · {userLocation.city} et environs
           </motion.div>
           
           <motion.h1 
@@ -39,7 +57,9 @@ export const MarketingHero = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-lg opacity-60 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed text-foreground"
           >
-            Le premier service de VTC au Cameroun qui vous laisse négocier votre prix. Pas d&apos;algorithme caché. Juste vous et le chauffeur.
+            Le service de ramassage par Taxi présent au {userLocation.country} <div></div> et qui vous laisse négocier votre prix. Pas d&apos;algorithme caché. Juste vous et le chauffeur.
+            <br />
+            <span className="text-xs italic mt-2 block opacity-70">🌍 Présent dans d&apos;autres pays.</span>
           </motion.p>
           
           {/* LES 3 BOUTONS DISTINCTS */}

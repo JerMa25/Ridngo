@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Minus, Phone, Clock, User as UserIcon, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Phone, Clock, User as UserIcon, Users, Send } from 'lucide-react';
 
 interface Props {
   price: number;
@@ -189,9 +189,10 @@ export const RidePriceSetting = ({
       <button 
         onClick={onPublish} 
         disabled={!passengerPhone || !departureTime}
-        className="w-full py-5 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-2xl font-black uppercase tracking-widest hover:bg-orange-btn hover:text-white transition-all shadow-xl disabled:opacity-20"
+        className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-20 flex items-center justify-center gap-3"
       >
-        Lancer la recherche
+        <span>Publier l'offre</span>
+        <Send size={18} />
       </button>
     </motion.div>
   );

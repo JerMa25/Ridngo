@@ -19,6 +19,12 @@ public interface UserUseCases {
 
     Mono<User> getUserById(UUID userId);
 
+    /**
+     * Profil de l'utilisateur actuellement authentifié — utilise GET /api/users/me
+     * côté Kernel.
+     */
+    Mono<User> getMyProfile(UUID userId);
+
     Mono<Boolean> deleteUserById(UUID userId);
 
     Flux<User> getAllUsers();

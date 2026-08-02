@@ -5,9 +5,11 @@ import { UserObj } from '../types/api';
 interface AuthContextType {
   user: UserObj | null;
   isLoading: boolean;
+  isGuest: boolean;
   login: (identifier: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  setAsGuest: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -15,6 +17,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserObj | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -23,7 +26,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loadUser = async () => {
     try {
       const u = await authService.getUser();
-      setUser(u);
+      if (u) {
+        setUser(u);
+        setIsGuest(false);
+      } else {
+        setIsGuest(true);
+      }
+    } catch (e) {
+      setIsGuest(true);
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +50,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     await authService.logout();
     setUser(null);
+    setIsGuest(true);
+  };
+
+  const setAsGuest = () => {
+    setIsGuest(true);
   };
 
   const refreshUser = async () => {
@@ -47,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, isGuest, login, logout, refreshUser, setAsGuest }}>
       {children}
     </AuthContext.Provider>
   );

@@ -849,7 +849,14 @@ export default function RideScreen() {
                     autoFocus
                   />
                 ) : (
-                  <Text style={[styles.phoneStatic, { color: Colors.text }]}>{myPhone || '---'}</Text>
+                  <TextInput
+                    style={[styles.phoneInput, { color: Colors.text }]}
+                    value={myPhone}
+                    onChangeText={setMyPhone}
+                    keyboardType="phone-pad"
+                    placeholder="Votre numéro de téléphone"
+                    placeholderTextColor={Colors.textMuted}
+                  />
                 )}
               </View>
 

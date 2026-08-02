@@ -1,6 +1,11 @@
 server:
   port: 8080
   forward-headers-strategy: framework
+  netty:
+    max-initial-line-length: 16384
+    max-header-size: 65536
+    max-chunk-size: 16384
+  max-http-request-header-size: 64KB
 
 spring:
   application:
@@ -10,6 +15,11 @@ spring:
   docker:
     compose:
       enabled: false
+  webflux:
+    netty:
+      server:
+        max-header-size: 32768
+        max-initial-line-length: 32768
 
   # POSTGRESQL (R2DBC)
   r2dbc:
@@ -35,7 +45,7 @@ spring:
   # Liquibase
   liquibase:
     enabled: true
-    user:  ${DB_LIQUIBASE_USERNAME}
+    user: ${DB_LIQUIBASE_USERNAME}
     password: ${DB_LIQUIBASE_PASSWORD}
     change-log: classpath:db/changelog/db.changelog-master.yaml
     default-schema: ${DB_SCHEMA} # Force Liquibase à travailler dans ce schéma
@@ -75,6 +85,8 @@ application:
     client-id: ${KERNEL_CLIENT_ID}
     api-key: ${KERNEL_API_KEY}
     tenant-id: ${APPLICATION_KERNEL_TENANT_ID}
+    service-username: ${APPLICATION_KERNEL_SERVICE_USERNAME}
+    service-password: ${APPLICATION_KERNEL_SERVICE_PASSWORD}
 
   offer:
     search-radius-km: 5.0 # Rayon par défaut pour le matching
@@ -105,6 +117,8 @@ application:
 
   vehicle:
     url: https://kernel-core.yowyob.com/kernel-api
+    organization-id: edba974f-ac3d-4e35-b7c0-fbc9ec26ad9c
+    agency-id: f05f4a39-8c51-4b84-ab56-f37c753e795c
 
   syndicate:
     url: https://traefikdev.yowyob.com/ugate
@@ -112,6 +126,12 @@ application:
   payment:
     url: https://kernel-core.yowyob.com/kernel-api
     commission-rate: 0.10
+    currency: XAF
+    # Où le Kernel/provider redirige l'utilisateur après une recharge de wallet.
+    # L'app retrouve l'orderId via le localStorage (pas garanti dans le query string),
+    # donc ces URLs pointent simplement sur la page wallet avec un flag success/failure.
+    callback-url: ${PAYMENT_CALLBACK_URL}
+    failure-callback-url: ${PAYMENT_FAILURE_CALLBACK_URL}
 
   kafka:
     topics:

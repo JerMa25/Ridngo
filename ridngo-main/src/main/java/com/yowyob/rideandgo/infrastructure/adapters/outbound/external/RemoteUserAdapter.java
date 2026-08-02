@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class RemoteUserAdapter implements ExternalUserPort {
 
     private final AuthApiClient client;
+    private final String tenantId;
 
     // ─── READ ──────────────────────────────────────────────────────────────────
 
@@ -48,18 +49,46 @@ public class RemoteUserAdapter implements ExternalUserPort {
     @Override
     public Mono<User> fetchRemoteUserById(UUID id) {
         return client.getUserById(id.toString())
+                .mapNotNull(AuthApiClient.KernelUserDetailEnvelope::data)
                 .map(this::mapToDomain)
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     if (ex.getStatusCode() == HttpStatus.FORBIDDEN
                             || ex.getStatusCode() == HttpStatus.NOT_FOUND) {
                         log.warn("⚠️ getUserById({}) interdit/introuvable, fallback sur /users/me", id);
-                        return client.getMe().map(this::mapToDomain);
+                        return client.getMe().mapNotNull(AuthApiClient.KernelUserDetailEnvelope::data)
+                                .map(this::mapToDomain);
                     }
-                    log.error("❌ fetchRemoteUserById({}) : {} — {}", id, ex.getStatusCode(), ex.getResponseBodyAsString());
+                    log.error("❌ fetchRemoteUserById({}) : {} — {}", id, ex.getStatusCode(),
+                            ex.getResponseBodyAsString());
                     return Mono.empty();
                 })
                 .onErrorResume(e -> {
                     log.error("❌ fetchRemoteUserById({}) erreur inattendue : {}", id, e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    /**
+     * Profil du user connecté via GET /api/users/me.
+     * C'est le SEUL endpoint Kernel Core qui dérive firstName/lastName/profession
+     * depuis l'Actor — GET /api/users/{id} ne le fait pas et renvoie ces champs à
+     * null.
+     * Le userId est ignoré ici : le Bearer token (propagé par WebClientConfig)
+     * suffit
+     * à identifier l'utilisateur côté Kernel.
+     */
+    @Override
+    public Mono<User> fetchMyProfile(UUID userId) {
+        return client.getMe()
+                .mapNotNull(AuthApiClient.KernelUserDetailEnvelope::data)
+                .map(this::mapToDomain)
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    if (ex.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                        return Mono.error(
+                                new AuthenticationFailedException("Session expirée. Veuillez vous reconnecter."));
+                    }
+                    log.error("❌ fetchMyProfile({}) : {} — {}", userId, ex.getStatusCode(),
+                            ex.getResponseBodyAsString());
                     return Mono.empty();
                 });
     }
@@ -75,15 +104,31 @@ public class RemoteUserAdapter implements ExternalUserPort {
     public Mono<Void> addRole(UUID userId, String roleName) {
         log.info("🌍 Kernel : ADD ROLE '{}' pour user {}", roleName, userId);
 
-        // scopeType TENANT — aucun scopeId requis pour un rôle global
-        AuthApiClient.KernelAssignRoleRequest request = new AuthApiClient.KernelAssignRoleRequest(
-                roleName,     // roleId = nom du rôle (le Kernel le résoudra par name)
-                "TENANT",
-                null,
-                "TENANT"
-        );
+        return client.getRoles()
+                .flatMap(envelope -> {
+                    String kernelRoleId = (envelope != null && envelope.data() != null)
+                            ? envelope.data().stream()
+                                    .filter(r -> roleName.equalsIgnoreCase(r.code())
+                                            || roleName.equalsIgnoreCase(r.name()))
+                                    .findFirst()
+                                    .map(AuthApiClient.KernelRoleDto::id)
+                                    .orElse(null)
+                            : null;
 
-        return client.assignRole(userId.toString(), request)
+                    if (kernelRoleId == null) {
+                        log.error("❌ Rôle '{}' introuvable dans le catalogue Kernel du tenant {} — "
+                                + "à créer via POST /api/administration/roles.", roleName, tenantId);
+                        return Mono.error(new RuntimeException(
+                                "Le rôle '" + roleName + "' n'existe pas dans le catalogue Kernel de ce tenant."));
+                    }
+
+                    // Format confirmé par un test réel : {"roleId": ..., "scopeType": "TENANT"} —
+                    // pas de scopeId ni de scope pour un rôle TENANT.
+                    AuthApiClient.KernelAssignRoleRequest request = new AuthApiClient.KernelAssignRoleRequest(
+                            kernelRoleId, "TENANT", null, null);
+
+                    return client.assignRole(userId.toString(), request);
+                })
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     log.error("❌ addRole '{}' pour {} : {} — {}",
                             roleName, userId, ex.getStatusCode(), ex.getResponseBodyAsString());
@@ -115,6 +160,7 @@ public class RemoteUserAdapter implements ExternalUserPort {
     public Mono<User> updateProfile(UUID userId, String firstName, String lastName, String phone) {
         log.info("🌍 Kernel : UPDATE IDENTITY pour user {}", userId);
         return client.updateMyIdentity(new AuthApiClient.KernelUpdateIdentityRequest(firstName, lastName, phone))
+                .mapNotNull(AuthApiClient.KernelUserDetailEnvelope::data)
                 .map(this::mapToDomain)
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     if (ex.getStatusCode() == HttpStatus.UNAUTHORIZED) {
@@ -138,7 +184,10 @@ public class RemoteUserAdapter implements ExternalUserPort {
     // ─── MAPPER ────────────────────────────────────────────────────────────────
 
     private User mapToDomain(AuthApiClient.KernelUserDetail dto) {
+        // Même normalisation que côté login (RemoteAuthAdapter) : le Kernel préfixe
+        // avec "ROLE_" et ajoute un suffixe "#SCOPE" sur les rôles.
         Set<Role> roles = dto.roles() != null ? dto.roles().stream()
+                .map(RemoteUserAdapter::normalizeRoleAuthority)
                 .filter(roleStr -> {
                     try {
                         RoleType.valueOf(roleStr);
@@ -159,9 +208,27 @@ public class RemoteUserAdapter implements ExternalUserPort {
                 .firstName(dto.firstName())
                 .lastName(dto.lastName())
                 .email(dto.email())
-                .telephone(dto.phone())
+                .telephone(dto.phoneNumber())
                 .roles(roles)
                 .directPermissions(Collections.emptySet())
                 .build();
+    }
+
+    /**
+     * Retire le préfixe "ROLE_" et le suffixe "#SCOPE" (ex.
+     * "ROLE_RIDE_AND_GO_DRIVER#TENANT" -&gt; "RIDE_AND_GO_DRIVER").
+     */
+    private static String normalizeRoleAuthority(String authority) {
+        if (authority == null)
+            return null;
+        String normalized = authority;
+        int hashIdx = normalized.indexOf('#');
+        if (hashIdx >= 0) {
+            normalized = normalized.substring(0, hashIdx);
+        }
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring("ROLE_".length());
+        }
+        return normalized;
     }
 }

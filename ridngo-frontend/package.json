@@ -17,6 +17,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.26",
     "idb-keyval": "^6.3.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "navigoo": "^1.0.2",
     "next": "^16.2.7",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

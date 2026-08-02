@@ -13,7 +13,7 @@ public interface AuthPort {
     Mono<AuthResponse> refreshToken(String refreshToken);
 
     Mono<AuthResponse> register(
-            String username, String password, String email, String phone,
+            String username, String email, String password, String phone,
             String firstName, String lastName, List<RoleType> roles,
             org.springframework.http.codec.multipart.FilePart photo // Ajouté
     );

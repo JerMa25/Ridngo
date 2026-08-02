@@ -37,7 +37,7 @@ public class AuthController {
                 : List.of(RoleType.RIDE_AND_GO_PASSENGER);
 
         return authUseCase.register(
-                dto.username(), dto.password(), dto.email(),
+                dto.username(), dto.email(), dto.password(),
                 dto.phone(), dto.firstName(), dto.lastName(),
                 rolesToAssign, photo);
     }

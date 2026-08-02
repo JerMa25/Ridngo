@@ -37,7 +37,7 @@ public class AuthService implements AuthUseCase {
     public Mono<AuthPort.AuthResponse> register(String username, String email, String password, String phone,
             String firstName, String lastName, List<RoleType> roles, FilePart photo) {
 
-        return authPort.register(username, password, email, phone, firstName, lastName, roles, photo)
+        return authPort.register(username, email, password, phone, firstName, lastName, roles, photo)
                 .flatMap(response -> {
                     boolean isDriver = roles.contains(RoleType.RIDE_AND_GO_DRIVER);
 

@@ -44,7 +44,7 @@ export const RideSearch = ({ pickup, setPickup, dest, setDest, onEstimate }: Pro
       disabled={!pickup || !dest} 
       className="w-full py-6 bg-orange-btn text-white rounded-[24px] font-black uppercase tracking-widest shadow-xl shadow-orange-btn/20 hover:scale-[1.01] active:scale-95 transition-all mt-4"
     >
-      Estimer le prix
+      Estimer & Continuer
     </button>
   </motion.div>
 );

@@ -15,8 +15,8 @@ public interface AuthUseCase {
 
     Mono<AuthPort.AuthResponse> register(
         String username, 
-        String password, 
         String email, 
+        String password, 
         String phone, 
         String firstName, 
         String lastName,

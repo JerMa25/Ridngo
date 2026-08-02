@@ -32,6 +32,11 @@ public class FakeUserAdapter implements ExternalUserPort {
         return userRepository.findUserById(id);
     }
 
+    @Override
+    public Mono<User> fetchMyProfile(UUID userId) {
+        return userRepository.findUserById(userId);
+    }
+
     // --- WRITE OPERATIONS (Fake Implementation) ---
 
     @Override

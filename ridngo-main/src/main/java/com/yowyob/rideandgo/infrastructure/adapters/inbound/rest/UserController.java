@@ -54,7 +54,7 @@ public class UserController {
     @Operation(summary = "Get my profile", description = "Retrieve the profile of the currently authenticated user based on JWT.")
     public Mono<UserResponse> getCurrentUser() {
         return getCurrentUserId()
-                .flatMap(userUseCases::getUserById)
+                .flatMap(userUseCases::getMyProfile)
                 .map(this::mapToResponse);
     }
 
@@ -103,7 +103,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
     public Mono<FullDriverProfileResponse> getFullDriverProfile() {
         return getCurrentUserId()
-                .flatMap(userService::getFullDriverProfile);
+                .flatMap(userService::getMyFullDriverProfile);
     }
 
     // --- LECTURE STANDARD ---

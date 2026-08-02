@@ -28,8 +28,10 @@ public class AuthConfig {
     @ConditionalOnProperty(name = "application.auth.mode", havingValue = "remote", matchIfMissing = true)
     public AuthPort remoteAuthPort(AuthApiClient authApiClient,
             UserRepositoryPort userRepositoryPort,
-            CacheInvalidationPort cacheInvalidationPort) { // Ajout du paramètre
-        return new RemoteAuthAdapter(authApiClient, userRepositoryPort, cacheInvalidationPort); // Injection
+            CacheInvalidationPort cacheInvalidationPort,
+            @org.springframework.beans.factory.annotation.Value("${application.kernel.tenant-id}") String tenantId,
+            org.springframework.data.redis.core.ReactiveRedisTemplate<String, Object> redisTemplate) {
+        return new RemoteAuthAdapter(authApiClient, userRepositoryPort, cacheInvalidationPort, tenantId, redisTemplate);
     }
 
     @Bean
@@ -40,7 +42,9 @@ public class AuthConfig {
 
     @Bean
     @ConditionalOnProperty(name = "application.auth.mode", havingValue = "remote", matchIfMissing = true)
-    public com.yowyob.rideandgo.domain.ports.out.ExternalUserPort remoteUserPort(AuthApiClient authApiClient) {
-        return new com.yowyob.rideandgo.infrastructure.adapters.outbound.external.RemoteUserAdapter(authApiClient);
+    public com.yowyob.rideandgo.domain.ports.out.ExternalUserPort remoteUserPort(AuthApiClient authApiClient,
+            @org.springframework.beans.factory.annotation.Value("${application.kernel.tenant-id}") String tenantId) {
+        return new com.yowyob.rideandgo.infrastructure.adapters.outbound.external.RemoteUserAdapter(authApiClient,
+                tenantId);
     }
 }

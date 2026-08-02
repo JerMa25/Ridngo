@@ -15,6 +15,7 @@ import java.net.URI;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
@@ -22,6 +23,7 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import com.yowyob.rideandgo.infrastructure.adapters.outbound.external.KernelServiceTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,6 +31,16 @@ import lombok.extern.slf4j.Slf4j;
 public class WebClientConfig {
 
     private final HttpClient httpClient = HttpClient.create().wiretap(true);
+
+    // @Lazy : évite toute dépendance circulaire au démarrage
+    // (KernelServiceTokenProvider
+    // construit son propre WebClient interne, indépendant des beans définis ici,
+    // mais
+    // n'est résolu qu'au premier appel réel du filtre, pas à la construction du
+    // contexte).
+    @org.springframework.beans.factory.annotation.Autowired
+    @Lazy
+    private KernelServiceTokenProvider kernelServiceTokenProvider;
 
     @Value("${application.kernel.client-id}")
     private String kernelClientId;
@@ -38,6 +50,9 @@ public class WebClientConfig {
 
     @Value("${application.kernel.tenant-id:}")
     private String kernelTenantId;
+
+    @Value("${application.payment.currency:XAF}")
+    private String paymentCurrency;
 
     @Bean
     public PaymentApiClient paymentApiClient(WebClient.Builder builder,
@@ -85,13 +100,12 @@ public class WebClientConfig {
     private ExchangeFilterFunction logRequest() {
         return (request, next) -> {
             log.info("🚀 [WebClient Outbound] {} {}", request.method(), request.url());
-            request.headers().forEach((name, values) ->
-                values.forEach(value -> {
-                    String maskedValue = (name.equalsIgnoreCase("Authorization") || name.equalsIgnoreCase("X-Api-Key"))
-                            ? "********" : value;
-                    log.info("   🧩 Header: {}={}", name, maskedValue);
-                })
-            );
+            request.headers().forEach((name, values) -> values.forEach(value -> {
+                String maskedValue = (name.equalsIgnoreCase("Authorization") || name.equalsIgnoreCase("X-Api-Key"))
+                        ? "********"
+                        : value;
+                log.info("   🧩 Header: {}={}", name, maskedValue);
+            }));
             return next.exchange(request);
         };
     }
@@ -99,7 +113,8 @@ public class WebClientConfig {
     @Bean
     public NotificationApiClient notificationApiClient(WebClient.Builder builder,
             @Value("${application.notification.url}") String url) {
-        // X-Service-Token retiré : le Kernel Core utilise X-Client-Id + X-Api-Key + Bearer
+        // X-Service-Token retiré : le Kernel Core utilise X-Client-Id + X-Api-Key +
+        // Bearer
         WebClient webClient = builder
                 .baseUrl(url)
                 .filter(kernelAuthFilter())
@@ -120,29 +135,35 @@ public class WebClientConfig {
 
     @Bean
     public VehicleApiClient vehicleApiClient(WebClient.Builder builder,
-            @Value("${application.vehicle.url}") String url) {
+            @Value("${application.vehicle.url}") String url,
+            @Value("${application.vehicle.organization-id}") String organizationId) {
         WebClient webClient = builder
                 .baseUrl(url)
                 .filter(kernelAuthFilter())
                 .filter(addBearerToken())
+                .defaultHeader("X-Organization-Id", organizationId)
                 .build();
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
         return HttpServiceProxyFactory.builderFor(adapter).build().createClient(VehicleApiClient.class);
     }
 
     /**
-     * Injecte les credentials d'application cliente Kernel Core sur chaque requête :
+     * Injecte les credentials d'application cliente Kernel Core sur chaque requête
+     * :
      * X-Client-Id + X-Api-Key (lus depuis application.kernel.client-id / api-key).
      */
     private ExchangeFilterFunction kernelAuthFilter() {
         return (request, next) -> {
-            ClientRequest newRequest = ClientRequest.from(request)
+            ClientRequest.Builder requestBuilder = ClientRequest.from(request)
                     .headers(headers -> {
                         headers.set("X-Client-Id", kernelClientId);
                         headers.set("X-Api-Key", kernelApiKey);
-                    })
-                    .build();
-            return next.exchange(newRequest);
+                        // X-Tenant-Id requis pour les endpoints tenant-scoped du Kernel Core
+                        if (kernelTenantId != null && !kernelTenantId.isBlank()) {
+                            headers.set("X-Tenant-Id", kernelTenantId);
+                        }
+                    });
+            return next.exchange(requestBuilder.build());
         };
     }
 
@@ -170,8 +191,15 @@ public class WebClientConfig {
                         return next.exchange(request);
                     })
                     .switchIfEmpty(Mono.defer(() -> {
-                        log.warn("⚠️ [WebClient] No Security Context found for path: {}. Sending without token.", path);
-                        return next.exchange(request);
+                        log.warn(
+                                "⚠️ [WebClient] Pas de contexte de sécurité utilisateur pour {} — tentative avec le token de service.",
+                                path);
+                        return kernelServiceTokenProvider.getServiceToken()
+                                .map(token -> ClientRequest.from(request)
+                                        .headers(headers -> headers.setBearerAuth(token))
+                                        .build())
+                                .switchIfEmpty(Mono.just(request))
+                                .flatMap(next::exchange);
                     }));
         };
     }

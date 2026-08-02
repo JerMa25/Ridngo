@@ -16,6 +16,7 @@ import { RidePriceSetting } from './components/RidePriceSetting';
 import { RideWaiting } from './components/RideWaiting';
 import { RideActive } from './components/RideActive';
 import { TripSummary } from './components/TripSummary';
+import { ChatWidget } from './components/ChatWidget';
 
 const MapView = dynamic(() => import('@/components/home/MapView'), { ssr: false });
 
@@ -34,6 +35,7 @@ export default function RidePage() {
   const [numberOfPlaces, setNumberOfPlaces] = useState(1);
   const queryClient = useQueryClient();
   const [activeOfferId, setActiveOfferId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Initialisation : Auth + Tel + OfferId
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function RidePage() {
     if (storedUser) {
       const u = JSON.parse(storedUser);
       if (u.phone) setPassengerPhone(u.phone);
+      if (u.id) setUserId(u.id);
     }
     const savedOffer = localStorage.getItem('activeOfferId');
     if (savedOffer) {
@@ -233,10 +236,19 @@ export default function RidePage() {
             )}
 
             {step === 'active' && (
-              <RideActive 
-                ride={ride} 
-                tracking={tracking} 
-              />
+              <>
+                <RideActive 
+                  ride={ride} 
+                  tracking={tracking} 
+                />
+                {userId && ride?.id && (
+                  <ChatWidget 
+                    rideId={ride.id} 
+                    userId={userId} 
+                    userRole="PASSENGER" 
+                  />
+                )}
+              </>
             )}
           </AnimatePresence>
         </div>

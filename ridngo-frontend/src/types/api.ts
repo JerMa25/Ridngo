@@ -159,6 +159,27 @@ export interface Wallet {
   balance: number;
 }
 
+export interface RechargeOrder {
+  orderId: string;
+  walletId: string;
+  amount: number;
+  status: string;
+  redirectUrl: string;
+}
+
+export interface TransactionSummary {
+  id: string;
+  organizationId: string;
+  chainCode: string;
+  transactionType: string;
+  sourceService: string;
+  sourceReference: string;
+  transactionHash: string;
+  status: string;
+  createdAt: string;
+  minedAt?: string;
+}
+
 export interface DriverProfile {
   userId: string;
   status: string;

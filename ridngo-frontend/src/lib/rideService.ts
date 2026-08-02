@@ -2,7 +2,7 @@ import api from './api-client';
 import { 
   OfferResponse, LandingOfferResponse, FareResponse, RideResponse, 
   CreateOfferRequest, FareRequest, RideTrackingResponse, Wallet, 
-  DriverTrajectory
+  RechargeOrder, DriverTrajectory, TransactionSummary
 } from '@/types/api';
 
 export const rideService = {
@@ -88,6 +88,14 @@ export const rideService = {
 
   getOfferById: async (id: string) => (await api.get<OfferResponse>(`/api/v1/offers/${id}`)).data,
   getMyWallet: async () => (await api.get<Wallet>('/api/v1/wallets/me')).data,
+  rechargeWallet: async (amount: number, payerReference: string) =>
+    (await api.post<RechargeOrder>('/api/v1/wallets/me/recharge', { amount, payerReference })).data,
+  refreshRechargeOrder: async (orderId: string) =>
+    (await api.post<RechargeOrder>(`/api/v1/wallets/recharge-orders/${orderId}/refresh`)).data,
+  getMyWalletTransactions: async () => 
+    (await api.get<TransactionSummary[]>('/api/v1/wallets/me/transactions')).data,
+  getMyRechargeOrders: async () =>
+    (await api.get<RechargeOrder[]>('/api/v1/wallets/me/recharge-orders')).data,
   getRideDetails: async (rideId: string) => (await api.get<RideResponse>(`/api/v1/trips/${rideId}`)).data,
 
   getRideByOffer: async (offerId: string): Promise<RideResponse> => {

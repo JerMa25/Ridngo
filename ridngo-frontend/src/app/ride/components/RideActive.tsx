@@ -147,6 +147,11 @@ export const RideActive = ({ ride, tracking }: Props) => {
            <span className="text-[10px] font-bold opacity-20 uppercase tracking-tighter">Véhicule vérifié</span>
         </div>
 
+        <div className="mt-6 p-4 bg-orange-btn/10 text-orange-btn rounded-2xl flex flex-col items-center justify-center text-center">
+           <p className="text-xs font-black uppercase tracking-widest">🤝 Le prix est un contrat</p>
+           <p className="text-[10px] font-bold opacity-80 mt-1">Préparez-vous à payer le chauffeur à l'arrivée (cash ou mobile money).</p>
+        </div>
+
         {vehicleData && (
           <div className="mt-6 p-4 bg-foreground/5 rounded-2xl flex items-center justify-center gap-4">
              <div className="text-left">
@@ -200,6 +205,11 @@ export const RideActive = ({ ride, tracking }: Props) => {
                   <CheckCircle2 size={40} />
                </div>
                <h2 className="text-3xl font-black italic tracking-tighter mb-2">Trajet terminé !</h2>
+               
+               <div className="bg-orange-btn/10 text-orange-btn p-4 rounded-2xl mb-6 text-xs font-black border border-orange-btn/20 shadow-inner">
+                 🤝 N'oubliez pas que le prix négocié est un contrat. Merci de payer directement le chauffeur.
+               </div>
+
                <p className="text-sm opacity-50 mb-8 font-medium">Comment s&apos;est passée votre course avec <span className="text-foreground font-bold">{userData?.firstName || userData?.name?.split(' ')[0]}</span> ?</p>
       
                {/* SÉLECTION DES ÉTOILES */}
