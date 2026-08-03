@@ -54,6 +54,26 @@ public class WebClientConfig {
     @Value("${application.payment.currency:XAF}")
     private String paymentCurrency;
 
+    /**
+     * Contrairement à addBearerToken() (qui utilise le token de l'utilisateur
+     * connecté, avec
+     * repli sur le token de service seulement si personne n'est authentifié), ce
+     * filtre utilise
+     * TOUJOURS le compte de service — pour les opérations gérées au niveau de
+     * l'organisation,
+     * pas de l'utilisateur (ex. création de ressources/véhicules :
+     * "resources:write" est une
+     * permission scope AGENCY qu'aucun chauffeur/passager n'a, seul le compte admin
+     * l'a).
+     */
+    private ExchangeFilterFunction alwaysServiceToken() {
+        return ExchangeFilterFunction.ofRequestProcessor(request -> kernelServiceTokenProvider.getServiceToken()
+                .map(token -> ClientRequest.from(request)
+                        .headers(headers -> headers.setBearerAuth(token))
+                        .build())
+                .switchIfEmpty(Mono.just(request)));
+    }
+
     @Bean
     public PaymentApiClient paymentApiClient(WebClient.Builder builder,
             @Value("${application.payment.url}") String url) {
@@ -140,7 +160,7 @@ public class WebClientConfig {
         WebClient webClient = builder
                 .baseUrl(url)
                 .filter(kernelAuthFilter())
-                .filter(addBearerToken())
+                .filter(alwaysServiceToken())
                 .defaultHeader("X-Organization-Id", organizationId)
                 .build();
         WebClientAdapter adapter = WebClientAdapter.create(webClient);

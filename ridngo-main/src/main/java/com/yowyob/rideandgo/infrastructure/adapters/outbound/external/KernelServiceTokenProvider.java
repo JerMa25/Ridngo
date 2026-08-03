@@ -87,7 +87,7 @@ public class KernelServiceTokenProvider {
 
     private Mono<String> fetchServiceToken() {
         return client.post()
-                .uri("/auth/discover-contexts")
+                .uri("/api/auth/discover-contexts")
                 .bodyValue(new AuthApiClient.KernelDiscoverContextsRequest(serviceUsername, servicePassword))
                 .retrieve()
                 .bodyToMono(AuthApiClient.KernelDiscoverContextsResponse.class)
@@ -106,7 +106,7 @@ public class KernelServiceTokenProvider {
                                 "Le compte de service Kernel n'appartient pas au tenant RidnGo (" + tenantId + ")."));
                     }
                     return client.post()
-                            .uri("/auth/select-context")
+                            .uri("/api/auth/select-context")
                             .bodyValue(new AuthApiClient.KernelSelectContextRequest(
                                     discover.data().selectionToken(), context.contextId()))
                             .retrieve()
