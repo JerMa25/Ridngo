@@ -112,7 +112,7 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
            <Car size={16} className="opacity-30" />
            <div className="min-w-0">
               <p className="text-[10px] font-black text-foreground uppercase truncate">
-                {vehicle?.brand} {vehicle?.modelName}
+                {vehicle?.brand} {vehicle?.modelName} {vehicle?.registrationNumber}
               </p>
               <p className="text-[9px] font-bold opacity-40 uppercase">
                 {vehicle?.fuelTypeId?.split('-')[0] || "Standard"}

@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { MapPin, Calculator, Car, UserPlus, Radar } from 'lucide-react';
 import Link from 'next/link';
 import { rideService } from '@/lib/rideService';
+import { useGeolocation, getCountryFromLocation } from "@/hooks/useGeolocation";
 
 export const MarketingHero = () => {
   const [activeOffersCount, setActiveOffersCount] = useState(0);
-  const [userLocation, setUserLocation] = useState({ country: 'Cameroun', city: 'Douala', flag: '🇨🇲' });
+  const { location: userLocation } = useGeolocation(true);
+  const country = getCountryFromLocation(userLocation?.label);
 
   useEffect(() => {
     // On récupère le nombre réel de courses disponibles pour le mockup "Live"
@@ -43,7 +45,7 @@ export const MarketingHero = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 bg-orange-btn/10 text-orange-btn px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest"
           >
-            <MapPin size={14} /> {userLocation.flag} {userLocation.country} · {userLocation.city} et environs
+            <MapPin size={14} /> Disponible à {country}
           </motion.div>
           
           <motion.h1 
@@ -57,9 +59,7 @@ export const MarketingHero = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-lg opacity-60 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed text-foreground"
           >
-            Le service de ramassage par Taxi présent au {userLocation.country} <div></div> et qui vous laisse négocier votre prix. Pas d&apos;algorithme caché. Juste vous et le chauffeur.
-            <br />
-            <span className="text-xs italic mt-2 block opacity-70">🌍 Présent dans d&apos;autres pays.</span>
+            Le premier service de ramassage par taxi au {country} qui vous permet de négocier votre prix. Pas de tarif imposé. Juste vous et votre chauffeur.
           </motion.p>
           
           {/* LES 3 BOUTONS DISTINCTS */}

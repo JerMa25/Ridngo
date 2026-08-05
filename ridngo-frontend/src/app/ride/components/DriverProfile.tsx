@@ -131,7 +131,7 @@ useEffect(() => {
             <InfoRow
               icon={<Car size={14} className="text-orange-btn" />}
               label="Véhicule"
-              value={`${vehicle?.brand || ""} ${vehicle?.modelName || ""}`.trim() || "—"}
+              value={`${vehicle?.brand || ""} ${vehicle?.modelName || ""} ${vehicle?.registrationNumber || ""}`.trim() || "—"}
               sub={vehicle?.registrationNumber}
             />
 

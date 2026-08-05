@@ -39,11 +39,14 @@ function RegisterForm() {
     }
   };
 
+  const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_+\-=[\]{};':"\\|,.<>/?]).{10,}$/;
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    if (formData.password.length < 8) {
-      toast.error("Le mot de passe doit contenir au moins 8 caractères.");
+    if (!PASSWORD_REGEX.test(formData.password)) {
+      toast.error("Le mot de passe doit contenir au moins 10 caractères, dont une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial.");
       setIsLoading(false);
       return;
     }
@@ -149,6 +152,10 @@ function RegisterForm() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20" size={18} />
                 <input required type="password" className="input-r" placeholder="••••••••" onChange={(e) => setFormData({...formData, password: e.target.value})} />
+                 <p className="text-xs opacity-60 ml-1">
+                  Le mot de passe doit contenir au moins 10 caractères, dont une lettre
+                  majuscule, une lettre minuscule, un chiffre et un caractère spécial.
+                </p>
               </div>
             </div>
 

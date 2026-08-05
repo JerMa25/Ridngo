@@ -159,7 +159,7 @@ export default function OffersPage() {
     new Promise<boolean>((resolve) => {
       toast((t) => (
         <div className="flex flex-col gap-3">
-          <p>Voulez-vous vraiment annulerrr cette offre ?</p>
+          <p>Voulez-vous vraiment annuler cette offre ?</p>
 
           <div className="flex justify-end gap-2">
             <button

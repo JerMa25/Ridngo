@@ -191,8 +191,7 @@ export const RidePriceSetting = ({
         disabled={!passengerPhone || !departureTime}
         className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-20 flex items-center justify-center gap-3"
       >
-        <span>Publier l'offre</span>
-        <Send size={18} />
+        Publier l&apos;offre
       </button>
     </motion.div>
   );

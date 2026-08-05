@@ -57,3 +57,14 @@ export function useGeolocation(enabled: boolean) {
 
   return { location, isLoading };
 }
+
+export function getCountryFromLocation(label?: string): string {
+  if (!label) return "Cameroun";
+
+  const parts = label
+    .split(",")
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  return parts.at(-1) ?? "Cameroun";
+}
