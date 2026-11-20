@@ -7,7 +7,7 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   // swMinify: true,
-  disable: false,//process.env.NODE_ENV === "development", // Désactivé en dev pour éviter les conflits Turbopack
+  disable: process.env.NODE_ENV === "development", // Désactivé en dev pour éviter les conflits Turbopack
   workboxOptions: {
     disableDevLogs: true,
   },

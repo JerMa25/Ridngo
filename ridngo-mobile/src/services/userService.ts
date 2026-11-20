@@ -88,7 +88,7 @@ export const userService = {
 
   getNotificationSettings: async () => {
     try {
-      const res = await api.get('/api/v1/notifications/settings');
+      const res = await api.get('/api/v1/settings/notifications');
       return res.data;
     } catch {
       return { pushEnabled: true, emailEnabled: true, smsEnabled: false, whatsappEnabled: false };
@@ -99,7 +99,7 @@ export const userService = {
     push?: boolean; email?: boolean; sms?: boolean; whatsapp?: boolean;
   }) => {
     try {
-      await api.put('/api/v1/notifications/settings', settings);
+      await api.put('/api/v1/settings/notifications', settings);
     } catch { /* ignore */ }
   },
 };

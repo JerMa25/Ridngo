@@ -2,6 +2,7 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '@/lib/api-client';
 import { User, XCircle, Star, Phone, Car, UserCircle } from 'lucide-react';
 
 /**
@@ -36,14 +37,9 @@ export default function DriverProfilePopup({ profile, onClose }: DriverProfilePo
 useEffect(() => {
   const fetchReviews = async () => {
     try {
-      const res = await fetch("/api/v1/reviews/me", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // adapte si besoin
-        },
-      });
-
-      const data = await res.json();
-      setReviews(data);
+      // api ajoute le bon token (accessToken), la bonne baseURL et gère le refresh
+      const res = await api.get("/api/v1/reviews/me");
+      setReviews(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Erreur récupération reviews", err);
     } finally {

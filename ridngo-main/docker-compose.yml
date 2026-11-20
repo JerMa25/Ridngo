@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: fleet_admin
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432" # accessible uniquement depuis la machine hôte
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,18 +19,18 @@ services:
 
   # 2. Cache Redis pour le tracking GPS
   redis:
-    image: redis:alpine
+    image: redis:7.4-alpine
     container_name: ride-go-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     command: redis-server --requirepass ${REDIS_PASSWORD}
 
   # 3. Kafka (Redpanda) pour les notifications
   redpanda:
-    image: docker.redpanda.com/redpandadata/redpanda:latest
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.7
     container_name: ride-go-kafka
     ports:
-      - "9092:9092"
+      - "127.0.0.1:9092:9092"
     command:
       - redpanda start
       - --overprovisioned
@@ -98,6 +98,8 @@ services:
       FARE_API_KEY: ${FARE_API_KEY}
       PAYMENT_CALLBACK_URL: ${PAYMENT_CALLBACK_URL}
       PAYMENT_FAILURE_CALLBACK_URL: ${PAYMENT_FAILURE_CALLBACK_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,https://*.yowyob.com}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
 
 volumes:
   postgres_data:

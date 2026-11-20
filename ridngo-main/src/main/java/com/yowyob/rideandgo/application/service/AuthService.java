@@ -5,6 +5,7 @@ import com.yowyob.rideandgo.domain.ports.in.AuthUseCase;
 import com.yowyob.rideandgo.domain.ports.out.AuthPort;
 import com.yowyob.rideandgo.domain.ports.out.DriverRepositoryPort;
 import com.yowyob.rideandgo.domain.ports.out.PaymentPort;
+import com.yowyob.rideandgo.domain.ports.out.UserRepositoryPort;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,15 +23,38 @@ public class AuthService implements AuthUseCase {
     private final AuthPort authPort;
     private final PaymentPort paymentPort;
     private final DriverRepositoryPort driverRepositoryPort;
+    private final UserRepositoryPort userRepositoryPort;
 
     @Override
     public Mono<AuthPort.AuthResponse> login(String principal, String password) {
-        return authPort.login(principal, password);
+        return authPort.login(principal, password).flatMap(this::withLocalRoles);
+    }
+
+    /** Ajoute les rôles connus en base (ex. chauffeur promu dont la session Kernel n'a pas encore le rôle). */
+    private Mono<AuthPort.AuthResponse> withLocalRoles(AuthPort.AuthResponse res) {
+        if (res.userId() == null) {
+            return Mono.just(res);
+        }
+        return userRepositoryPort.findUserById(res.userId())
+                .map(user -> {
+                    java.util.LinkedHashSet<String> roles = new java.util.LinkedHashSet<>(
+                            res.roles() == null ? List.of() : res.roles());
+                    if (user.roles() != null) {
+                        user.roles().stream().filter(r -> r.type() != null).forEach(r -> roles.add(r.type().name()));
+                    }
+                    return new AuthPort.AuthResponse(res.userId(), res.accessToken(), res.refreshToken(),
+                            res.username(), List.copyOf(roles), res.permissions());
+                })
+                .defaultIfEmpty(res)
+                .onErrorResume(e -> {
+                    log.warn("Rôles locaux indisponibles pour {} : {}", res.userId(), e.getMessage());
+                    return Mono.just(res);
+                });
     }
 
     @Override
     public Mono<AuthPort.AuthResponse> refreshToken(String refreshToken) {
-        return authPort.refreshToken(refreshToken);
+        return authPort.refreshToken(refreshToken).flatMap(this::withLocalRoles);
     }
 
     @Override

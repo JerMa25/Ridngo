@@ -23,6 +23,7 @@ import java.util.UUID;
 public class ChatController {
 
     private final ChatUseCase chatUseCase;
+    private final com.yowyob.rideandgo.application.service.RideService rideService;
 
     @PostMapping("/{rideId}/messages")
     @ResponseStatus(HttpStatus.CREATED)
@@ -31,9 +32,10 @@ public class ChatController {
             @PathVariable UUID rideId,
             @RequestBody ChatDto.SendMessageRequest request) {
         
-        return ReactiveSecurityContextHolder.getContext()
-                .map(SecurityContext::getAuthentication)
-                .map(auth -> UUID.fromString(auth.getName()))
+        if (request == null || request.content() == null || request.content().isBlank()) {
+            return Mono.error(new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, "Message vide"));
+        }
+        return requireParticipant(rideId)
                 .flatMap(userId -> chatUseCase.sendMessage(rideId, userId, request.senderRole(), request.content()))
                 .map(this::toResponse);
     }
@@ -44,12 +46,21 @@ public class ChatController {
             @PathVariable UUID rideId,
             @RequestParam(required = false) String since) {
         
-        if (since != null && !since.isBlank()) {
-            LocalDateTime sinceDateTime = LocalDateTime.parse(since);
-            return chatUseCase.getMessagesSince(rideId, sinceDateTime).map(this::toResponse);
-        }
-        
-        return chatUseCase.getMessagesForRide(rideId).map(this::toResponse);
+        return requireParticipant(rideId).flatMapMany(userId -> {
+            if (since != null && !since.isBlank()) {
+                LocalDateTime sinceDateTime;
+                try {
+                    // accepte "2026-01-01T10:00:00" et les ISO avec fuseau/Z envoyés par JS (toISOString)
+                    sinceDateTime = since.endsWith("Z") || since.matches(".*[+-]\\d{2}:\\d{2}$")
+                            ? java.time.OffsetDateTime.parse(since).atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime()
+                            : LocalDateTime.parse(since);
+                } catch (java.time.format.DateTimeParseException e) {
+                    return Flux.error(new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, "Paramètre since invalide"));
+                }
+                return chatUseCase.getMessagesSince(rideId, sinceDateTime);
+            }
+            return chatUseCase.getMessagesForRide(rideId);
+        }).map(this::toResponse);
     }
 
     private ChatDto.ChatMessageResponse toResponse(ChatMessage message) {
@@ -61,5 +72,16 @@ public class ChatController {
                 message.getContent(),
                 message.getSentAt()
         );
+    }
+
+    /** Seuls le chauffeur et le passager de la course accèdent au chat. */
+    private Mono<UUID> requireParticipant(UUID rideId) {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> UUID.fromString(ctx.getAuthentication().getName()))
+                .flatMap(userId -> rideService.getRideById(rideId)
+                        .filter(ride -> userId.equals(ride.driverId()) || userId.equals(ride.passengerId()))
+                        .map(ride -> userId)
+                        .switchIfEmpty(Mono.error(new org.springframework.web.server.ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Vous ne participez pas à cette course"))));
     }
 }

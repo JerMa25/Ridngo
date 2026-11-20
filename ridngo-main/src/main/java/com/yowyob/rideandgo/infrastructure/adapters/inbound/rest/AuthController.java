@@ -32,14 +32,15 @@ public class AuthController {
             @RequestPart("data") RegisterDto dto, // ✅ Objet structuré
             @RequestPart(value = "file", required = false) FilePart photo) {
 
-        List<RoleType> rolesToAssign = (dto.roles() != null && !dto.roles().isEmpty())
-                ? dto.roles()
-                : List.of(RoleType.RIDE_AND_GO_PASSENGER);
+        // Le rôle ADMIN ne peut jamais être auto-attribué à l'inscription
+        List<RoleType> requested = dto.roles() == null ? List.of()
+                : dto.roles().stream().filter(r -> r != null && r != RoleType.RIDE_AND_GO_ADMIN).distinct().toList();
+        List<RoleType> rolesToAssign = requested.isEmpty() ? List.of(RoleType.RIDE_AND_GO_PASSENGER) : requested;
 
-        return authUseCase.register(
+        return UploadValidator.check(photo).then(Mono.defer(() -> authUseCase.register(
                 dto.username(), dto.email(), dto.password(),
                 dto.phone(), dto.firstName(), dto.lastName(),
-                rolesToAssign, photo);
+                rolesToAssign, photo)));
     }
 
     @PostMapping("/refresh")

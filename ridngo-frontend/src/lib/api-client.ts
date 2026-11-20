@@ -31,7 +31,6 @@ const processQueue = (error: any, token: string | null = null) => {
 const authInterceptor = (config: any) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('accessToken');
-    console.log("Attaching token:", token);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }

@@ -64,7 +64,6 @@ public class OfferController {
                 .map(SecurityContext::getAuthentication)
                 .flatMap(auth -> {
                     try {
-                        System.err.println(auth.getName());
                         UUID passengerId = UUID.fromString(auth.getName());
                         return createOfferUseCase.createOffer(mapper.toDomain(request), passengerId);
                     } catch (Exception e) {
@@ -112,28 +111,31 @@ public class OfferController {
     @Operation(summary = "Review enriched bidders (Passenger)")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_PASSENGER')")
     public Mono<OfferResponse> getBids(@PathVariable UUID id) {
-        return offerService.getOfferWithEnrichedBids(id).map(mapper::toResponse);
+        return requireOwnOffer(id).then(Mono.defer(() -> offerService.getOfferWithEnrichedBids(id))).map(mapper::toResponse);
     }
 
     @PatchMapping("/{id}/select-driver")
     @Operation(summary = "1. Passenger selects driver", description = "Offer state -> DRIVER_SELECTED")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_PASSENGER')")
     public Mono<OfferResponse> select(@PathVariable UUID id, @RequestParam UUID driverId) {
-        return selectDriverUseCase.selectDriver(id, driverId).map(mapper::toResponse);
+        return requireOwnOffer(id).then(Mono.defer(() -> selectDriverUseCase.selectDriver(id, driverId))).map(mapper::toResponse);
     }
 
     @PostMapping("/{id}/accept")
     @Operation(summary = "2. Driver confirms pickup", description = "Offer state -> VALIDATED. Creates Ride.")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
-    public Mono<RideResponse> driverAccepts(@PathVariable UUID id, @RequestParam UUID driverId) {
-        return offerService.driverAcceptsOffer(id, driverId).map(rideMapper::toResponse);
+    public Mono<RideResponse> driverAccepts(@PathVariable UUID id,
+            @RequestParam(required = false) UUID driverId) { // ignoré : le chauffeur est celui du token
+        return currentUserId()
+                .flatMap(me -> offerService.driverAcceptsOffer(id, me))
+                .map(rideMapper::toResponse);
     }
 
     @PostMapping("/{id}/cancel")
     @Operation(summary = "Cancel offer (Passenger)")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_PASSENGER')")
     public Mono<OfferResponse> cancel(@PathVariable UUID id) {
-        return offerService.cancelOffer(id).map(mapper::toResponse);
+        return requireOwnOffer(id).then(Mono.defer(() -> offerService.cancelOffer(id))).map(mapper::toResponse);
     }
 
     // --- NOUVEAU ENDPOINT : Transition Offre -> Course ---
@@ -169,12 +171,30 @@ public class OfferController {
                 .numberOfPlaces(request.numberOfPlaces() != null ? request.numberOfPlaces() : 0)
                 .build();
 
-        return offerService.updateOffer(id, domainUpdate).map(mapper::toResponse);
+        return requireOwnOffer(id).then(Mono.defer(() -> offerService.updateOffer(id, domainUpdate))).map(mapper::toResponse);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete offer", description = "Permanently removes an offer")
     public Mono<Void> deleteOffer(@PathVariable UUID id) {
-        return offerService.deleteOffer(id).then();
+        return requireOwnOffer(id).then(Mono.defer(() -> offerService.deleteOffer(id))).then();
+    }
+
+    private Mono<UUID> currentUserId() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> UUID.fromString(ctx.getAuthentication().getName()));
+    }
+
+    /** 403 si l'offre n'appartient pas au passager connecté (les admins passent). */
+    private Mono<Void> requireOwnOffer(UUID offerId) {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(SecurityContext::getAuthentication)
+                .flatMap(auth -> offerService.getOfferById(offerId)
+                        .filter(offer -> auth.getName().equals(String.valueOf(offer.passengerId()))
+                                || auth.getAuthorities().stream()
+                                        .anyMatch(a -> "RIDE_AND_GO_ADMIN".equals(a.getAuthority())))
+                        .switchIfEmpty(Mono.error(new org.springframework.web.server.ResponseStatusException(
+                                org.springframework.http.HttpStatus.FORBIDDEN, "Cette offre ne vous appartient pas"))))
+                .then();
     }
 }

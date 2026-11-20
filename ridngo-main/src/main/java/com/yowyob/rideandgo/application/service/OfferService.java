@@ -84,7 +84,12 @@ public class OfferService implements
     // ==================================================================================
     @Override
     public Mono<Offer> createOffer(Offer request, UUID callerId) {
-        return userRepositoryPort.findUserById(callerId)
+        if (request.price() <= 0 || request.startPoint() == null || request.startPoint().isBlank()
+                || request.endPoint() == null || request.endPoint().isBlank()) {
+            return Mono.error(new IllegalArgumentException("Départ, arrivée et prix strictement positif obligatoires."));
+        }
+        return ensureUserExistsLocally(callerId)
+                .switchIfEmpty(Mono.error(new IllegalStateException("Profil utilisateur introuvable.")))
                 .flatMap(user -> {
                     // Logique métier : Si pas de numéro tiers, on prend celui du compte
                     String finalPhone = (request.passengerPhone() != null && !request.passengerPhone().isBlank())
@@ -421,10 +426,11 @@ public class OfferService implements
                     }
 
                     // 1. Paiement effectif de la commission
+                    // On débite la commission (prix * taux), le même montant que celui vérifié à la candidature
                     return paymentPort.getWalletByOwnerId(driverId)
-                            .flatMap(wallet -> paymentPort.processPayment(wallet.id(), offer.price()))
+                            .flatMap(wallet -> paymentPort.processPayment(wallet.id(), offer.price() * commissionRate))
                             // 2. Mise à jour de l'Offre vers VALIDATED (Retrait de Redis Geo automatique)
-                            .then(updateOfferState(offer, OfferState.VALIDATED))
+                            .then(Mono.defer(() -> updateOfferState(offer, OfferState.VALIDATED)))
                             .thenReturn(offer);
                 })
                 .flatMap(offer -> {

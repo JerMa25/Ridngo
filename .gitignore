@@ -1,0 +1,14 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Archives, dumps de contexte, fichiers d'IDE et de build
+*.zip
+project_bundle.txt
+project_context.txt
+*.backup
+*.tsbuildinfo
+.idea/
+.vscode/
+ridngo-main/bin/

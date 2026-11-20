@@ -82,7 +82,8 @@ public class UserController {
             @RequestPart(name = "registrationPhoto", required = false) FilePart registrationPhoto,
             @RequestPart(name = "serialPhoto", required = false) FilePart serialPhoto) {
 
-        return getCurrentUserId()
+        return UploadValidator.check(registrationPhoto).then(UploadValidator.check(serialPhoto))
+                .then(getCurrentUserId())
                 .flatMap(userId -> userService.upgradeToDriverComplete(
                         userId, request, registrationPhoto, serialPhoto));
     }
@@ -110,16 +111,37 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public Mono<UserResponse> getUserById(@PathVariable UUID userId) {
-        return userUseCases.getUserById(userId).map(this::mapToResponse);
+        return isSelfOrAdmin(userId).flatMap(allowed -> userUseCases.getUserById(userId).map(this::mapToResponse)
+                .map(res -> {
+                    if (!allowed) { // pas de fuite email/téléphone vers les autres utilisateurs
+                        res.setEmail(null);
+                        res.setTelephone(null);
+                    }
+                    return res;
+                }));
     }
 
     @GetMapping("/drivers/{id}")
     @Operation(summary = "Get Driver Full Profile", description = "Aggregates User, Driver, Wallet and Vehicle data for a specific driver.")
     public Mono<FullDriverProfileResponse> getDriverById(@PathVariable UUID id) {
-        return userService.getFullDriverProfile(id);
+        return isSelfOrAdmin(id).flatMap(allowed -> userService.getFullDriverProfile(id).map(profile -> {
+            if (!allowed) { // le passager garde le téléphone du chauffeur, pas son solde ni son email
+                profile.setWallet(null);
+                if (profile.getUser() != null) profile.getUser().setEmail(null);
+            }
+            return profile;
+        }));
     }
 
     // --- HELPERS ---
+
+    private Mono<Boolean> isSelfOrAdmin(UUID targetId) {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(SecurityContext::getAuthentication)
+                .map(auth -> targetId.toString().equals(auth.getName()) || auth.getAuthorities().stream()
+                        .anyMatch(a -> "RIDE_AND_GO_ADMIN".equals(a.getAuthority())))
+                .defaultIfEmpty(false);
+    }
 
     private Mono<UUID> getCurrentUserId() {
         return ReactiveSecurityContextHolder.getContext()

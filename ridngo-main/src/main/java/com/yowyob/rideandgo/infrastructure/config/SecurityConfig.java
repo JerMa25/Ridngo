@@ -4,7 +4,9 @@ import com.yowyob.rideandgo.infrastructure.security.JwtAuthenticationManager;
 import com.yowyob.rideandgo.infrastructure.security.SecurityContextRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -19,6 +21,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
+@EnableReactiveMethodSecurity // active les @PreAuthorize des contrôleurs
 @RequiredArgsConstructor
 public class SecurityConfig {
         private final JwtAuthenticationManager authenticationManager;
@@ -57,7 +60,8 @@ public class SecurityConfig {
                                                                 "/swagger-ui.html",
                                                                 "/webjars/**",
                                                                 "/api/v1/health/**",
-                                                                "/actuator/**")
+                                                                "/actuator/health/**",
+                                                                "/actuator/info")
                                                 .permitAll()
                                                 // Autoriser les requêtes OPTIONS (Pre-flight CORS)
                                                 .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
@@ -65,24 +69,17 @@ public class SecurityConfig {
                                 .build();
         }
 
-        // --- BEAN CORS CORRIGÉ POUR LA PROD ---
+        @Value("${application.cors.allowed-origins}")
+        private List<String> allowedOrigins;
+
         @Bean
         CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-
-                // CORRECTION CRITIQUE :
-                // Utiliser allowedOriginPatterns("*") au lieu de allowedOrigins("*")
-                // permet d'utiliser allowCredentials(true) sans violer la spec CORS.
-                configuration.setAllowedOriginPatterns(List.of("*"));
-
+                // Origines explicites (patterns autorisés, ex. https://*.yowyob.com) : jamais "*" avec credentials
+                configuration.setAllowedOriginPatterns(allowedOrigins);
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
                 configuration.setAllowedHeaders(List.of("*"));
-
-                // Indispensable pour que le frontend puisse envoyer le token Authorization
                 configuration.setAllowCredentials(true);
-
-                // Exposer les headers si besoin (ex: pagination)
-                configuration.setExposedHeaders(List.of("*"));
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);

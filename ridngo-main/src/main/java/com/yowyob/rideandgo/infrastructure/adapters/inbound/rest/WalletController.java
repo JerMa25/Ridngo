@@ -1,5 +1,8 @@
 package com.yowyob.rideandgo.infrastructure.adapters.inbound.rest;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.yowyob.rideandgo.domain.model.RechargeOrder;
 import com.yowyob.rideandgo.domain.model.TransactionSummary;
 import com.yowyob.rideandgo.domain.model.Wallet;
@@ -56,6 +59,11 @@ public class WalletController {
                     + "Crée le wallet automatiquement si nécessaire.")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
     public Mono<RechargeOrder> rechargeMyWallet(@RequestBody RechargeRequestDto request) {
+        if (request == null || !Double.isFinite(request.amount()) || request.amount() <= 0
+                || request.payerReference() == null || request.payerReference().isBlank()) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Montant strictement positif et référence payeur obligatoires"));
+        }
         return getCurrentUserId()
                 .flatMap(id -> paymentPort.getOrCreateWallet(id, "User_" + id.toString().substring(0, 5)))
                 .flatMap(wallet -> paymentPort.rechargeWallet(
@@ -71,7 +79,13 @@ public class WalletController {
                     + "Le statut passe à COMPLETED si le paiement est validé.")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
     public Mono<RechargeOrder> refreshRecharge(@PathVariable String orderId) {
-        return paymentPort.refreshRechargeOrder(orderId);
+        return getCurrentUserId()
+                .flatMap(id -> paymentPort.getOrCreateWallet(id, "User_" + id.toString().substring(0, 5)))
+                .flatMap(wallet -> paymentPort.refreshRechargeOrder(orderId)
+                        // walletId absent de la réponse Kernel : on ne bloque pas le paiement
+                        .filter(order -> order.walletId() == null || wallet.id().toString().equals(order.walletId()))
+                        .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN,
+                                "Cet ordre de recharge ne concerne pas votre wallet"))));
     }
 
     @GetMapping("/me/recharge-orders")
@@ -107,6 +121,9 @@ public class WalletController {
             description = "Vérifie si le wallet du chauffeur connecté dispose d'un solde suffisant pour une opération du montant donné.")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
     public Mono<CanOperateResponse> canOperate(@RequestParam double amount) {
+        if (!Double.isFinite(amount) || amount < 0) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Montant invalide"));
+        }
         return getCurrentUserId()
                 .flatMap(id -> paymentPort.getOrCreateWallet(id, "User_" + id.toString().substring(0, 5)))
                 .flatMap(wallet -> paymentPort.canOperate(wallet.id(), amount))

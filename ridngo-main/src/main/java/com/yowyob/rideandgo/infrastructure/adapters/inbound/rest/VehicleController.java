@@ -62,7 +62,7 @@ public class VehicleController {
         // absent du formulaire (booléens notamment, primitifs donc jamais "null") était
         // écrasé par une valeur par défaut (false/0), ce qui effaçait silencieusement les
         // équipements et caractéristiques non renvoyés par le formulaire mobile.
-        return vehicleService.getVehicleById(id)
+        return requireOwnVehicle(id).then(Mono.defer(() -> vehicleService.getVehicleById(id)))
                 .flatMap(existing -> {
                     Vehicle merged = Vehicle.builder()
                             .id(existing.id())
@@ -110,7 +110,7 @@ public class VehicleController {
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload Gallery Image")
     public Mono<String> uploadImage(@PathVariable UUID id, @RequestPart("file") FilePart file) {
-        return vehicleService.addImage(id, file);
+        return UploadValidator.check(file).then(requireOwnVehicle(id)).then(Mono.defer(() -> vehicleService.addImage(id, file)));
     }
 
     @GetMapping("/{id}/images")
@@ -124,16 +124,27 @@ public class VehicleController {
     @PutMapping(value = "/{id}/documents/registration", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update Registration Photo")
     public Mono<Vehicle> updateRegistrationDoc(@PathVariable UUID id, @RequestPart("file") FilePart file) {
-        return vehicleService.createVehicleWithDocuments(
+        return UploadValidator.check(file).then(requireOwnVehicle(id)).then(Mono.defer(() -> vehicleService.createVehicleWithDocuments(
                 Vehicle.builder().id(id).build(),
-                file, null).flatMap(v -> vehicleService.getVehicleById(id));
+                file, null))).flatMap(v -> vehicleService.getVehicleById(id));
     }
 
     @PutMapping(value = "/{id}/documents/serial", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update Serial Number Photo")
     public Mono<Vehicle> updateSerialDoc(@PathVariable UUID id, @RequestPart("file") FilePart file) {
-        return vehicleService.createVehicleWithDocuments(
+        return UploadValidator.check(file).then(requireOwnVehicle(id)).then(Mono.defer(() -> vehicleService.createVehicleWithDocuments(
                 Vehicle.builder().id(id).build(),
-                null, file).flatMap(v -> vehicleService.getVehicleById(id));
+                null, file))).flatMap(v -> vehicleService.getVehicleById(id));
+    }
+
+    /** Erreur 403 si le véhicule n'appartient pas au chauffeur connecté. */
+    private Mono<UUID> requireOwnVehicle(UUID vehicleId) {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> UUID.fromString(ctx.getAuthentication().getName()))
+                .flatMap(driverRepositoryPort::findById)
+                .filter(driver -> vehicleId.equals(driver.vehicleId()))
+                .map(driver -> vehicleId)
+                .switchIfEmpty(Mono.error(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.FORBIDDEN, "Ce véhicule ne vous appartient pas")));
     }
 }

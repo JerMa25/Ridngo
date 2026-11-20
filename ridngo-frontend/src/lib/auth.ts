@@ -63,7 +63,6 @@ const finalizeSession = async (authData: AuthResponse) => {
 
   // On stocke TOUT le profil pour les besoins futurs (numéro, etc.)
   localStorage.setItem('user-full', JSON.stringify(userProfile));
-  console.log('userProfile: ', userProfile);
 
   // On stocke l'objet simplifié utilisé par la Navbar
   const userObj = {
@@ -72,13 +71,15 @@ const finalizeSession = async (authData: AuthResponse) => {
     username: userProfile.username || userProfile.name?.split(' ')[0] || userProfile.firstName,
     email: userProfile.email,
     phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
-    role: userProfile.roles?.[0]?.replace('RIDE_AND_GO_', '') || 'PASSENGER'
+    // Priorité ADMIN > DRIVER > PASSENGER (l'ordre des rôles renvoyés n'est pas garanti)
+    role: ['ADMIN', 'DRIVER', 'PASSENGER'].find(r =>
+      [...(userProfile.roles || []), ...(authData.roles || [])].includes(`RIDE_AND_GO_${r}`)) || 'PASSENGER'
   };
   
   localStorage.setItem('user', JSON.stringify(userObj));
 
   return { 
     success: true, 
-    redirectUrl: isDriver ? "/driver/dashboard" : "/ride" 
+    redirectUrl: userObj.role === 'ADMIN' ? "/admin/dashboard" : isDriver ? "/driver/dashboard" : "/ride" 
   };
 };

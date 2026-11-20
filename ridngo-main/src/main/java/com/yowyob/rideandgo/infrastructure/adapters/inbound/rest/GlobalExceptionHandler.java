@@ -65,4 +65,11 @@ public class GlobalExceptionHandler {
             com.yowyob.rideandgo.domain.exception.DriverProfileNotValidatedException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
     }
+
+    // Kernel / services externes injoignables : 503 explicite au lieu d'un 500 générique
+    @ExceptionHandler(org.springframework.web.reactive.function.client.WebClientRequestException.class)
+    public ProblemDetail handleUpstreamUnavailable(Exception e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "Service externe momentanément indisponible, réessayez dans quelques instants.");
+    }
 }

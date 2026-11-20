@@ -194,7 +194,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
 
     setIsCancelling(true);
     try {
-      await api.delete(`/api/v1/offers/${offer.id}`);
+      await api.post(`/api/v1/offers/${offer.id}/cancel`); // annule (notifie le chauffeur) au lieu de supprimer
       localStorage.removeItem('activeOfferId');
       window.location.reload();
     } catch (error: any) {

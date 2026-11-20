@@ -20,6 +20,10 @@ spring:
       server:
         max-header-size: 32768
         max-initial-line-length: 32768
+    # Limite des uploads multipart (photos, documents)
+    multipart:
+      max-disk-usage-per-part: 10MB
+      max-in-memory-size: 1MB
 
   # POSTGRESQL (R2DBC)
   r2dbc:
@@ -74,7 +78,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
+        spring.json.trusted.packages: "com.yowyob.*"
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -97,6 +101,12 @@ application:
   auth:
     mode: remote # 'fake' pour ton dev local, 'remote' pour le serveur réel
     url: https://kernel-core.yowyob.com/kernel-api
+    # Validation de signature des JWT Kernel (clé publique RS256)
+    jwks-uri: ${KERNEL_JWKS_URI:https://kernel-core.yowyob.com/.well-known/jwks.json}
+    issuer: ${KERNEL_JWT_ISSUER:kernel-core}
+
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,https://*.yowyob.com}
 
   fare:
     mode: remote # 'fake' pour ton dev local, 'remote' pour le serveur réel
@@ -106,7 +116,7 @@ application:
   notification:
     mode: http # 'http' ou 'kafka'
     url: https://kernel-core.yowyob.com/kernel-api # URL du Swagger fourni
-    service-token: "a77599d3-8de7-4d52-b9d0-2202b2e13a9e" # Token récupéré après enregistrement du service
+    service-token: ${NOTIFICATION_SERVICE_TOKEN}
     templates:
       new-offer: 12 # ID template: Nouvelle offre pour les chauffeurs
       driver-applied: 13 # ID template: Un chauffeur a postulé (pour le client)
@@ -146,13 +156,19 @@ management:
         include: ["health", "info", "prometheus"]
   endpoint:
     health:
-      show-details: "always"
+      show-details: "when-authorized"
       probes:
         enabled: true
   metrics:
     export:
       prometheus:
         enabled: true
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
 
 # ======================================================
 # 2. CONFIGURATION TIMEOUT (Resilience4j)

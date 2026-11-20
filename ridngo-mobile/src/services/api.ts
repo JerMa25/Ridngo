@@ -2,9 +2,9 @@ import axios, { AxiosInstance } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { reportConnectivity } from './connectivityBus';
 
-// Utilise l'adresse IP de ta machine sur ton réseau local
-export const BASE_URL = 'http://10.62.212.154:8080';
-export const VEHICLE_URL = 'https://vehicule-service.pynfi.com'; // À changer s'il y a un service local
+// Défini au build via EXPO_PUBLIC_API_URL (voir eas.json) ; sinon IP locale pour le dev sur réseau local
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.62.212.154:8080';
+export const VEHICLE_URL = process.env.EXPO_PUBLIC_VEHICLE_API_URL || 'https://traefikdev.yowyob.com/vehicule';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,

@@ -52,7 +52,10 @@ public class TripController {
             @PathVariable UUID driverId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return rideService.getHistoryForDriver(driverId, page, size)
+        return currentAuth()
+                .filter(auth -> driverId.toString().equals(auth.getName()) || isAdmin(auth))
+                .switchIfEmpty(Mono.error(forbidden()))
+                .flatMapMany(auth -> rideService.getHistoryForDriver(driverId, page, size))
                 .map(rideMapper::toResponse);
     }
 
@@ -72,7 +75,11 @@ public class TripController {
 
     @GetMapping("/{id}")
     public Mono<RideResponse> getRideById(@PathVariable UUID id) {
-        return rideService.getRideById(id).map(rideMapper::toResponse);
+        return currentAuth().flatMap(auth -> rideService.getRideById(id)
+                .filter(ride -> isAdmin(auth) || auth.getName().equals(String.valueOf(ride.driverId()))
+                        || auth.getName().equals(String.valueOf(ride.passengerId())))
+                .switchIfEmpty(Mono.error(forbidden())))
+                .map(rideMapper::toResponse);
     }
 
     @GetMapping("/driver/current")
@@ -108,5 +115,18 @@ public class TripController {
                     UUID driverId = UUID.fromString(auth.getName());
                     return trajectoryService.getMyTrajectories(driverId);
                 });
+    }
+
+    private Mono<org.springframework.security.core.Authentication> currentAuth() {
+        return ReactiveSecurityContextHolder.getContext().map(SecurityContext::getAuthentication);
+    }
+
+    private static boolean isAdmin(org.springframework.security.core.Authentication auth) {
+        return auth.getAuthorities().stream().anyMatch(a -> "RIDE_AND_GO_ADMIN".equals(a.getAuthority()));
+    }
+
+    private static org.springframework.web.server.ResponseStatusException forbidden() {
+        return new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, "Accès refusé à cette course");
     }
 }
