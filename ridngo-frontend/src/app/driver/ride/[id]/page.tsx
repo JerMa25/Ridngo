@@ -8,6 +8,10 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation'; // CORRECT IMPORT
 import { toast } from 'react-hot-toast';
+import { useNavigation, formatDistance } from '@/lib/navigation';
+
+/** Doit rester aligné sur RideService.ARRIVAL_RADIUS_M côté backend. */
+const ARRIVAL_RADIUS_M = 150;
 
 const MapView = dynamic(() => import('@/components/home/MapView'), { ssr: false });
 
@@ -17,6 +21,7 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
   const [ride, setRide] = useState<any>(null);
   const [passenger, setPassenger] = useState<any>(null);
   const [tracking, setTracking] = useState<any>(null);
+  const [offer, setOffer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -25,6 +30,8 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
       try {
         const res = await api.get(`/api/v1/trips/${id}`);
         setRide(res.data);
+        // départ / destination / téléphone du passager sont portés par l'offre
+        rideService.getOfferById(res.data.offerId).then(setOffer).catch(() => {});
 
         const passRes = await api.get(`/api/v1/users/${res.data.passengerId}`);
         setPassenger(passRes.data);
@@ -51,6 +58,13 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
     return () => clearInterval(interval);
   }, [id, router]);
 
+  const goingToPickup = ride?.state === 'CREATED';
+  const pickup = offer?.startLat != null ? { lat: offer.startLat, lon: offer.startLon } : null;
+  const destination = offer?.endLat != null ? { lat: offer.endLat, lon: offer.endLon } : null;
+  const nav = useNavigation(goingToPickup ? pickup : destination, !!ride && ride.state !== 'COMPLETED');
+  const arrived = nav.toTarget !== null && nav.toTarget <= ARRIVAL_RADIUS_M;
+  const passengerPhone = passenger?.telephone || offer?.passengerPhone;
+
   const updateStatus = async (newStatus: 'ONGOING' | 'COMPLETED') => {
     setActionLoading(true);
     try {
@@ -64,7 +78,7 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
       }
     } catch (e: any) { 
       console.error("Erreur statut:", e);
-      toast.error(e.response?.data?.message || "Erreur lors de la mise à jour du statut"); 
+      toast.error(e.response?.data?.detail || e.response?.data?.message || "Erreur lors de la mise à jour du statut"); 
     } finally {
       setActionLoading(false);
     }
@@ -109,13 +123,24 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
                       <p className="text-[10px] opacity-40 font-bold uppercase tracking-widest">Passager vérifié</p>
                    </div>
                 </div>
-                <a href={`tel:${passenger?.telephone}`} className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-green-500/20 hover:scale-110 transition-transform">
+                <a href={`tel:${passengerPhone}`} aria-label="Appeler le passager" className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-green-500/20 hover:scale-110 transition-transform">
                    <Phone size={20} />
                 </a>
               </div>
               <div className="pt-3 border-t border-foreground/5">
                 <p className="text-[9px] font-black uppercase opacity-30 mb-0.5 tracking-tighter">Contact direct</p>
-                <p className="text-xs font-bold">{passenger?.telephone || "Non renseigné"}</p>
+                <p className="text-xs font-bold">{passengerPhone || "Non renseigné"}</p>
+              </div>
+           </div>
+
+           {/* GUIDAGE */}
+           <div className="bg-orange-btn text-white rounded-[24px] p-5 shadow-xl shadow-orange-btn/20" aria-live="polite">
+              <p className="text-[9px] font-black uppercase tracking-widest opacity-80">{goingToPickup ? 'Vers le passager' : 'Vers la destination'}</p>
+              <p className="text-lg font-black leading-tight mt-1">{nav.geoError || nav.instruction}</p>
+              <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+                <div><p className="text-[8px] font-black uppercase opacity-70">Restant</p><p className="font-black">{nav.remaining != null ? formatDistance(nav.remaining) : '—'}</p></div>
+                <div><p className="text-[8px] font-black uppercase opacity-70">Parcouru</p><p className="font-black">{formatDistance(nav.traveled)}</p></div>
+                <div><p className="text-[8px] font-black uppercase opacity-70">Arrivée</p><p className="font-black">{nav.etaMinutes ? `${nav.etaMinutes} min` : '—'}</p></div>
               </div>
            </div>
 
@@ -130,13 +155,21 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
                   {actionLoading ? <Loader2 className="animate-spin" /> : <><Navigation size={20}/> J&apos;ai récupéré le client</>}
                 </button>
               ) : (
+                <>
+                {!arrived && (
+                  <p className="text-[11px] font-bold text-center opacity-60">
+                    Vous pourrez terminer la course à moins de {ARRIVAL_RADIUS_M} m de la destination
+                    {nav.toTarget != null ? ` (encore ${formatDistance(nav.toTarget)})` : ''}.
+                  </p>
+                )}
                 <button 
-                  disabled={actionLoading}
+                  disabled={actionLoading || !arrived}
                   onClick={() => updateStatus('COMPLETED')}
-                  className="w-full py-6 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-[24px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-green-500 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95"
+                  className="w-full py-6 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-[24px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-green-500 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-foreground"
                 >
                   {actionLoading ? <Loader2 className="animate-spin" /> : <><Flag size={20}/> Terminer la course</>}
                 </button>
+                </>
               )}
            </div>
         </div>
@@ -144,14 +177,17 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
         <div className="mt-8 pt-8 border-t border-foreground/5">
            <div className="flex items-center gap-3 opacity-60">
               <MapPin size={16} className="text-orange-btn" />
-              <p className="text-xs font-bold truncate">Destination : {ride?.endPoint || "..."}</p>
+              <p className="text-xs font-bold truncate">Destination : {offer?.endPoint || ride?.endPoint || "..."}</p>
            </div>
         </div>
       </div>
 
       {/* CARTE GPS */}
-      <div className="flex-1 relative z-0">
-         <MapView partnerPos={tracking ? { lat: tracking.latitude, lon: tracking.longitude } : undefined} />
+      <div className="flex-1 relative z-0 min-h-[55vh] lg:min-h-0">
+         <MapView
+           pickup={pickup ? { ...pickup, name: offer?.startPoint } : undefined}
+           destination={destination ? { ...destination, name: offer?.endPoint } : undefined}
+           partnerPos={nav.position || (tracking ? { lat: tracking.latitude, lon: tracking.longitude } : undefined)} />
          
          <div className="absolute bottom-6 right-6 glass p-6 border-none shadow-2xl flex items-center gap-6 bg-background/80 backdrop-blur-md">
             <div className="text-center">

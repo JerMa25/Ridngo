@@ -12,11 +12,22 @@ public interface AuthPort {
 
     Mono<AuthResponse> refreshToken(String refreshToken);
 
+    /** Termine une connexion qui a levé MfaRequiredException. */
+    Mono<AuthResponse> confirmLoginMfa(String mfaToken, String code);
+
+    Mono<CaptchaChallenge> captcha();
+
+    Mono<Void> resendEmailVerification(String principal);
+
     Mono<AuthResponse> register(
             String username, String email, String password, String phone,
             String firstName, String lastName, List<RoleType> roles,
-            org.springframework.http.codec.multipart.FilePart photo // Ajouté
+            org.springframework.http.codec.multipart.FilePart photo, // Ajouté
+            String captchaToken, String captchaAnswer
     );
+
+    record CaptchaChallenge(String captchaToken, String prompt) {
+    }
 
     record AuthResponse(
             UUID userId, // Ajouté pour identifier l'utilisateur

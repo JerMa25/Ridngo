@@ -52,6 +52,16 @@ public class FakeUserAdapter implements ExternalUserPort {
     }
 
     @Override
+    public Mono<String> uploadProfilePhoto(org.springframework.http.codec.multipart.FilePart photo) {
+        return Mono.just(UUID.randomUUID().toString());
+    }
+
+    @Override
+    public Mono<FileContent> fetchProfilePhoto(String fileId) {
+        return Mono.empty();
+    }
+
+    @Override
     public Mono<User> updateProfile(UUID userId, String firstName, String lastName, String phone) {
         log.info("🛠 FAKE ADAPTER: Pretending to update profile for user {}", userId);
         // On retourne l'utilisateur local tel quel

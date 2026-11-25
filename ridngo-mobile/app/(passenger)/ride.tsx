@@ -12,6 +12,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { LocationSearch } from '../../src/components/LocationSearch';
+import { DriverProfileSheet } from '../../src/components/DriverProfileSheet';
 import { rideService, clearPassengerRideData } from '../../src/services/rideService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { Location, OfferResponse, Bid } from '../../src/types/api';
@@ -203,6 +204,7 @@ export default function RideScreen() {
 
   // ── États de navigation
   const [step, setStep] = useState<Step>('search');
+  const [profileDriverId, setProfileDriverId] = useState<string | null>(null);
 
   // ── Carte
   const [pickup, setPickup] = useState<Location | null>(null);
@@ -613,6 +615,9 @@ export default function RideScreen() {
   // RENDU
   // ─────────────────────────────────────────────
   return (
+    <>
+    <DriverProfileSheet driverId={profileDriverId} onClose={() => setProfileDriverId(null)}
+      onChoose={(id) => { setProfileDriverId(null); handleSelectDriver(id); }} />
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]}>
       {/* ── CARTE EN FOND ── */}
       <View style={styles.mapContainer}>
@@ -936,16 +941,17 @@ export default function RideScreen() {
                   </Text>
                   {((currentOffer as any).bids as Bid[]).map((bid: Bid) => (
                     <View key={bid.driverId} style={[styles.bidCard, { backgroundColor: Colors.background, borderColor: Colors.cardBorder }]}>
-                      <View>
+                      <TouchableOpacity onPress={() => setProfileDriverId(bid.driverId)} accessibilityRole="button" accessibilityHint="Voir le profil détaillé">
                         <Text style={[styles.bidName, { color: Colors.text }]}>
                           {bid.driverName || `Chauffeur #${bid.driverId.slice(-4)}`}
                         </Text>
+                        <Text style={{ color: Colors.orange, fontSize: 12, fontWeight: '800' }}>Voir le profil ›</Text>
                         {bid.proposedPrice && (
                           <Text style={[styles.bidPrice, { color: Colors.textMuted }]}>
                             Prix proposé : {bid.proposedPrice} FCFA
                           </Text>
                         )}
-                      </View>
+                      </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.chooseBtn}
                         onPress={() => handleSelectDriver(bid.driverId)}
@@ -1036,6 +1042,7 @@ export default function RideScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </>
   );
 }
 

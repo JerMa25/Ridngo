@@ -38,6 +38,13 @@ public class ReviewController {
                 .flatMapMany(reviewService::getReviewsForDriver);
     }
 
+    @GetMapping("/driver/{driverId}")
+    @Operation(summary = "Avis reçus par un chauffeur (pour le choisir)")
+    @PreAuthorize("isAuthenticated()")
+    public Flux<ReviewResponse> getDriverReviews(@PathVariable UUID driverId) {
+        return reviewService.getReviewsForDriver(driverId);
+    }
+
     public record ReviewRequest(int stars, String comment, boolean anonymous) {
     }
 }

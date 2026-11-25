@@ -10,6 +10,12 @@ public interface AuthUseCase {
     Mono<AuthPort.AuthResponse> login(String principal, String password);
 
     Mono<AuthPort.AuthResponse> refreshToken(String refreshToken);
+
+    Mono<AuthPort.AuthResponse> confirmLoginMfa(String mfaToken, String code);
+
+    Mono<AuthPort.CaptchaChallenge> captcha();
+
+    Mono<Void> resendEmailVerification(String principal);
     
     Mono<Void> resetPassword(String email);
 
@@ -21,6 +27,8 @@ public interface AuthUseCase {
         String firstName, 
         String lastName,
         List<RoleType> roles,
-        FilePart photo // ✅ Ajout ici
+        FilePart photo, // ✅ Ajout ici
+        String captchaToken,
+        String captchaAnswer
     );
 }

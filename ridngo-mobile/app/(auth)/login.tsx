@@ -10,22 +10,26 @@ import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Spacing, Radius } from '../../src/types/theme';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, confirmMfa } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mfa, setMfa] = useState<{ mfaToken: string; channel: string } | null>(null);
+  const [code, setCode] = useState('');
 
   const handleLogin = async () => {
-    if (!identifier.trim() || !password.trim()) {
+    if (mfa ? !code.trim() : !identifier.trim() || !password.trim()) {
       Alert.alert('Champs requis', 'Veuillez remplir tous les champs.');
       return;
     }
     setLoading(true);
-    const result = await login(identifier.trim(), password);
+    const result = mfa ? await confirmMfa(mfa.mfaToken, code) : await login(identifier.trim(), password);
     setLoading(false);
     if (result.success) {
       router.replace('/');
+    } else if (result.mfa) {
+      setMfa(result.mfa);
     } else {
       Alert.alert('Erreur de connexion', result.message || 'Identifiants invalides.');
     }
@@ -61,6 +65,40 @@ export default function LoginScreen() {
           <Text style={styles.title}>Bon retour 👋</Text>
           <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
 
+          {mfa ? (
+          <View style={styles.form}>
+            <Text style={styles.subtitle}>
+              Un code vous a été envoyé par {mfa.channel === 'SMS' ? 'SMS' : 'email'}.
+            </Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="key" size={18} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { letterSpacing: 6 }]}
+                placeholder="Code reçu"
+                placeholderTextColor={Colors.textMuted}
+                value={code}
+                onChangeText={setCode}
+                keyboardType="number-pad"
+                textContentType="oneTimeCode"
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                accessibilityLabel="Code de vérification"
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.btnPrimary, loading && { opacity: 0.6 }]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              {loading ? <ActivityIndicator color={Colors.dark} /> : <Text style={styles.btnText}>Valider le code</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMfa(null); setCode(''); }}>
+              <Text style={[styles.forgotText, { textAlign: 'center' }]}>← Changer de compte</Text>
+            </TouchableOpacity>
+          </View>
+          ) : (
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email / Téléphone / Pseudo</Text>
@@ -123,6 +161,7 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
           </View>
+          )}
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Pas encore de compte ? </Text>

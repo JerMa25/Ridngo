@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { useRouteGuidance, formatDistance, ARRIVAL_RADIUS_M } from '../../../src/services/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ExpoLocation from 'expo-location';
@@ -92,7 +93,7 @@ export default function DriverRideScreen() {
   // /trips/{id} ne renvoie pas toujours l'itinéraire, le prix ou le nombre de places
   // (ces infos vivent sur l'offre) : on les complète depuis l'offre liée si besoin.
   const enrichWithOffer = async (data: RideResponse): Promise<RideResponse> => {
-    if (!data.offerId || (data.startPoint && data.numberOfPlaces)) return data;
+    if (!data.offerId || (data.startPoint && data.numberOfPlaces && data.endLat != null)) return data;
     try {
       const offer = await rideService.getOfferById(data.offerId);
       return {
@@ -101,7 +102,11 @@ export default function DriverRideScreen() {
         endPoint: data.endPoint || offer.endPoint,
         price: data.price ?? offer.price,
         numberOfPlaces: data.numberOfPlaces ?? offer.numberOfPlaces,
-      };
+        // coordonnées et téléphone portés par l'offre : guidage + contrôle d'arrivée
+        startLat: data.startLat ?? (offer as any).startLat, startLon: data.startLon ?? (offer as any).startLon,
+        endLat: data.endLat ?? (offer as any).endLat, endLon: data.endLon ?? (offer as any).endLon,
+        passengerPhone: (data as any).passengerPhone ?? offer.passengerPhone,
+      } as RideResponse;
     } catch { return data; }
   };
 
@@ -155,8 +160,20 @@ export default function DriverRideScreen() {
     } finally { setAction(false); }
   };
 
-  // ONGOING → COMPLETED : chauffeur termine
+  // Guidage : vers le passager tant que CREATED, puis vers la destination
+  const navTarget = rideState === 'CREATED'
+    ? (ride?.startLat != null && ride?.startLon != null ? { lat: ride.startLat, lon: ride.startLon } : null)
+    : (ride?.endLat != null && ride?.endLon != null ? { lat: ride.endLat, lon: ride.endLon } : null);
+  const nav = useRouteGuidance(driverPos, navTarget);
+
+  // ONGOING → COMPLETED : chauffeur termine (seulement une fois arrivé, le backend vérifie aussi)
   const handleComplete = () => {
+    if (!nav.arrived) {
+      Alert.alert('Pas encore arrivé', nav.toTarget != null
+        ? `Vous pourrez terminer à moins de ${ARRIVAL_RADIUS_M} m de la destination (encore ${formatDistance(nav.toTarget)}).`
+        : 'Activez la localisation pour terminer la course.');
+      return;
+    }
     Alert.alert('Terminer la course', 'Confirmez-vous la fin de la course ?', [
       { text: 'Non' },
       { text: 'Oui, terminer', onPress: async () => {
@@ -167,7 +184,7 @@ export default function DriverRideScreen() {
           if (pollRef.current) clearInterval(pollRef.current);
           setRideState('COMPLETED');
         } catch (e: any) {
-          Alert.alert('Erreur', e?.response?.data?.message || e?.message || 'Erreur.');
+          Alert.alert('Erreur', e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur.');
         } finally { setAction(false); }
       }},
     ]);
@@ -352,10 +369,35 @@ export default function DriverRideScreen() {
           </View>
         )}
 
+        {/* Guidage */}
+        {(rideState === 'CREATED' || rideState === 'ONGOING') && (
+          <View style={{ backgroundColor: Colors.orange, borderRadius: 20, padding: 16, marginBottom: 12 }} accessibilityLiveRegion="polite">
+            <Text style={{ color: '#fff', opacity: 0.8, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }}>
+              {rideState === 'CREATED' ? 'VERS LE PASSAGER' : 'VERS LA DESTINATION'}
+            </Text>
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900', marginTop: 4 }}>{nav.instruction}</Text>
+            <View style={{ flexDirection: 'row', marginTop: 12 }}>
+              {[['RESTANT', nav.remaining != null ? formatDistance(nav.remaining) : '—'],
+                ['PARCOURU', formatDistance(nav.traveled)],
+                ['ARRIVÉE', nav.etaMinutes ? `${nav.etaMinutes} min` : '—']].map(([k, v]) => (
+                <View key={k} style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{ color: '#fff', opacity: 0.7, fontSize: 9, fontWeight: '900' }}>{k}</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900' }}>{v}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Bouton ONGOING : Terminer */}
+        {rideState === 'ONGOING' && !nav.arrived && (
+          <Text style={{ color: Colors.textSecondary, textAlign: 'center', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
+            Terminer à moins de {ARRIVAL_RADIUS_M} m de la destination{nav.toTarget != null ? ` (encore ${formatDistance(nav.toTarget)})` : ''}.
+          </Text>
+        )}
         {rideState === 'ONGOING' && (
           <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: Colors.green }]}
+            style={[s.actionBtn, { backgroundColor: Colors.green, opacity: nav.arrived ? 1 : 0.45 }]}
             onPress={handleComplete} disabled={actionLoading} activeOpacity={0.85}>
             {actionLoading
               ? <ActivityIndicator color="#fff" />

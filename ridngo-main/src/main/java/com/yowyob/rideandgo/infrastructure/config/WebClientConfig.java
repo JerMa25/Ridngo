@@ -30,7 +30,24 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class WebClientConfig {
 
-    private final HttpClient httpClient = HttpClient.create().wiretap(true);
+    // Sans délai, une requête Kernel sans réponse bloquait la connexion indéfiniment (vu en test réel)
+    // Connexions inactives fermées avant que le Kernel ne les coupe : réutiliser une connexion déjà
+    // fermée côté Kernel ("connexion ré-initialisée") bloquait la requête jusqu'au délai d'attente.
+    private final HttpClient httpClient = HttpClient.create(reactor.netty.resources.ConnectionProvider.builder("kernel")
+                    .maxIdleTime(java.time.Duration.ofSeconds(20))
+                    .maxLifeTime(java.time.Duration.ofMinutes(5))
+                    .evictInBackground(java.time.Duration.ofSeconds(30))
+                    .build())
+            .wiretap(true)
+            .option(io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS, 10_000)
+            // le Kernel répond parfois en 10 s+ sur /auth/discover-contexts
+            .responseTimeout(java.time.Duration.ofSeconds(60));
+
+    /** Mêmes délais pour tous les WebClient construits depuis le WebClient.Builder de Spring. */
+    @Bean
+    public org.springframework.boot.web.reactive.function.client.WebClientCustomizer kernelTimeouts() {
+        return builder -> builder.clientConnector(new ReactorClientHttpConnector(httpClient));
+    }
 
     // @Lazy : évite toute dépendance circulaire au démarrage
     // (KernelServiceTokenProvider
@@ -81,6 +98,7 @@ public class WebClientConfig {
                 .baseUrl(url)
                 .filter(kernelAuthFilter())
                 .filter(addBearerToken())
+                .filter(kernelSessionExpired())
                 .build();
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
         return HttpServiceProxyFactory.builderFor(adapter).build().createClient(PaymentApiClient.class);
@@ -115,6 +133,17 @@ public class WebClientConfig {
         WebClientAdapter adapter = WebClientAdapter.create(webClient);
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
         return factory.createClient(AuthApiClient.class);
+    }
+
+    /**
+     * Un 401 du Kernel sur le wallet = session Kernel de l'utilisateur expirée ou révoquée (ex. reconnexion
+     * dans un autre portail Yowyob). Remonté en 401 (et non 500) pour que le front rafraîchisse la session.
+     */
+    private ExchangeFilterFunction kernelSessionExpired() {
+        return ExchangeFilterFunction.ofResponseProcessor(response -> response.statusCode().value() == 401
+                ? response.releaseBody().then(Mono.error(new com.yowyob.rideandgo.domain.exception.AuthenticationFailedException(
+                        "Votre session Yowyob a expiré : reconnectez-vous.")))
+                : Mono.just(response));
     }
 
     private ExchangeFilterFunction logRequest() {
@@ -194,7 +223,8 @@ public class WebClientConfig {
 
             // Pas de Bearer token sur les routes publiques d'auth
             if (path.contains("/auth/login") || path.contains("/auth/sign-up") || path.contains("/auth/refresh")
-                    || path.contains("/auth/discover-contexts") || path.contains("/auth/select-context")) {
+                    || path.contains("/auth/discover-contexts") || path.contains("/auth/select-context")
+                    || path.contains("/auth/captcha")) {
                 return next.exchange(request);
             }
 

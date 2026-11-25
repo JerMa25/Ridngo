@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
+import { WalletCard } from '../../src/components/WalletCard';
 import { rideService } from '../../src/services/rideService';
 import { driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
@@ -242,6 +243,8 @@ export default function DriverDashboard() {
           />
         }
       >
+        <WalletCard balance={balance} onChanged={loadData} />
+
         {/* ── Bandeau course active ── */}
         {currentRide && (
           <TouchableOpacity

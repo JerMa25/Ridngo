@@ -57,6 +57,9 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   const [me, setMe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [commissionChallenge, setCommissionChallenge] = useState<{ challengeToken: string; commission: number } | null>(null);
+  const [commissionCode, setCommissionCode] = useState('');
+  const [codeError, setCodeError] = useState('');
   const [copied, setCopied] = useState(false);
 
   // --- FORCE SCROLL TO TOP ON MOUNT ---
@@ -152,13 +155,23 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   };
 
   const handleFinalAccept = async () => {
+    setCodeError('');
+    if (commissionChallenge && !/^\d{4,8}$/.test(commissionCode.trim())) {
+      setCodeError('Saisissez le code reçu (4 à 8 chiffres).');
+      return;
+    }
     setActionLoading(true);
     try {
-      const profile = await api.get('/api/v1/users/me');
-      const rideRes = await rideService.driverAccepts(id, profile.data.id);
+      if (!commissionChallenge) {
+        // étape 1 : le Kernel envoie le code de confirmation de la commission
+        setCommissionChallenge(await rideService.requestAcceptCode(id));
+        return;
+      }
+      const rideRes = await rideService.driverAccepts(id, commissionChallenge.challengeToken, commissionCode.trim());
       router.push(`/driver/ride/${rideRes.id}`);
     } catch (e: any) {
-      toast.error("Erreur validation");
+      const msg = e.response?.data?.detail || e.response?.data?.message || "Validation impossible pour le moment.";
+      if (commissionChallenge && /code|mfa|challenge|expir/i.test(msg)) setCodeError(msg); else toast.error(msg);
     } finally {
       setActionLoading(false);
     }
@@ -270,12 +283,23 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                         <p className="text-xs font-bold">Le client vous a sélectionné.</p>
                      </div>
                   </div>
+                  {commissionChallenge && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold">
+                        Commission de {commissionChallenge.commission.toLocaleString()} FCFA : saisissez le code de confirmation reçu.
+                      </p>
+                      <input autoFocus inputMode="numeric" autoComplete="one-time-code" aria-label="Code de confirmation"
+                        aria-invalid={!!codeError} value={commissionCode} onChange={e => setCommissionCode(e.target.value)}
+                        className={`w-full bg-foreground/5 border rounded-xl py-3 px-4 text-center tracking-[0.4em] text-lg font-black outline-none focus:ring-2 focus:ring-orange-btn ${codeError ? 'border-red-500' : 'border-foreground/10'}`} />
+                      {codeError && <p role="alert" className="text-[11px] font-bold text-red-500">{codeError}</p>}
+                    </div>
+                  )}
                   <button 
                     onClick={handleFinalAccept}
                     disabled={actionLoading}
                     className="w-full py-5 bg-foreground text-background rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
-                    {actionLoading ? <Loader2 className="animate-spin" /> : "Démarrer la course"}
+                    {actionLoading ? <Loader2 className="animate-spin" /> : commissionChallenge ? "Confirmer et démarrer" : "Accepter la course"}
                   </button>
                 </motion.div>
               ) : hasApplied ? (

@@ -12,16 +12,28 @@ public interface PaymentPort {
 
     Mono<Wallet> getWalletByOwnerId(UUID ownerId);
 
-    Mono<Void> processPayment(UUID walletId, double amount);
+    /** Paiement depuis le wallet : le Kernel exige le code MFA émis par startPayment (428 sinon). */
+    Mono<Void> processPayment(UUID walletId, double amount, String reference, String challengeToken, String code);
+
+    /** Émet l'épreuve MFA d'un paiement (le code part chez le titulaire) ; renvoie le challengeToken. */
+    Mono<String> startPayment(UUID walletId, double amount, String reference);
 
     /** Démarre une recharge de wallet via le provider externe (MYCOOLPAY). */
-    Mono<RechargeOrder> rechargeWallet(UUID walletId, double amount, String payerReference);
+    /** method : MOBILE_MONEY | ORANGE_MONEY | MTN_MOBILE_MONEY (MyCoolPay) ou CARD (Stripe). */
+    Mono<RechargeOrder> rechargeWallet(UUID walletId, double amount, String payerReference, String method);
 
     /**
      * Rafraîchit le statut d'une recharge auprès du provider et crédite le wallet
      * si succès.
      */
     Mono<RechargeOrder> refreshRechargeOrder(String orderId);
+
+    /** Retrait étape 1 : renvoie le challengeToken (le code part chez le titulaire). */
+    Mono<String> startWithdrawal(UUID walletId, double amount, String phoneNumber);
+
+    /** Retrait étape 2 : renvoie le statut de la transaction de débit. */
+    Mono<String> confirmWithdrawal(UUID walletId, double amount, String phoneNumber, String method,
+            String recipientName, String challengeToken, String code);
 
     /**
      * Retourne l'historique des transactions blockchain d'un wallet.

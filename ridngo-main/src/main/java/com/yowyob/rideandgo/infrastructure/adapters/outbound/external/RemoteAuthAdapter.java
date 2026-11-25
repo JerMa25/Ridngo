@@ -1,6 +1,7 @@
 package com.yowyob.rideandgo.infrastructure.adapters.outbound.external;
 
 import com.yowyob.rideandgo.domain.exception.AuthenticationFailedException;
+import com.yowyob.rideandgo.domain.exception.MfaRequiredException;
 import com.yowyob.rideandgo.domain.exception.UserAlreadyExistsException;
 import com.yowyob.rideandgo.domain.model.User;
 import com.yowyob.rideandgo.domain.model.enums.RoleType;
@@ -32,6 +33,7 @@ public class RemoteAuthAdapter implements AuthPort {
     private final CacheInvalidationPort cacheInvalidationPort;
     private final String tenantId;
     private final ReactiveRedisTemplate<String, Object> redisTemplate;
+    private final String organizationId;
 
     private static final String PENDING_ROLES_KEY_PREFIX = "pending-roles:";
     // Le lien de vérification email doit rester valable largement plus longtemps
@@ -45,8 +47,47 @@ public class RemoteAuthAdapter implements AuthPort {
     @Override
     public Mono<AuthResponse> login(String principal, String password) {
         log.info("🌐 KERNEL AUTH : Login pour {}", principal);
-        return doLoginFlow(principal, password)
-                .flatMap(authResponse -> ensurePendingRoleAssigned(principal, password, authResponse));
+        return doLoginFlow(principal, password).flatMap(this::ensurePendingRoleAssigned);
+    }
+
+    @Override
+    public Mono<AuthResponse> confirmLoginMfa(String mfaToken, String code) {
+        return client.confirmLoginMfa(new AuthApiClient.KernelConfirmMfaRequest(mfaToken, code))
+                .mapNotNull(AuthApiClient.KernelRefreshEnvelope::data)
+                .switchIfEmpty(Mono.error(new AuthenticationFailedException("Réponse MFA Kernel invalide.")))
+                .flatMap(session -> {
+                    if (session.tenantId() != null && !tenantId.equals(session.tenantId())) {
+                        return Mono.error(new AuthenticationFailedException(
+                                "Ce compte n'a pas accès à l'espace RidnGo."));
+                    }
+                    if (session.id() != null) {
+                        cacheInvalidationPort.invalidateUserCache(UUID.fromString(session.id())).subscribe();
+                    }
+                    return Mono.just(mapSessionToDomain(session));
+                })
+                .flatMap(this::ensurePendingRoleAssigned)
+                .onErrorResume(WebClientResponseException.class, ex -> Mono.error(new AuthenticationFailedException(
+                        ex.getStatusCode().is4xxClientError()
+                                ? "Code de vérification incorrect ou expiré."
+                                : "Erreur d'authentification distante")));
+    }
+
+    @Override
+    public Mono<Void> resendEmailVerification(String principal) {
+        return client.resendEmailVerification(new AuthApiClient.KernelPrincipalRequest(principal))
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    // même réponse qu'un compte existe ou non (le Kernel ne doit pas servir d'annuaire)
+                    log.warn("⚠️ Renvoi de vérification email refusé : {} — {}", ex.getStatusCode(),
+                            ex.getResponseBodyAsString());
+                    return Mono.empty();
+                });
+    }
+
+    @Override
+    public Mono<CaptchaChallenge> captcha() {
+        return client.captcha()
+                .mapNotNull(AuthApiClient.KernelCaptchaEnvelope::data)
+                .map(c -> new CaptchaChallenge(c.captchaToken(), c.prompt()));
     }
 
     /**
@@ -64,7 +105,7 @@ public class RemoteAuthAdapter implements AuthPort {
      * donc ne
      * contient pas encore le rôle).
      */
-    private Mono<AuthResponse> ensurePendingRoleAssigned(String principal, String password, AuthResponse authResponse) {
+    private Mono<AuthResponse> ensurePendingRoleAssigned(AuthResponse authResponse) {
         if (authResponse.roles() != null && !authResponse.roles().isEmpty()) {
             return Mono.just(authResponse); // déjà un rôle RIDE_AND_GO_* — rien à faire
         }
@@ -92,33 +133,49 @@ public class RemoteAuthAdapter implements AuthPort {
 
                     log.info(
                             "🎯 Rôle(s) en attente trouvé(s) pour {} : {} — tentative d'assignation (email désormais vérifié).",
-                            principal, roleNames);
+                            authResponse.username(), roleNames);
 
-                    return resolveRoleIds(roles)
+                    // Le rôle est d'abord enregistré en base locale : JwtAuthenticationManager et
+                    // AuthService.withLocalRoles en tiennent compte même si l'assignation Kernel échoue.
+                    Mono<Void> saveLocal = userRepositoryPort.findUserById(authResponse.userId())
+                            .switchIfEmpty(Mono.defer(() -> userRepositoryPort.save(User.builder()
+                                    .id(authResponse.userId())
+                                    .name(authResponse.username())
+                                    .roles(Collections.emptySet())
+                                    .directPermissions(Collections.emptySet())
+                                    .build())))
+                            .thenMany(reactor.core.publisher.Flux.fromIterable(roles))
+                            .concatMap(role -> userRepositoryPort.addRoleToUser(authResponse.userId(), role))
+                            .then();
+
+                    return saveLocal.then(resolveRoleIds(roles))
                             .flatMap(roleIdByName -> reactor.core.publisher.Flux.fromIterable(roles)
                                     .flatMap(role -> {
-                                        String kernelRoleId = roleIdByName.get(role.name());
-                                        if (kernelRoleId == null) {
+                                        AuthApiClient.KernelRoleDto kernelRole = roleIdByName.get(role.name());
+                                        if (kernelRole == null) {
                                             log.error(
                                                     "❌ Rôle en attente '{}' toujours introuvable dans le catalogue Kernel.",
                                                     role.name());
                                             return Mono.empty();
                                         }
-                                        return client.assignRole(authResponse.userId().toString(),
-                                                new AuthApiClient.KernelAssignRoleRequest(kernelRoleId, "TENANT", null,
-                                                        null));
+                                        return client.assignRole(authResponse.userId().toString(), organizationId,
+                                                AuthApiClient.KernelAssignRoleRequest.forRole(kernelRole, organizationId));
                                     })
                                     .then())
                             .then(redisTemplate.opsForValue().delete(redisKey))
                             .then(Mono.defer(() -> {
                                 log.info(
-                                        "✅ Rôle(s) en attente assigné(s) pour {} — reconnexion pour rafraîchir le token.",
-                                        principal);
-                                return doLoginFlow(principal, password); // rejoue le login pour un token à jour
+                                        "✅ Rôle(s) en attente assigné(s) pour {} — refresh pour un token à jour.",
+                                        authResponse.username());
+                                // refresh plutôt que rejouer le login : un compte MFA renverrait un nouveau code
+                                return refreshToken(authResponse.refreshToken())
+                                        .map(r -> new AuthResponse(r.userId(), r.accessToken(), r.refreshToken(),
+                                                r.username(), roleNames, r.permissions()))
+                                        .onErrorReturn(authResponse);
                             }))
                             .onErrorResume(e -> {
-                                log.error("❌ Assignation du rôle en attente échouée pour {} : {}", principal,
-                                        e.getMessage());
+                                log.error("❌ Assignation du rôle en attente échouée pour {} : {}",
+                                        authResponse.username(), e.getMessage());
                                 return Mono.just(authResponse); // on ne fait pas échouer le login pour autant
                             });
                 })
@@ -159,6 +216,11 @@ public class RemoteAuthAdapter implements AuthPort {
                             discoverResponse.data().selectionToken(),
                             context.contextId()));
                 })
+                .flatMap(selectResponse -> selectResponse.data() != null
+                        && "CONFIRM_MFA".equals(selectResponse.data().nextStep())
+                                ? Mono.<AuthApiClient.KernelSelectContextResponse>error(new MfaRequiredException(
+                                        selectResponse.data().mfaToken(), selectResponse.data().channel()))
+                                : Mono.just(selectResponse))
                 .doOnSuccess(selectResponse -> {
                     if (selectResponse != null && selectResponse.data() != null
                             && selectResponse.data().session() != null) {
@@ -171,12 +233,31 @@ public class RemoteAuthAdapter implements AuthPort {
                 .map(this::mapSelectResponseToDomain)
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     if (ex.getStatusCode() == HttpStatus.UNAUTHORIZED || ex.getStatusCode() == HttpStatus.FORBIDDEN) {
-                        return Mono.error(new AuthenticationFailedException(
-                                "Identifiant, mot de passe incorrect, ou vérification requise."));
+                        String body = ex.getResponseBodyAsString();
+                        log.warn("⚠️ Login refusé par le Kernel : {} — {}", ex.getStatusCode(), body);
+                        return Mono.error(new AuthenticationFailedException(loginRefusalMessage(body)));
                     }
                     log.error("❌ Login flow failed: {} — {}", ex.getStatusCode(), ex.getResponseBodyAsString());
                     return Mono.error(new RuntimeException("Erreur d'authentification distante"));
                 });
+    }
+
+    /** Traduit l'errorCode Kernel (mêmes codes que le portail YowAuth) en message clair pour la popup. */
+    static String loginRefusalMessage(String kernelBody) {
+        String code = "";
+        try {
+            com.fasterxml.jackson.databind.JsonNode n = SIGNUP_ERROR_MAPPER.readTree(kernelBody);
+            code = n.path("errorCode").asText("");
+        } catch (Exception ignored) {
+            // corps non JSON : message générique
+        }
+        return switch (code) {
+            case "AUTH_EMAIL_NOT_VERIFIED", "EMAIL_NOT_VERIFIED" ->
+                "Votre email n'est pas encore vérifié : cliquez sur le lien reçu par email, puis reconnectez-vous.";
+            case "AUTH_ACCOUNT_LOCKED" -> "Compte temporairement bloqué après trop d'essais. Réessayez plus tard.";
+            case "AUTH_INVALID_CREDENTIALS" -> "Identifiant ou mot de passe incorrect.";
+            default -> "Identifiant, mot de passe incorrect, ou vérification requise.";
+        };
     }
 
     private AuthResponse mapSelectResponseToDomain(AuthApiClient.KernelSelectContextResponse res) {
@@ -248,10 +329,10 @@ public class RemoteAuthAdapter implements AuthPort {
      * Kernel doit
      * être provisionné au préalable via POST /api/administration/roles.
      */
-    private Mono<java.util.Map<String, String>> resolveRoleIds(List<RoleType> roles) {
+    private Mono<java.util.Map<String, AuthApiClient.KernelRoleDto>> resolveRoleIds(List<RoleType> roles) {
         return client.getRoles()
                 .map(envelope -> {
-                    java.util.Map<String, String> result = new java.util.HashMap<>();
+                    java.util.Map<String, AuthApiClient.KernelRoleDto> result = new java.util.HashMap<>();
                     if (envelope == null || envelope.data() == null) {
                         return result;
                     }
@@ -260,7 +341,7 @@ public class RemoteAuthAdapter implements AuthPort {
                                 .filter(r -> role.name().equalsIgnoreCase(r.code())
                                         || role.name().equalsIgnoreCase(r.name()))
                                 .findFirst()
-                                .ifPresent(r -> result.put(role.name(), r.id()));
+                                .ifPresent(r -> result.put(role.name(), r));
                     }
                     return result;
                 })
@@ -281,14 +362,23 @@ public class RemoteAuthAdapter implements AuthPort {
      */
     @Override
     public Mono<AuthResponse> register(String username, String email, String password, String phone,
-            String firstName, String lastName, List<RoleType> roles, FilePart photo) {
+            String firstName, String lastName, List<RoleType> roles, FilePart photo,
+            String captchaToken, String captchaAnswer) {
 
         log.info("🌐 KERNEL AUTH : Sign-up pour {} (photo ignorée — upload séparé via /api/files)", email);
 
-        AuthApiClient.KernelSignUpRequest signUpRequest = new AuthApiClient.KernelSignUpRequest(
-                this.tenantId, username, email, password, firstName, lastName, phone);
+        if (captchaToken == null || captchaToken.isBlank() || captchaAnswer == null || captchaAnswer.isBlank()) {
+            return Mono.error(new com.yowyob.rideandgo.domain.exception.InvalidRegistrationDataException(
+                    "Répondez à la vérification anti-robot avant de créer le compte."));
+        }
 
-        return client.signUp(signUpRequest)
+        return client.verifyCaptcha(new AuthApiClient.KernelVerifyCaptchaRequest(captchaToken, captchaAnswer.trim()))
+                .mapNotNull(v -> v.data() == null ? null : v.data().captchaVerificationToken())
+                .onErrorResume(WebClientResponseException.class, ex -> Mono.empty())
+                .switchIfEmpty(Mono.error(new com.yowyob.rideandgo.domain.exception.InvalidRegistrationDataException(
+                        "Réponse anti-robot invalide ou expirée. Réessayez.")))
+                .flatMap(verificationToken -> client.signUp(new AuthApiClient.KernelSignUpRequest(
+                        this.tenantId, username, email, password, firstName, lastName, phone, verificationToken)))
                 .flatMap(signUpResponse -> {
                     log.info("✅ Sign-up Kernel réponse status: {}", signUpResponse.status());
 
@@ -391,21 +481,22 @@ public class RemoteAuthAdapter implements AuthPort {
                     Mono<Void> assignRolesMono = resolveRoleIds(roles)
                             .flatMap(roleIdByName -> reactor.core.publisher.Flux.fromIterable(roles)
                                     .flatMap(role -> {
-                                        String kernelRoleId = roleIdByName.get(role.name());
-                                        if (kernelRoleId == null) {
+                                        AuthApiClient.KernelRoleDto kernelRole = roleIdByName.get(role.name());
+                                        if (kernelRole == null) {
                                             log.error("❌ Rôle '{}' introuvable dans le catalogue Kernel du tenant {} — "
                                                     + "il doit être créé via POST /api/administration/roles avant inscription.",
                                                     role.name(), this.tenantId);
                                             return Mono.empty();
                                         }
                                         return client.assignRole(
-                                                userIdStr,
-                                                new AuthApiClient.KernelAssignRoleRequest(kernelRoleId, "TENANT", null,
-                                                        null));
+                                                userIdStr, organizationId,
+                                                AuthApiClient.KernelAssignRoleRequest.forRole(kernelRole, organizationId));
                                     })
                                     .then());
 
                     return assignRolesMono
+                            // attribué dès l'inscription : plus rien à rejouer à la première connexion
+                            .then(redisTemplate.opsForValue().delete(PENDING_ROLES_KEY_PREFIX + username).then())
                             .onErrorResume(WebClientResponseException.class, ex -> {
                                 log.error(
                                         "❌ Assignation de rôle échouée (PAS un échec de sign-up) pour user {} : {} — {}",

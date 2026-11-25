@@ -36,6 +36,13 @@ public interface PaymentApiClient {
         /**
          * GET /api/payments/wallets/owner/{ownerId} — récupérer le wallet d'un owner.
          */
+        /** Wallet personnel du porteur du token (seule façon de créer/lire le sien dans ce Kernel). */
+        @PostExchange("/api/payments/wallets/mine")
+        Mono<KernelResponse<WalletData>> createMyWallet(@RequestBody CreateWalletRequest request);
+
+        @GetExchange("/api/payments/wallets/mine")
+        Mono<KernelResponse<WalletData>> getMyWallet();
+
         @GetExchange("/api/payments/wallets/owner/{ownerId}")
         Mono<KernelResponse<WalletData>> getWalletByOwnerId(@PathVariable("ownerId") String ownerId);
 
@@ -94,6 +101,27 @@ public interface PaymentApiClient {
          * statut
          * provider et créditer wallet si succès.
          */
+        /** Retrait étape 1 : le Kernel envoie un code au titulaire et renvoie un challengeToken. */
+        @PostExchange("/api/payments/wallets/{walletId}/withdrawals/challenge")
+        Mono<KernelResponse<WithdrawalChallengeData>> withdrawalChallenge(@PathVariable("walletId") String walletId,
+                        @RequestBody WithdrawalChallengeRequest request);
+
+        /** Retrait étape 2 : débit du wallet et envoi vers le Mobile Money (nom vérifié par l'opérateur). */
+        @PostExchange("/api/payments/wallets/{walletId}/withdrawals")
+        Mono<KernelResponse<TransactionData>> withdraw(@PathVariable("walletId") String walletId,
+                        @RequestBody WithdrawalRequest request);
+
+        record WithdrawalChallengeRequest(double amount, String phoneNumber) {
+        }
+
+        @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+        record WithdrawalChallengeData(String challengeToken, Integer expiresInSeconds) {
+        }
+
+        record WithdrawalRequest(double amount, String currency, String phoneNumber, String method,
+                        String recipientName, String challengeToken, String code) {
+        }
+
         @PostExchange("/api/payments/wallets/recharge-orders/{orderId}/refresh")
         Mono<KernelResponse<RechargeOrderData>> refreshRechargeOrder(@PathVariable("orderId") String orderId);
 
@@ -109,7 +137,22 @@ public interface PaymentApiClient {
         @PostExchange("/api/payments/wallets/{walletId}/pay")
         Mono<KernelResponse<TransactionData>> payFromWallet(
                         @PathVariable("walletId") String walletId,
-                        @RequestBody PaymentRequest request);
+                        @RequestBody PayRequest request);
+
+        @PostExchange("/api/payments/wallets/{walletId}/pay/challenge")
+        Mono<KernelResponse<WithdrawalChallengeData>> payChallenge(@PathVariable("walletId") String walletId,
+                        @RequestBody PayChallengeRequest request);
+
+        record PayChallengeRequest(double amount, String reference) {
+        }
+
+        /**
+         * Format réel de /pay (testé : sans "amount" au premier niveau → "amount must be strictly positive").
+         * Le TransactionRequest du swagger ne correspond pas à ce que le Kernel lit.
+         */
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        record PayRequest(double amount, String currency, String reference, String challengeToken, String code) {
+        }
 
         // =========================================================================
         // Enveloppe générique Kernel

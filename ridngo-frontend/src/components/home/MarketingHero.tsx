@@ -57,7 +57,7 @@ export const MarketingHero = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-lg opacity-60 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed text-foreground"
           >
-            Le service de ramassage par Taxi présent au {userLocation.country} <div></div> et qui vous laisse négocier votre prix. Pas d&apos;algorithme caché. Juste vous et le chauffeur.
+            Le service de ramassage par Taxi présent au {userLocation.country} <br /> et qui vous laisse négocier votre prix. Pas d&apos;algorithme caché. Juste vous et le chauffeur.
             <br />
             <span className="text-xs italic mt-2 block opacity-70">🌍 Présent dans d&apos;autres pays.</span>
           </motion.p>

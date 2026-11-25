@@ -38,6 +38,23 @@ public interface AuthApiClient {
         @PostExchange("/auth/sign-up")
         Mono<KernelSignUpResponse> signUp(@RequestBody KernelSignUpRequest request);
 
+        /** POST /api/auth/login/mfa/confirm — data = même session à plat que /auth/login */
+        @PostExchange("/auth/login/mfa/confirm")
+        Mono<KernelRefreshEnvelope> confirmLoginMfa(@RequestBody KernelConfirmMfaRequest request);
+
+        @PostExchange("/auth/email-verification/resend")
+        Mono<Void> resendEmailVerification(@RequestBody KernelPrincipalRequest request);
+
+        record KernelPrincipalRequest(String principal) {
+        }
+
+        /** POST /api/auth/captcha — défi anti-robot exigé par /auth/sign-up */
+        @PostExchange("/auth/captcha")
+        Mono<KernelCaptchaEnvelope> captcha();
+
+        @PostExchange("/auth/captcha/verify")
+        Mono<KernelCaptchaVerifyEnvelope> verifyCaptcha(@RequestBody KernelVerifyCaptchaRequest request);
+
         /** POST /api/auth/refresh — rotation du refreshToken */
         @PostExchange("/auth/refresh")
         Mono<KernelRefreshEnvelope> refresh(@RequestBody KernelRefreshRequest request);
@@ -56,7 +73,10 @@ public interface AuthApiClient {
 
         /** POST /api/administration/users/{userId}/roles — assigner un rôle RBAC */
         @PostExchange("/administration/users/{userId}/roles")
-        Mono<Void> assignRole(@PathVariable String userId, @RequestBody KernelAssignRoleRequest request);
+        Mono<Void> assignRole(@PathVariable String userId,
+                        // Kernel : "OrganizationDelegationForbiddenException - organizationId is required" sans cet en-tête
+                        @org.springframework.web.bind.annotation.RequestHeader("X-Organization-Id") String organizationId,
+                        @RequestBody KernelAssignRoleRequest request);
 
         /**
          * DELETE /api/administration/users/{userId}/roles/{assignmentId} — retirer un
@@ -71,6 +91,32 @@ public interface AuthApiClient {
          */
         @GetExchange("/administration/roles")
         Mono<KernelRolesEnvelope> getRoles();
+
+        // ─── FILES (photo de profil) ──────────────────────────────────────────────
+
+        /** POST /api/files (file-core) — dépôt multipart ; data.id sert d'avatarId. */
+        @PostExchange("/files")
+        Mono<KernelFileEnvelope> uploadFile(
+                        @org.springframework.web.bind.annotation.RequestPart("file") org.springframework.core.io.Resource file,
+                        @org.springframework.web.bind.annotation.RequestParam("documentType") String documentType,
+                        @org.springframework.web.bind.annotation.RequestParam("public") boolean isPublic);
+
+        @PutExchange("/users/me/avatar")
+        Mono<Void> updateAvatar(@RequestBody KernelAvatarRequest request);
+
+        @GetExchange("/files/{fileId}/content")
+        Mono<org.springframework.http.ResponseEntity<byte[]>> fileContent(@PathVariable String fileId);
+
+        record KernelAvatarRequest(String avatarId) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelStoredFile(String id, String contentType) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelFileEnvelope(boolean success, KernelStoredFile data, String message, String errorCode) {
+        }
 
         // ─── ACTOR (profil self-service) ──────────────────────────────────────────
 
@@ -102,10 +148,34 @@ public interface AuthApiClient {
                         String password,
                         String firstName,
                         String lastName,
-                        String phoneNumber) {
+                        String phoneNumber,
+                        String captchaVerificationToken) {
         }
 
         record KernelRefreshRequest(String refreshToken) {
+        }
+
+        record KernelConfirmMfaRequest(String mfaToken, String code) {
+        }
+
+        record KernelVerifyCaptchaRequest(String captchaToken, String answer) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelCaptcha(String captchaToken, String prompt, Integer expiresInSeconds) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelCaptchaEnvelope(boolean success, KernelCaptcha data, String message, String errorCode) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelCaptchaVerification(String captchaVerificationToken) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelCaptchaVerifyEnvelope(boolean success, KernelCaptchaVerification data, String message,
+                        String errorCode) {
         }
 
         /**
@@ -123,6 +193,14 @@ public interface AuthApiClient {
                         String scopeType,
                         String scopeId,
                         String scope) {
+
+                /** Rôle ORGANIZATION (catalogue du tenant cad65f4e) : scopé sur l'organisation RidnGo. */
+                public static KernelAssignRoleRequest forRole(KernelRoleDto role, String organizationId) {
+                        return "ORGANIZATION".equalsIgnoreCase(role.scopeType())
+                                        ? new KernelAssignRoleRequest(role.id(), "ORGANIZATION", organizationId,
+                                                        "ORGANIZATION")
+                                        : new KernelAssignRoleRequest(role.id(), "TENANT", null, null);
+                }
         }
 
         /**
@@ -171,7 +249,9 @@ public interface AuthApiClient {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
-        record KernelSelectContextData(String selectedTenantId, String selectedOrganizationId, KernelSession session) {
+        // nextStep/mfaToken/channel : réponse 202 "MFA required." (confirmé en réel sur select-context)
+        record KernelSelectContextData(String selectedTenantId, String selectedOrganizationId, KernelSession session,
+                        String nextStep, String mfaToken, String channel) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -220,7 +300,8 @@ public interface AuthApiClient {
                         List<String> roles,
                         List<String> permissions,
                         String businessActorId,
-                        String businessActorStatus) {
+                        String businessActorStatus,
+                        String actorId) {
         }
 
         /**

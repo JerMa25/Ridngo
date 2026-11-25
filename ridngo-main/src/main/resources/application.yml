@@ -127,8 +127,9 @@ application:
 
   vehicle:
     url: https://kernel-core.yowyob.com/kernel-api
-    organization-id: edba974f-ac3d-4e35-b7c0-fbc9ec26ad9c
-    agency-id: f05f4a39-8c51-4b84-ab56-f37c753e795c
+    # Organisation + agence RidnGo du tenant APPLICATION_KERNEL_TENANT_ID (abonnée au service RESOURCE)
+    organization-id: ${VEHICLE_ORGANIZATION_ID:edba974f-ac3d-4e35-b7c0-fbc9ec26ad9c}
+    agency-id: ${VEHICLE_AGENCY_ID:f05f4a39-8c51-4b84-ab56-f37c753e795c}
 
   syndicate:
     url: https://traefikdev.yowyob.com/ugate

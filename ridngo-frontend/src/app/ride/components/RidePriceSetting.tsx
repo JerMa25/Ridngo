@@ -52,7 +52,6 @@ export const RidePriceSetting = ({
     }
   };
 
-  console.log('phone: ', passengerPhone, ' departureTime: ', departureTime);
 
   const adjustSeats = (amount: number) => {
     setNumberOfPlaces(
@@ -60,10 +59,9 @@ export const RidePriceSetting = ({
     );
   };
 
+  // price = prix par place ; l'affichage montre le total (prix × places)
   const adjustPrice = (amount: number) => {
-    const total = price * numberOfPlaces;
-    
-    setPrice(total);
+    setPrice(Math.max(100, price + amount));
   };
 
   return (
@@ -98,7 +96,7 @@ export const RidePriceSetting = ({
             value={price * numberOfPlaces} 
             onChange={(e) => {
               const total = parseInt(e.target.value || "0");
-              setPrice(total);
+              setPrice(Math.max(0, Math.round(total / numberOfPlaces)));
             }} 
             className="bg-transparent text-4xl font-black text-center w-32 outline-none text-foreground" 
           />

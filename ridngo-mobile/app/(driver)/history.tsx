@@ -96,7 +96,7 @@ export default function DriverHistoryScreen() {
             const isAnon = !!review?.anonymous;
             const passenger = isAnon ? null : passengersMap.get(ride.passengerId);
             const passName = isAnon ? 'Anonyme' : (passenger ? `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim() : 'Passager');
-            const passAvatar = isAnon ? null : passenger?.profilePhotoUrl;
+            const passAvatar = isAnon ? null : (passenger?.photoUri || passenger?.profilePhotoUrl);
 
             return (
               <View key={ride.rideId} style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>

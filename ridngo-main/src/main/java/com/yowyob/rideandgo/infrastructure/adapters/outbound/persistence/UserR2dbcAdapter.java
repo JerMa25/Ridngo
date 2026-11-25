@@ -57,12 +57,19 @@ public class UserR2dbcAdapter implements UserRepositoryPort {
     public Mono<User> save(User user) {
         UserEntity entity = userMapper.toEntity(user);
 
-        return userRepository.existsById(user.id())
-                .flatMap(exists -> {
-                    if (!exists)
-                        entity.setNewEntity(true);
-                    return userRepository.save(entity);
+        return userRepository.findById(user.id())
+                .map(existing -> {
+                    // Le Kernel ne renvoie pas la photo : un profil rafraîchi depuis le Kernel ne doit pas l'effacer.
+                    if (entity.getPhotoUri() == null) {
+                        entity.setPhotoUri(existing.getPhotoUri());
+                    }
+                    return entity;
                 })
+                .switchIfEmpty(Mono.fromSupplier(() -> {
+                    entity.setNewEntity(true);
+                    return entity;
+                }))
+                .flatMap(userRepository::save)
                 .flatMap(savedEntity -> syncRoles(user, savedEntity))
                 .flatMap(savedEntity -> syncActorTables(user, savedEntity))
                 .map(savedEntity -> user);

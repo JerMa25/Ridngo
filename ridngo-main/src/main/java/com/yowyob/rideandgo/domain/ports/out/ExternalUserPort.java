@@ -31,4 +31,12 @@ public interface ExternalUserPort {
     Mono<User> updateProfile(UUID userId, String firstName, String lastName, String phone);
 
     Mono<Void> changePassword(UUID userId, String currentPassword, String newPassword);
+
+    /** Dépose la photo dans le Kernel (et la déclare comme avatar) ; renvoie l'id du fichier. */
+    Mono<String> uploadProfilePhoto(org.springframework.http.codec.multipart.FilePart photo);
+
+    Mono<FileContent> fetchProfilePhoto(String fileId);
+
+    record FileContent(byte[] bytes, String contentType) {
+    }
 }

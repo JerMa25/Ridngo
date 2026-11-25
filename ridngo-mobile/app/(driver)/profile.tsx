@@ -94,7 +94,7 @@ export default function DriverProfileScreen() {
       setShowInfoForm(false);
       Alert.alert('✅', 'Informations mises à jour avec succès');
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message || 'Impossible de mettre à jour le profil.');
+      Alert.alert('Erreur', e?.response?.data?.detail || e?.message || 'Impossible de mettre à jour le profil.');
     } finally { setSavingInfo(false); }
   };
 
@@ -108,7 +108,7 @@ export default function DriverProfileScreen() {
   const displayEmail = uData?.email || user?.email || '—';
   const displayPhone = uData?.telephone || user?.phone || '—';
   const avatarInitial = displayName?.[0]?.toUpperCase() || '?';
-  const photoUrl = newPhoto?.uri || uData?.profilePhotoUrl || null;
+  const photoUrl = newPhoto?.uri || uData?.photoUri || uData?.profilePhotoUrl || null;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top', 'bottom', 'left', 'right']}>

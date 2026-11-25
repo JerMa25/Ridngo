@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert, Image
@@ -24,6 +24,15 @@ export default function RegisterScreen() {
   const [photo, setPhoto] = useState<any>(null);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [captcha, setCaptcha] = useState<{ captchaToken: string; prompt: string } | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+
+  // Défi anti-robot Kernel, à usage unique : rechargé après chaque tentative
+  const loadCaptcha = useCallback(async () => {
+    setCaptchaAnswer('');
+    try { setCaptcha(await authService.getCaptcha()); } catch { setCaptcha(null); }
+  }, []);
+  useEffect(() => { loadCaptcha(); }, [loadCaptcha]);
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -42,8 +51,12 @@ export default function RegisterScreen() {
       Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
       return;
     }
-    if (password.length < 6) {
-      Alert.alert('Erreur', 'Le mot de passe doit faire au moins 6 caractères.');
+    if (password.length < 8) {
+      Alert.alert('Erreur', 'Le mot de passe doit faire au moins 8 caractères.');
+      return;
+    }
+    if (!captcha || !captchaAnswer.trim()) {
+      Alert.alert('Vérification', 'Répondez à la question anti-robot.');
       return;
     }
     setLoading(true);
@@ -51,9 +64,12 @@ export default function RegisterScreen() {
       const result = await authService.register({
         username, email, password, phone, firstName, lastName,
         role: isDriver ? 'RIDE_AND_GO_DRIVER' : 'RIDE_AND_GO_PASSENGER',
-        photo,
+        photo, captchaToken: captcha.captchaToken, captchaAnswer: captchaAnswer.trim(),
       });
-      if (result.success) {
+      if (result.verifyEmail) {
+        Alert.alert('Compte créé', 'Confirmez votre adresse via le lien reçu par email, puis connectez-vous.');
+        router.replace('/(auth)/login');
+      } else if (result.success) {
         if (isDriver) router.replace('/(driver)/onboarding');
         else router.replace('/(passenger)/ride');
       } else {
@@ -63,6 +79,7 @@ export default function RegisterScreen() {
       Alert.alert('Erreur', e?.message || "Une erreur inattendue s'est produite.");
     } finally {
       setLoading(false);
+      loadCaptcha();
     }
   };
 
@@ -187,7 +204,7 @@ export default function RegisterScreen() {
               <View style={styles.inputRow}>
                 <TextInput
                   style={[styles.input, { flex: 1, borderWidth: 0 }]}
-                  placeholder="Min. 6 caractères"
+                  placeholder="Min. 8 caractères"
                   placeholderTextColor={Colors.textMuted}
                   value={password}
                   onChangeText={setPassword}
@@ -212,8 +229,27 @@ export default function RegisterScreen() {
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPass}
                 autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+
+            <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.label}>Anti-robot : {captcha ? `${captcha.prompt} ?` : '…'}</Text>
+                <TouchableOpacity onPress={loadCaptcha} accessibilityLabel="Nouvelle question">
+                  <Ionicons name="refresh" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Réponse"
+                placeholderTextColor={Colors.textMuted}
+                value={captchaAnswer}
+                onChangeText={setCaptchaAnswer}
+                keyboardType="number-pad"
                 returnKeyType="done"
                 onSubmitEditing={handleRegister}
+                accessibilityLabel="Réponse anti-robot"
               />
             </View>
           </View>

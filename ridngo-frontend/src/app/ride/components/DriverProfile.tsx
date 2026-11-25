@@ -34,21 +34,20 @@ export default function DriverProfilePopup({ profile, onClose }: DriverProfilePo
     ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
     : 0;
 
-useEffect(() => {
-  const fetchReviews = async () => {
-    try {
-      // api ajoute le bon token (accessToken), la bonne baseURL et gère le refresh
-      const res = await api.get("/api/v1/reviews/me");
-      setReviews(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Erreur récupération reviews", err);
-    } finally {
-      setLoadingReviews(false);
-    }
-  };
+  const driverId = driverStats?.id || driverUser?.id;
+  const [rides, setRides] = useState<any[]>([]);
 
-  fetchReviews();
-}, []);
+useEffect(() => {
+  if (!driverId) return;
+  // Avis et courses du chauffeur affiché (et non de l'utilisateur connecté : /reviews/me était le mauvais endpoint)
+  Promise.all([
+    api.get(`/api/v1/reviews/driver/${driverId}`).then(r => (Array.isArray(r.data) ? r.data : [])).catch(() => []),
+    api.get(`/api/v1/trips/driver/${driverId}/public`).then(r => (Array.isArray(r.data) ? r.data : [])).catch(() => []),
+  ]).then(([revs, trips]) => { setReviews(revs); setRides(trips); })
+    .finally(() => setLoadingReviews(false));
+}, [driverId]);
+
+  const completedRides = rides.filter(r => r.state === 'COMPLETED').length;
 
   return (
     <AnimatePresence>
@@ -127,9 +126,24 @@ useEffect(() => {
             <InfoRow
               icon={<Car size={14} className="text-orange-btn" />}
               label="Véhicule"
-              value={`${vehicle?.brand || ""} ${vehicle?.modelName || ""}`.trim() || "—"}
-              sub={vehicle?.registrationNumber}
+              value={`${vehicle?.brand || ""} ${vehicle?.vehicleModelId || ""}`.trim() || "—"}
+              sub={[vehicle?.registrationNumber, vehicle?.vehicleTypeId, vehicle?.totalSeatNumber ? `${vehicle.totalSeatNumber} places` : null, vehicle?.fuelTypeId, vehicle?.transmissionTypeId]
+                .filter(Boolean).join(' · ')}
             />
+
+            {/* ── Expérience ── */}
+            <div className="grid grid-cols-3 gap-2 w-full">
+              {[
+                { label: 'Courses', value: completedRides },
+                { label: 'Avis', value: reviews.length },
+                { label: 'Note', value: reviews.length ? averageRating.toFixed(1) : '—' },
+              ].map(s => (
+                <div key={s.label} className="bg-foreground/5 rounded-xl py-2 text-center">
+                  <p className="text-base font-black">{s.value}</p>
+                  <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">{s.label}</p>
+                </div>
+              ))}
+            </div>
 
             
           </div>
@@ -180,6 +194,24 @@ useEffect(() => {
                 </span>
           </div>
 
+
+          {/* ── Courses récentes (sans les adresses des autres passagers) ── */}
+          {rides.length > 0 && (
+            <div className="w-full mt-4">
+              <p className="text-[10px] font-black uppercase opacity-40 tracking-widest mb-2">Courses récentes</p>
+              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                {rides.slice(0, 5).map(r => (
+                  <div key={r.id} className="flex justify-between items-center bg-foreground/5 rounded-lg px-3 py-2 text-[11px]">
+                    <span className="font-bold">{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</span>
+                    <span className="opacity-60">{r.distance ? `${Number(r.distance).toFixed(1)} km` : ''}</span>
+                    <span className={`font-black ${r.state === 'COMPLETED' ? 'text-green-500' : r.state === 'CANCELLED' ? 'text-red-500' : 'text-orange-btn'}`}>
+                      {r.state === 'COMPLETED' ? 'Terminée' : r.state === 'CANCELLED' ? 'Annulée' : 'En cours'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Reviews ── */}
           <div className="w-full mt-4">

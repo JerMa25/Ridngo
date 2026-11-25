@@ -147,12 +147,26 @@ export default function RidePage() {
   }, [step]);
 
   const handleEstimate = async () => {
-    const res = await rideService.estimateFare(pickup.name, dest.name);
-    setPrice(Math.round(res.prix_moyen / 50) * 50);
+    if (!pickup || !dest) { toast.error('Choisissez un lieu de départ et une destination dans la liste.'); return; }
+    if (pickup.lat === dest.lat && pickup.lon === dest.lon) { toast.error('Le départ et la destination sont identiques.'); return; }
+    try {
+      const res = await rideService.estimateFare(pickup.name, dest.name);
+      setPrice(Math.max(100, Math.round((res?.prix_moyen || 0) / 50) * 50));
+    } catch {
+      // estimation indisponible : le passager fixe son prix lui-même
+      toast('Estimation indisponible : proposez votre prix.', { icon: 'ℹ️' });
+      setPrice(price || 1000);
+    }
     setStep('price');
   };
 
   const handlePublishOffer = async () => {
+    // Contrôles avant envoi : un message précis plutôt qu'un refus serveur générique
+    const phone = (passengerPhone || '').replace(/\s/g, '');
+    if (!price || price < 100) { toast.error('Le prix doit être d’au moins 100 FCFA.'); return; }
+    if (!numberOfPlaces || numberOfPlaces < 1) { toast.error('Indiquez au moins une place.'); return; }
+    if (!/^\+?\d{8,15}$/.test(phone)) { toast.error('Numéro de téléphone du passager invalide (ex. 6XXXXXXXX).'); return; }
+    if (!departureTime) { toast.error("Indiquez l'heure de départ."); return; }
     try {
       // On construit la requête avec les coordonnées extraites de 'pickup'
       const data = await rideService.createOffer({
@@ -173,7 +187,7 @@ export default function RidePage() {
       setStep('waiting');
     } catch (e: any) {
       console.error("Erreur publication:", e.response?.data);
-      toast.error(e.response?.data?.message || "Erreur lors de la publication de l'offre");
+      toast.error(e.response?.data?.detail || e.response?.data?.message || "Erreur lors de la publication de l'offre");
     }
   };
 
@@ -197,7 +211,8 @@ export default function RidePage() {
             <TripSummary 
               pickup={pickup?.name || offer?.startPoint || ride?.startPoint || "..."} 
               destination={dest?.name || offer?.endPoint || ride?.endPoint || "..."}
-              price={price || offer?.price || ride?.price}
+              // une fois l'offre publiée, son prix fait foi (le state local garde la valeur par défaut au rechargement)
+              price={step === 'price' ? price : (offer?.price ?? ride?.price ?? price)}
             />
           )}
 

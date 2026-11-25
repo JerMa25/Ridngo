@@ -52,7 +52,9 @@ public class UserService implements UserUseCases {
 
         @Override
         public Mono<User> getUserById(UUID userId) {
-                return externalUserPort.fetchRemoteUserById(userId).flatMap(userRepositoryPort::save);
+                // Le Kernel refuse GET /users/{id} pour un tiers : on retombe sur la copie locale (nom, photo, rôles)
+                return externalUserPort.fetchRemoteUserById(userId).flatMap(userRepositoryPort::save)
+                                .switchIfEmpty(Mono.defer(() -> userRepositoryPort.findUserById(userId)));
         }
 
         @Override
@@ -98,6 +100,26 @@ public class UserService implements UserUseCases {
                                                                 local.photoUri(), local.roles(),
                                                                 local.directPermissions()))
                                                 .flatMap(userRepositoryPort::save));
+        }
+
+        @Override
+        public Mono<User> updateProfilePhoto(UUID userId, FilePart photo, String photoBaseUrl) {
+                return externalUserPort.uploadProfilePhoto(photo)
+                                .flatMap(fileId -> userRepositoryPort.findUserById(userId)
+                                                .switchIfEmpty(Mono.defer(() -> externalUserPort.fetchMyProfile(userId)))
+                                                .map(u -> new User(u.id(), u.name(), u.firstName(), u.lastName(),
+                                                                u.email(), u.telephone(), u.password(),
+                                                                photoBaseUrl + fileId, u.roles(), u.directPermissions()))
+                                                .flatMap(userRepositoryPort::save));
+        }
+
+        @Override
+        public Mono<ExternalUserPort.FileContent> getProfilePhoto(String fileId) {
+                // N'expose que des fichiers réellement utilisés comme photo de profil, pas n'importe quel id Kernel.
+                // shortcut: parcourt tous les users, passer par une requête "photo_uri LIKE" si la base grossit
+                return userRepositoryPort.findAll()
+                                .any(u -> u.photoUri() != null && u.photoUri().endsWith("/" + fileId))
+                                .flatMap(known -> known ? externalUserPort.fetchProfilePhoto(fileId) : Mono.empty());
         }
 
         @Override

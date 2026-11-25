@@ -38,6 +38,11 @@ public interface UserUseCases {
 
     Mono<User> updateProfile(UUID userId, String firstName, String lastName, String phone);
 
+    /** photoBaseUrl : préfixe absolu de GET /api/v1/users/photos/{fileId}, stocké tel quel dans photoUri. */
+    Mono<User> updateProfilePhoto(UUID userId, FilePart photo, String photoBaseUrl);
+
+    Mono<com.yowyob.rideandgo.domain.ports.out.ExternalUserPort.FileContent> getProfilePhoto(String fileId);
+
     Mono<Void> changePassword(UUID userId, String currentPassword, String newPassword);
 
     Flux<User> getAllRemoteUsersByService(String serviceName);
