@@ -17,8 +17,9 @@ export const NavbarWrapper = () => {
   useEffect(() => {
     setMounted(true);
     const load = () => {
+      // null après déconnexion : sinon la navbar continue d'afficher l'ancien compte
       const savedUser = localStorage.getItem('user');
-      if (savedUser) setUser(JSON.parse(savedUser));
+      setUser(savedUser ? JSON.parse(savedUser) : null);
     };
     load();
     // le profil émet 'storage' après une modification (nom, photo)

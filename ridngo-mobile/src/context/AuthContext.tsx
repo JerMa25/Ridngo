@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService, AuthResult } from '../services/auth';
+import { onSessionExpired } from '../services/api';
 import { UserObj } from '../types/api';
 
 interface AuthContextType {
@@ -22,6 +23,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     loadUser();
+    onSessionExpired(() => { setUser(null); setIsGuest(true); });
+    return () => onSessionExpired(null);
   }, []);
 
   const loadUser = async () => {
@@ -31,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(u);
         setIsGuest(false);
       } else {
+        setUser(null);
         setIsGuest(true);
       }
     } catch (e) {

@@ -572,7 +572,7 @@ export default function MyOfferScreen() {
               style={[s.reviewBtn, { backgroundColor: Colors.orange }]}
               onPress={handleSubmitReview} disabled={submittingReview}>
               {submittingReview
-                ? <ActivityIndicator color="#0D0D0D" />
+                ? <ActivityIndicator color="#FFFFFF" />
                 : <Text style={s.reviewBtnTxt}>ENVOYER MON AVIS</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setShowReview(false); router.back(); }}>
@@ -653,6 +653,6 @@ const s = StyleSheet.create({
   starsRow:    { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   commentInput: { borderRadius: Radius.md, borderWidth: 1, padding: 12, fontWeight: '500', fontSize: 14, textAlignVertical: 'top', minHeight: 80 },
   reviewBtn:   { borderRadius: Radius.xl, paddingVertical: 16, alignItems: 'center' },
-  reviewBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, letterSpacing: 1.5 },
+  reviewBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, letterSpacing: 1.5 },
   skipTxt:     { textAlign: 'center', fontWeight: '700', fontSize: 13, paddingVertical: 8 },
 });

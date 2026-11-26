@@ -9,7 +9,7 @@ export default function DriverLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#141414',
+          backgroundColor: '#16202F',
           borderTopColor: 'rgba(255,255,255,0.07)',
           borderTopWidth: 1,
           paddingBottom: 8,
@@ -25,33 +25,32 @@ export default function DriverLayout() {
         name="dashboard"
         options={{
           title: 'Radar',
-          tabBarIcon: ({ color, size }) => <Ionicons name="scan" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="scan" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="driver-dashboard"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="my-rides"
         options={{
           title: 'Mes offres',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color as string} />,
         }}
       />
 
       {/* Écrans cachés */}
-      <Tabs.Screen name="ride-active" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="support" options={{ href: null }} />
       <Tabs.Screen name="heatmap" options={{ href: null }} />
@@ -59,8 +58,6 @@ export default function DriverLayout() {
       <Tabs.Screen name="performance" options={{ href: null }} />
       <Tabs.Screen name="vehicle" options={{ href: null }} />
       <Tabs.Screen name="onboarding" options={{ href: null }} />
-      <Tabs.Screen name="offers" options={{ href: null }} />
-      <Tabs.Screen name="ride" options={{ href: null }} />
       <Tabs.Screen name="offers/[id]" options={{ href: null }} />
       <Tabs.Screen name="ride/[id]" options={{ href: null }} />
     </Tabs>

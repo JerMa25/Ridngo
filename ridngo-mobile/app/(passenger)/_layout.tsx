@@ -9,7 +9,7 @@ export default function PassengerLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#141414',
+          backgroundColor: '#16202F',
           borderTopColor: 'rgba(255,255,255,0.07)',
           borderTopWidth: 1,
           paddingBottom: 8,
@@ -26,28 +26,28 @@ export default function PassengerLayout() {
         name="ride"
         options={{
           title: 'Commander',
-          tabBarIcon: ({ color, size }) => <Ionicons name="car" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="car" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="dashboard"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: 'Mes courses',
-          tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color as string} />,
         }}
       />
 

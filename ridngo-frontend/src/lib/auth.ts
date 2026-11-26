@@ -2,6 +2,8 @@
 import api from './api-client';
 import { AuthResponse, UserRole } from '@/types/api';
 import { handleApiError } from '@/utils/error-handler';
+import { clearOfflineCache } from '@/components/providers/QueryProvider';
+import { homeFor } from '@/components/layout/RouteGuard';
 
 export type AuthResult =
   | { success: true; redirectUrl: string }
@@ -94,9 +96,8 @@ const finalizeSession = async (authData: AuthResponse): Promise<AuthResult> => {
   };
 
   localStorage.setItem('user', JSON.stringify(userObj));
+  // le cache hors ligne peut contenir les données du compte précédent
+  await clearOfflineCache();
 
-  return {
-    success: true,
-    redirectUrl: userObj.role === 'ADMIN' ? "/admin/dashboard" : isDriver ? "/driver/dashboard" : "/ride"
-  };
+  return { success: true, redirectUrl: homeFor(userObj.role as 'ADMIN' | 'DRIVER' | 'PASSENGER') };
 };

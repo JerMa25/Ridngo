@@ -26,11 +26,12 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [captcha, setCaptcha] = useState<{ captchaToken: string; prompt: string } | null>(null);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
 
   // Défi anti-robot Kernel, à usage unique : rechargé après chaque tentative
   const loadCaptcha = useCallback(async () => {
-    setCaptchaAnswer('');
-    try { setCaptcha(await authService.getCaptcha()); } catch { setCaptcha(null); }
+    setCaptchaAnswer(''); setCaptchaError(false);
+    try { setCaptcha(await authService.getCaptcha()); } catch { setCaptcha(null); setCaptchaError(true); }
   }, []);
   useEffect(() => { loadCaptcha(); }, [loadCaptcha]);
 
@@ -47,6 +48,14 @@ export default function RegisterScreen() {
       Alert.alert('Champs requis', 'Veuillez remplir tous les champs obligatoires.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert('Email invalide', 'Saisissez une adresse email valide (ex. nom@exemple.com).');
+      return;
+    }
+    if (!/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ''))) {
+      Alert.alert('Téléphone invalide', 'Saisissez un numéro valide (ex. 6XXXXXXXX).');
+      return;
+    }
     if (password !== confirmPassword) {
       Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
       return;
@@ -55,7 +64,11 @@ export default function RegisterScreen() {
       Alert.alert('Erreur', 'Le mot de passe doit faire au moins 8 caractères.');
       return;
     }
-    if (!captcha || !captchaAnswer.trim()) {
+    if (!captcha) {
+      Alert.alert('Vérification indisponible', "La question anti-robot n'a pas pu être chargée (serveur Yowyob lent). Touchez ↻ pour réessayer.");
+      return;
+    }
+    if (!captchaAnswer.trim()) {
       Alert.alert('Vérification', 'Répondez à la question anti-robot.');
       return;
     }
@@ -100,8 +113,8 @@ export default function RegisterScreen() {
 
           <View style={styles.header}>
             <View style={[styles.badge, isDriver && styles.badgeDriver]}>
-              <Ionicons name={isDriver ? 'car-sport' : 'person'} size={14} color={isDriver ? Colors.dark : Colors.white} />
-              <Text style={[styles.badgeText, isDriver && { color: Colors.dark }]}>
+              <Ionicons name={isDriver ? 'car-sport' : 'person'} size={14} color={Colors.white} />
+              <Text style={[styles.badgeText, isDriver && { color: Colors.white }]}>
                 {isDriver ? 'CHAUFFEUR' : 'PASSAGER'}
               </Text>
             </View>
@@ -235,7 +248,7 @@ export default function RegisterScreen() {
 
             <View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={styles.label}>Anti-robot : {captcha ? `${captcha.prompt} ?` : '…'}</Text>
+                <Text style={styles.label}>Anti-robot : {captcha ? `${captcha.prompt} ?` : captchaError ? 'indisponible, touchez ↻' : 'chargement…'}</Text>
                 <TouchableOpacity onPress={loadCaptcha} accessibilityLabel="Nouvelle question">
                   <Ionicons name="refresh" size={16} color={Colors.textMuted} />
                 </TouchableOpacity>
@@ -261,11 +274,11 @@ export default function RegisterScreen() {
             activeOpacity={0.85}
           >
             {loading ? (
-              <ActivityIndicator color={Colors.dark} />
+              <ActivityIndicator color={Colors.white} />
             ) : (
               <>
                 <Text style={styles.btnText}>Créer mon compte</Text>
-                <Ionicons name="arrow-forward" size={20} color={Colors.dark} />
+                <Ionicons name="arrow-forward" size={20} color={Colors.white} />
               </>
             )}
           </TouchableOpacity>
@@ -325,7 +338,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
     marginBottom: Spacing.lg,
   },
-  btnText: { color: Colors.dark, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: Colors.white, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },

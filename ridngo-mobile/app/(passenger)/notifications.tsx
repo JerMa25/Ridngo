@@ -235,7 +235,7 @@ export default function PassengerNotificationsScreen() {
                     </>
                   )}
               </TouchableOpacity>
-            ) : null
+            ) : undefined
           }
         />
       )}
@@ -287,7 +287,7 @@ export default function PassengerNotificationsScreen() {
                   disabled={savingSettings}
                 >
                   {savingSettings
-                    ? <ActivityIndicator color="#0D0D0D" size="small" />
+                    ? <ActivityIndicator color="#FFFFFF" size="small" />
                     : <Text style={styles.saveBtnText}>Enregistrer</Text>}
                 </TouchableOpacity>
               </ScrollView>
@@ -375,5 +375,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg, paddingVertical: 16, alignItems: 'center',
     marginTop: 8, marginBottom: 20,
   },
-  saveBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  saveBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 });

@@ -1,3 +1,4 @@
+import { KEYCHAIN } from './api';
 import api from './api';
 import { BASE_URL } from './api';
 import * as SecureStore from 'expo-secure-store';
@@ -36,7 +37,7 @@ export const userService = {
     try {
       const stored = JSON.parse((await SecureStore.getItemAsync('user')) || '{}');
       const name = `${data.firstName || ''} ${data.lastName || ''}`.trim();
-      await SecureStore.setItemAsync('user', JSON.stringify({ ...stored, ...(name && { name }), ...(data.phone && { phone: data.phone }) }));
+      await SecureStore.setItemAsync('user', JSON.stringify({ ...stored, ...(name && { name }), ...(data.phone && { phone: data.phone }) }), KEYCHAIN);
     } catch { /* session absente */ }
     return res.data;
   },

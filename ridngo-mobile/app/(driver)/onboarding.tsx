@@ -57,9 +57,13 @@ export default function DriverOnboarding() {
     // Check if returning from UGate compliance
     const sub = Linking.addEventListener('url', ({ url }) => {
       if (url.includes('action=verify')) {
+        // retour d'UGate : même validation finale que le web
         setLoading(true);
-        // Check compliance status
-        setTimeout(() => { setLoading(false); setStep(2); }, 2000);
+        api.patch('/api/v1/users/verify-compliance')
+          .then(() => setStep(2))
+          .catch((e: any) => Alert.alert('Vérification non confirmée',
+            e?.response?.data?.detail || "La vérification UGate n'a pas pu être confirmée. Contactez le support."))
+          .finally(() => setLoading(false));
       }
     });
     return () => sub.remove();
@@ -247,10 +251,10 @@ export default function DriverOnboarding() {
             onPress={handleSubmitVehicle}
             disabled={loading}
           >
-            {loading ? <ActivityIndicator color={Colors.dark} /> : (
+            {loading ? <ActivityIndicator color={Colors.white} /> : (
               <>
                 <Text style={styles.btnText}>{isAddVehicleOnly ? 'Enregistrer le véhicule' : 'Continuer'}</Text>
-                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color={Colors.dark} />
+                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color={Colors.white} />
               </>
             )}
           </TouchableOpacity>
@@ -285,11 +289,8 @@ export default function DriverOnboarding() {
           ) : (
             <>
               <TouchableOpacity style={styles.btnPrimary} onPress={handleConnectSyndicate}>
-                <Ionicons name="open" size={20} color={Colors.dark} />
+                <Ionicons name="open" size={20} color={Colors.white} />
                 <Text style={styles.btnText}>Ouvrir UGate Compliance</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnSkip} onPress={() => setStep(2)}>
-                <Text style={styles.btnSkipText}>Passer (tester sans syndicat)</Text>
               </TouchableOpacity>
             </>
           )}
@@ -310,7 +311,7 @@ export default function DriverOnboarding() {
             style={styles.btnPrimary}
             onPress={() => router.replace('/(driver)/dashboard')}
           >
-            <Ionicons name="radio" size={20} color={Colors.dark} />
+            <Ionicons name="radio" size={20} color={Colors.white} />
             <Text style={styles.btnText}>Accéder au Radar</Text>
           </TouchableOpacity>
         </View>
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, elevation: 6,
     marginTop: Spacing.sm,
   },
-  btnText: { color: Colors.dark, fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: Colors.white, fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
   btnSkip: { alignItems: 'center', padding: Spacing.md },
   btnSkipText: { color: Colors.textMuted, fontWeight: '700', fontSize: 13 },
 

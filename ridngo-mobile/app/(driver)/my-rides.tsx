@@ -359,8 +359,8 @@ export default function MyRidesScreen() {
                       style={[s.confirmBtn, { backgroundColor: Colors.orange }]}
                       onPress={() => router.push(`/(driver)/ride/${trip.id}` as any)}
                       activeOpacity={0.85}>
-                      <Ionicons name="navigate" size={16} color="#0D0D0D" />
-                      <Text style={[s.confirmBtnTxt, { color: '#0D0D0D' }]}>REPRENDRE LA COURSE</Text>
+                      <Ionicons name="navigate" size={16} color="#FFFFFF" />
+                      <Text style={[s.confirmBtnTxt, { color: '#FFFFFF' }]}>REPRENDRE LA COURSE</Text>
                     </TouchableOpacity>
                   </View>
                 );

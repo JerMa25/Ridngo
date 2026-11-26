@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation'; // CORRECT IMPORT
 import { toast } from 'react-hot-toast';
 import { useNavigation, formatDistance } from '@/lib/navigation';
+import { ChatWidget } from '@/app/ride/components/ChatWidget';
 
 /** Doit rester aligné sur RideService.ARRIVAL_RADIUS_M côté backend. */
 const ARRIVAL_RADIUS_M = 150;
@@ -209,6 +210,8 @@ export default function DriverRidePage({ params }: { params: Promise<{ id: strin
           border: 1px solid var(--glass-border);
         }
       `}</style>
+      {/* même chat que côté passager : sans lui le chauffeur ne voyait jamais les messages */}
+      {ride?.id && ride?.driverId && <ChatWidget rideId={ride.id} userId={ride.driverId} userRole="DRIVER" />}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { KEYCHAIN } from './api';
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import {
@@ -13,7 +14,7 @@ export const addAppliedOffer = async (offerId: string) => {
     const ids: string[] = stored ? JSON.parse(stored) : [];
     if (!ids.includes(offerId)) {
       await SecureStore.setItemAsync('appliedOfferIds',
-        JSON.stringify([offerId, ...ids].slice(0, 20)));
+        JSON.stringify([offerId, ...ids].slice(0, 20)), KEYCHAIN);
     }
   } catch { }
 };
@@ -23,7 +24,7 @@ export const removeAppliedOffer = async (offerId: string) => {
     const stored = await SecureStore.getItemAsync('appliedOfferIds');
     const ids: string[] = stored ? JSON.parse(stored) : [];
     await SecureStore.setItemAsync('appliedOfferIds',
-      JSON.stringify(ids.filter(id => id !== offerId)));
+      JSON.stringify(ids.filter(id => id !== offerId)), KEYCHAIN);
   } catch { }
 };
 
@@ -34,9 +35,9 @@ export const addActiveTrip = async (tripId: string, offerId?: string) => {
       stored ? JSON.parse(stored) : [];
     if (!trips.find(t => t.tripId === tripId)) {
       await SecureStore.setItemAsync('activeTrips',
-        JSON.stringify([{ tripId, offerId }, ...trips].slice(0, 10)));
+        JSON.stringify([{ tripId, offerId }, ...trips].slice(0, 10)), KEYCHAIN);
     }
-    await SecureStore.setItemAsync('activeRideId', tripId);
+    await SecureStore.setItemAsync('activeRideId', tripId, KEYCHAIN);
   } catch { }
 };
 
@@ -46,7 +47,7 @@ export const removeActiveTrip = async (tripId: string) => {
     const trips: Array<{ tripId: string; offerId?: string }> =
       stored ? JSON.parse(stored) : [];
     await SecureStore.setItemAsync('activeTrips',
-      JSON.stringify(trips.filter(t => t.tripId !== tripId)));
+      JSON.stringify(trips.filter(t => t.tripId !== tripId)), KEYCHAIN);
     const current = await SecureStore.getItemAsync('activeRideId');
     if (current === tripId) await SecureStore.deleteItemAsync('activeRideId');
   } catch { }
@@ -73,7 +74,7 @@ export const rideService = {
 
   createOffer: async (data: CreateOfferRequest): Promise<OfferResponse> => {
     const res = await api.post<OfferResponse>('/api/v1/offers', data);
-    await SecureStore.setItemAsync('currentOfferId', res.data.id);
+    await SecureStore.setItemAsync('currentOfferId', res.data.id, KEYCHAIN);
     return res.data;
   },
 
@@ -179,6 +180,14 @@ export const rideService = {
     return res.data;
   },
 
+  /** Course en cours du chauffeur (comme le web) : vide si aucune course CREATED/ONGOING. */
+  getCurrentDriverRide: async (): Promise<RideResponse | null> => {
+    try {
+      const res = await api.get<RideResponse>('/api/v1/trips/driver/current');
+      return res.data && res.data.id ? res.data : null;
+    } catch { return null; }
+  },
+
   getCurrentPassengerRide: async (): Promise<RideResponse | null> => {
     try {
       const rideId = await SecureStore.getItemAsync('activeRideId');
@@ -204,6 +213,12 @@ export const rideService = {
     const res = await api.get<Wallet>('/api/v1/wallets/me');
     return res.data;
   },
+
+  // Historique (mêmes appels que la page wallet du web)
+  getMyWalletTransactions: async (): Promise<{ id: string; transactionType: string; status: string; transactionHash?: string; createdAt: string }[]> =>
+    (await api.get('/api/v1/wallets/me/transactions')).data || [],
+  getMyRechargeOrders: async (): Promise<{ orderId: string; amount: number; status: string }[]> =>
+    (await api.get('/api/v1/wallets/me/recharge-orders')).data || [],
 
   // Recharge via le paiement du Kernel (MyCoolPay / Stripe) : page de paiement puis suivi de l'ordre
   rechargeWallet: async (amount: number, payerReference: string, method: string) =>

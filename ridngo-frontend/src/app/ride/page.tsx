@@ -40,10 +40,7 @@ export default function RidePage() {
   // Initialisation : Auth + Tel + OfferId
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
+    if (!token) return; // RouteGuard renvoie vers la landing
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const u = JSON.parse(storedUser);

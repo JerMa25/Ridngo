@@ -1,11 +1,14 @@
+import { KEYCHAIN } from '../../src/services/api';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
+  View, Text, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Alert, TextInput,
   FlatList, KeyboardAvoidingView, Platform, Dimensions
 } from 'react-native';
 import { router, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { RideChat } from '../../src/components/RideChat';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../../src/context/AuthContext';
@@ -211,8 +214,6 @@ export default function RideScreen() {
   const [dest, setDest] = useState<Location | null>(null);
   const [mapKey, setMapKey] = useState(0);
   const [routeGeoJson, setRouteGeoJson] = useState<object | null>(null);
-  const webviewRef = useRef<WebView>(null);
-
   // ── Estimation tarifaire
   const [fareEstimate, setFareEstimate] = useState<FareEstimate | null>(null);
   const [priceNum, setPriceNum] = useState(0); // Price per seat
@@ -293,7 +294,7 @@ export default function RideScreen() {
             if (rideData.state === 'COMPLETED' || rideData.state === 'CANCELLED') {
               await clearPassengerRideData();
             } else {
-              await SecureStore.setItemAsync('activeRideId', rideData.id);
+              await SecureStore.setItemAsync('activeRideId', rideData.id, KEYCHAIN);
               setActiveRideId(rideData.id);
               setStep('active');
               startTrackingPolling(rideData.id);
@@ -459,7 +460,7 @@ export default function RideScreen() {
       });
 
       console.log('[Publish] Offre créée :', offer.id);
-      await SecureStore.setItemAsync('currentOfferId', offer.id);
+      await SecureStore.setItemAsync('currentOfferId', offer.id, KEYCHAIN);
       setCurrentOffer(offer);
       setStep('waiting');
       startPolling(offer.id);
@@ -626,7 +627,6 @@ export default function RideScreen() {
       <View style={styles.mapContainer}>
         <WebView
           key={mapKey}
-          ref={webviewRef}
           source={{ html: mapHTML }}
           style={styles.map}
           javaScriptEnabled
@@ -718,7 +718,7 @@ export default function RideScreen() {
                 activeOpacity={0.8}
               >
                 {loadingFare
-                  ? <ActivityIndicator color="#0D0D0D" />
+                  ? <ActivityIndicator color="#FFFFFF" />
                   : <Text style={styles.primaryBtnText}>Estimer le prix</Text>
                 }
               </TouchableOpacity>
@@ -755,7 +755,7 @@ export default function RideScreen() {
                   onPress={() => setPriceNum(p => p + 50)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.priceBtnText, { color: '#0D0D0D' }]}>+</Text>
+                  <Text style={[styles.priceBtnText, { color: '#FFFFFF' }]}>+</Text>
                 </TouchableOpacity>
               </View>
 
@@ -898,7 +898,7 @@ export default function RideScreen() {
                   activeOpacity={0.8}
                 >
                   {loading
-                    ? <ActivityIndicator color="#0D0D0D" />
+                    ? <ActivityIndicator color="#FFFFFF" />
                     : <Text style={styles.primaryBtnText}>LANCER LA RECHERCHE</Text>
                   }
                 </TouchableOpacity>
@@ -1045,6 +1045,7 @@ export default function RideScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    {step === 'active' && activeRideId && user?.id && <RideChat rideId={activeRideId} userId={user.id} role="PASSENGER" />}
     </>
   );
 }
@@ -1133,7 +1134,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
   },
-  primaryBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  primaryBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
   // Waiting step
   waitingSection: { paddingHorizontal: Spacing.md, alignItems: 'center', gap: Spacing.sm },
@@ -1154,7 +1155,7 @@ const styles = StyleSheet.create({
   chooseBtn: {
     backgroundColor: '#FF8C00', borderRadius: Radius.sm, paddingHorizontal: 14, paddingVertical: 8,
   },
-  chooseBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 12 },
+  chooseBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12 },
   cancelBtn: {
     width: '100%', borderRadius: Radius.md, borderWidth: 1,
     paddingVertical: 12, alignItems: 'center', marginTop: 8,
@@ -1687,7 +1688,7 @@ const styles = StyleSheet.create({
 //       });
 
 //       console.log('[Publish] Offre créée :', offer.id);
-//       await SecureStore.setItemAsync('currentOfferId', offer.id);
+//       await SecureStore.setItemAsync('currentOfferId', offer.id, KEYCHAIN);
 //       setCurrentOffer(offer);
 //       setStep('waiting');
 //       startPolling(offer.id);
@@ -1936,7 +1937,7 @@ const styles = StyleSheet.create({
 //                 activeOpacity={0.8}
 //               >
 //                 {loadingFare
-//                   ? <ActivityIndicator color="#0D0D0D" />
+//                   ? <ActivityIndicator color="#FFFFFF" />
 //                   : <Text style={styles.primaryBtnText}>Estimer le prix</Text>
 //                 }
 //               </TouchableOpacity>
@@ -1973,7 +1974,7 @@ const styles = StyleSheet.create({
 //                   onPress={() => setPriceNum(p => p + 50)}
 //                   activeOpacity={0.7}
 //                 >
-//                   <Text style={[styles.priceBtnText, { color: '#0D0D0D' }]}>+</Text>
+//                   <Text style={[styles.priceBtnText, { color: '#FFFFFF' }]}>+</Text>
 //                 </TouchableOpacity>
 //               </View>
 
@@ -2075,7 +2076,7 @@ const styles = StyleSheet.create({
 //                   activeOpacity={0.8}
 //                 >
 //                   {loading
-//                     ? <ActivityIndicator color="#0D0D0D" />
+//                     ? <ActivityIndicator color="#FFFFFF" />
 //                     : <Text style={styles.primaryBtnText}>LANCER LA RECHERCHE</Text>
 //                   }
 //                 </TouchableOpacity>
@@ -2296,7 +2297,7 @@ const styles = StyleSheet.create({
 //   primaryBtn: {
 //     borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
 //   },
-//   primaryBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+//   primaryBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
 //   // Waiting step
 //   waitingSection: { paddingHorizontal: Spacing.md, alignItems: 'center', gap: Spacing.sm },
@@ -2317,7 +2318,7 @@ const styles = StyleSheet.create({
 //   chooseBtn: {
 //     backgroundColor: '#FF8C00', borderRadius: Radius.sm, paddingHorizontal: 14, paddingVertical: 8,
 //   },
-//   chooseBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 12 },
+//   chooseBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12 },
 //   cancelBtn: {
 //     width: '100%', borderRadius: Radius.md, borderWidth: 1,
 //     paddingVertical: 12, alignItems: 'center', marginTop: 8,

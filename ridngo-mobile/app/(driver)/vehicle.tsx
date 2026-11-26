@@ -139,7 +139,7 @@ export default function VehicleScreen() {
               onPress={fetchVehicle}
               activeOpacity={0.85}
             >
-              <Ionicons name="refresh" size={18} color="#0D0D0D" />
+              <Ionicons name="refresh" size={18} color="#FFFFFF" />
               <Text style={styles.registerBtnTxt}>Réessayer</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -162,7 +162,7 @@ export default function VehicleScreen() {
               onPress={() => router.push('/(driver)/onboarding?mode=addVehicle' as any)}
               activeOpacity={0.85}
             >
-              <Ionicons name="add-circle-outline" size={18} color="#0D0D0D" />
+              <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
               <Text style={styles.registerBtnTxt}>Enregistrer mon véhicule</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderRadius: Radius.lg, paddingHorizontal: 24, paddingVertical: 14, marginTop: Spacing.sm,
   },
-  registerBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 14 },
+  registerBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 14 },
   backLinkBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderRadius: Radius.lg, paddingHorizontal: 24, paddingVertical: 12, borderWidth: 1,

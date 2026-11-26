@@ -49,7 +49,7 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     Alert.alert('Déconnexion', 'Voulez-vous vous déconnecter ?', [
       { text: 'Annuler' },
-      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); router.replace('/'); } }
+      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); router.replace('/(auth)/landing'); } }
     ]);
   };
 
@@ -210,7 +210,7 @@ export default function ProfileScreen() {
                   onPress={handleSaveInfo}
                   disabled={savingInfo}
                 >
-                  {savingInfo ? <ActivityIndicator color="#0D0D0D" size="small" /> : (
+                  {savingInfo ? <ActivityIndicator color="#FFFFFF" size="small" /> : (
                     <Text style={styles.saveBtnText}>Sauvegarder</Text>
                   )}
                 </TouchableOpacity>
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
                   onPress={handleChangePassword}
                   disabled={changingPass}
                 >
-                  {changingPass ? <ActivityIndicator color="#0D0D0D" size="small" /> : (
+                  {changingPass ? <ActivityIndicator color="#FFFFFF" size="small" /> : (
                     <Text style={styles.passBtnText}>Mettre à jour</Text>
                   )}
                 </TouchableOpacity>
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, right: 0,
     width: 22, height: 22, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#0D0D0D',
+    borderWidth: 2, borderColor: '#1B263B',
   },
   name: { fontWeight: '900', fontSize: 22, letterSpacing: -0.3 },
   email: { fontSize: 13, fontWeight: '500' },
@@ -351,13 +351,13 @@ const styles = StyleSheet.create({
   inputLabel: { fontWeight: '900', fontSize: 9, letterSpacing: 2, marginBottom: 6 },
   infoInput: { borderRadius: Radius.md, padding: 14, fontWeight: '700', fontSize: 14, borderWidth: 1 },
   saveBtn: { backgroundColor: '#FF8C00', borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
-  saveBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  saveBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
   // Password form
   passForm: { padding: Spacing.md, gap: Spacing.sm, borderTopWidth: 1 },
   passInput: { borderRadius: Radius.md, padding: 14, fontWeight: '700', fontSize: 14, borderWidth: 1 },
   passBtn: { backgroundColor: '#FF8C00', borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  passBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  passBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
   version: { fontSize: 11, textAlign: 'center', fontStyle: 'italic' },
 });

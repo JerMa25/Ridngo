@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NavbarWrapper } from "@/components/layout/NavbarWrapper";
+import { RouteGuard } from "@/components/layout/RouteGuard";
 import { AppBackground } from "@/components/layout/AppBackground";
 import { Toaster } from 'react-hot-toast';
 import { QueryProvider } from "@/components/providers/QueryProvider";
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             <OfflineBanner />
             <AppBackground /> 
+            <RouteGuard />
             <NavbarWrapper />
             {children}
             <Toaster position="top-center" reverseOrder={false} />

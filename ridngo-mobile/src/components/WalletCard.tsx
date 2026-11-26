@@ -28,6 +28,7 @@ export function WalletCard({ balance, onChanged }: { balance: number; onChanged:
           <Text style={[st.btnTxt, { color: Colors.text }]}>RETIRER</Text>
         </TouchableOpacity>
       </View>
+      <WalletHistory />
       <Modal visible={mode !== null} transparent animationType="slide" onRequestClose={() => setMode(null)}>
         <View style={st.overlay}>
           <View style={[st.sheet, { backgroundColor: Colors.darkCard }]}>
@@ -234,6 +235,64 @@ function Withdraw({ balance, onDone }: { balance: number; onDone: () => void }) 
           <Primary title="CONFIRMER LE RETRAIT" onPress={confirm} busy={busy} />
         </>
       )}
+    </View>
+  );
+}
+
+/** Opérations et recharges, chargées à l'ouverture (comme les deux listes de la page wallet web). */
+function WalletHistory() {
+  const { Colors } = useTheme();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [txs, setTxs] = useState<Awaited<ReturnType<typeof rideService.getMyWalletTransactions>>>([]);
+  const [orders, setOrders] = useState<Awaited<ReturnType<typeof rideService.getMyRechargeOrders>>>([]);
+
+  const toggle = async () => {
+    const next = !open;
+    setOpen(next);
+    if (!next) return;
+    setLoading(true);
+    const [t, o] = await Promise.all([
+      rideService.getMyWalletTransactions().catch(() => []),
+      rideService.getMyRechargeOrders().catch(() => []),
+    ]);
+    setTxs(t); setOrders(o); setLoading(false);
+  };
+
+  const row = { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const,
+    backgroundColor: Colors.input, borderRadius: 14, padding: 12, marginTop: 8 };
+  return (
+    <View style={{ marginTop: 14 }}>
+      <TouchableOpacity onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }} accessibilityRole="button">
+        <Ionicons name={open ? 'chevron-up' : 'time-outline'} size={14} color={Colors.textMuted} />
+        <Text style={[st.label, { color: Colors.textMuted, marginBottom: 0 }]}>{open ? 'MASQUER L’HISTORIQUE' : 'VOIR L’HISTORIQUE'}</Text>
+      </TouchableOpacity>
+      {open && (loading ? <ActivityIndicator color={Colors.orange} style={{ marginTop: 10 }} /> : (
+        <View>
+          <Text style={[st.label, { color: Colors.textMuted, marginTop: 12 }]}>OPÉRATIONS</Text>
+          {txs.length === 0 ? <Text style={{ color: Colors.textMuted, fontStyle: 'italic', fontSize: 12 }}>Aucune transaction enregistrée.</Text>
+            : txs.map(tx => {
+              const debit = tx.transactionType === 'RIDE_PAYMENT';
+              return (
+                <View key={tx.id} style={row}>
+                  <View>
+                    <Text style={{ color: Colors.text, fontWeight: '700', fontSize: 12 }}>{debit ? 'Débit course' : 'Crédit / recharge'}</Text>
+                    <Text style={{ color: Colors.textMuted, fontSize: 10 }}>{new Date(tx.createdAt).toLocaleDateString('fr-FR')}</Text>
+                  </View>
+                  <Text style={{ color: debit ? Colors.red : Colors.green, fontWeight: '900', fontSize: 10 }}>{tx.status}</Text>
+                </View>
+              );
+            })}
+          <Text style={[st.label, { color: Colors.textMuted, marginTop: 14 }]}>RECHARGES</Text>
+          {orders.length === 0 ? <Text style={{ color: Colors.textMuted, fontStyle: 'italic', fontSize: 12 }}>Aucun historique de recharge.</Text>
+            : orders.map(o => (
+              <View key={o.orderId} style={row}>
+                <Text style={{ color: Colors.orange, fontWeight: '900', fontSize: 12 }}>{o.amount.toLocaleString()} FCFA</Text>
+                <Text style={{ color: SUCCESS.includes((o.status || '').toUpperCase()) ? Colors.green : Colors.textMuted, fontWeight: '900', fontSize: 10 }}>{o.status}</Text>
+              </View>
+            ))}
+        </View>
+      ))}
     </View>
   );
 }

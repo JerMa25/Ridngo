@@ -97,9 +97,9 @@ api.interceptors.response.use(
       processQueue(refreshError, null);
       localStorage.clear();
       await clearOfflineCache();
-      // On ne redirige vers login que si on n'est pas déjà sur une page publique
+      // session expirée : retour à la landing (la popup de connexion s'y ouvre)
       if (window.location.pathname !== '/') {
-        window.location.href = '/login';
+        window.location.href = '/';
       }
       return Promise.reject(refreshError);
     } finally {

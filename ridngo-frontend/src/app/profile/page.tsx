@@ -139,7 +139,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
       localStorage.clear();
-      clearOfflineCache().finally(() => { window.location.href = "/login"; });
+      clearOfflineCache().finally(() => { window.location.href = "/"; });
     }
   };
 

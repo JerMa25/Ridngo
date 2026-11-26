@@ -37,10 +37,7 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     const stored = localStorage.getItem('user');
-    if (!stored || JSON.parse(stored).role !== 'ADMIN') {
-      window.location.href = "/login";
-      return;
-    }
+    if (!stored || JSON.parse(stored).role !== 'ADMIN') return; // RouteGuard redirige
     setUser(JSON.parse(stored));
   }, []);
 

@@ -1,3 +1,4 @@
+import { KEYCHAIN } from './api';
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import { BASE_URL } from './api';
@@ -8,9 +9,13 @@ export type AuthResult = {
   mfa?: { mfaToken: string; channel: string }; verifyEmail?: boolean;
 };
 
-// Spring ProblemDetail met le message dans `detail`
-const errorMessage = (error: any, fallback: string) =>
-  error.response?.data?.detail || error.response?.data?.message || error.message || fallback;
+// Spring ProblemDetail met le message dans `detail` ; sans réponse, message lisible plutôt que celui d'axios
+const errorMessage = (error: any, fallback: string) => {
+  if (error.response) return error.response.data?.detail || error.response.data?.message || fallback;
+  if (error.code === 'ECONNABORTED') return 'Le serveur met trop de temps à répondre. Réessayez dans un instant.';
+  if (error.isOffline) return 'Impossible de joindre le serveur Ride&Go. Vérifiez que le téléphone est sur le même Wi-Fi.';
+  return error.message || fallback;
+};
 
 export const authService = {
   /** Connexion Kernel : session directe, ou 202 CONFIRM_MFA (code envoyé par email/SMS). */
@@ -103,7 +108,10 @@ export const authService = {
       if (!responseData?.accessToken) return { success: true, verifyEmail: true };
       return await finalizeSession(responseData as AuthResponse);
     } catch (error: any) {
-      return { success: false, message: error.message || "Erreur lors de l'inscription" };
+      // fetch échoue sans réponse quand le backend est injoignable
+      return { success: false, message: error.message === 'Network request failed'
+        ? 'Impossible de joindre le serveur Ride&Go. Vérifiez que le téléphone est sur le même Wi-Fi.'
+        : error.message || "Erreur lors de l'inscription" };
     }
   },
 
@@ -128,8 +136,8 @@ export const authService = {
 
 const finalizeSession = async (authData: AuthResponse): Promise<{ success: boolean; role: string }> => {
   if (!authData.accessToken) throw new Error('Token manquant');
-  await SecureStore.setItemAsync('accessToken', authData.accessToken);
-  if (authData.refreshToken) await SecureStore.setItemAsync('refreshToken', authData.refreshToken);
+  await SecureStore.setItemAsync('accessToken', authData.accessToken, KEYCHAIN);
+  if (authData.refreshToken) await SecureStore.setItemAsync('refreshToken', authData.refreshToken, KEYCHAIN);
 
   const isDriver = authData.roles?.includes('RIDE_AND_GO_DRIVER');
   const isAdmin = authData.roles?.includes('RIDE_AND_GO_ADMIN');
@@ -150,6 +158,6 @@ const finalizeSession = async (authData: AuthResponse): Promise<{ success: boole
     role: isDriver ? 'DRIVER' : isAdmin ? 'ADMIN' : 'PASSENGER',
   };
 
-  await SecureStore.setItemAsync('user', JSON.stringify(userObj));
+  await SecureStore.setItemAsync('user', JSON.stringify(userObj), KEYCHAIN);
   return { success: true, role: userObj.role };
 };

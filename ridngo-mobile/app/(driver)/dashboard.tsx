@@ -83,8 +83,7 @@ export default function DriverDashboard() {
 
       // Course active ?
       try {
-        const ride = await rideService.getCurrentPassengerRide();
-        if (ride) setCurrentRide(ride);
+        setCurrentRide(await rideService.getCurrentDriverRide());
       } catch { /* optional */ }
 
     } catch (e) {
@@ -154,7 +153,7 @@ export default function DriverDashboard() {
   const handleLogout = () => {
     Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
       { text: 'Annuler' },
-      { text: 'Déconnexion', style: 'destructive', onPress: logout },
+      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); router.replace('/(auth)/landing'); } },
     ]);
   };
 
@@ -546,7 +545,7 @@ const s = StyleSheet.create({
   onlineDotBadge: {
     position: 'absolute', bottom: 2, right: 2,
     width: 14, height: 14, borderRadius: 7,
-    borderWidth: 2, borderColor: '#1C1C1C',
+    borderWidth: 2, borderColor: '#22304A',
   },
   identityName:   { fontWeight: '900', fontSize: 18, letterSpacing: 0.2 },
   identityRole:   { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginTop: 2 },

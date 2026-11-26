@@ -114,7 +114,7 @@ export function LocationSearch({
   const [locating, setLocating] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   // Sync valeur externe (ex: tap carte → reverse geocode)
   useEffect(() => {

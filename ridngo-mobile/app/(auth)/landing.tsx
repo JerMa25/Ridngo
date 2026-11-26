@@ -58,7 +58,7 @@ export default function LandingScreen() {
         <View style={styles.ctas}>
           <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push('/(auth)/login')} activeOpacity={0.85}>
             <Text style={styles.btnPrimaryText}>Se connecter</Text>
-            <Ionicons name="arrow-forward" size={20} color="#0D0D0D" />
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
   },
-  btnPrimaryText: { color: '#0D0D0D', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' },
+  btnPrimaryText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' },
   btnSecondary: { borderRadius: Radius.lg, paddingVertical: 18, alignItems: 'center', borderWidth: 1 },
   btnSecondaryText: { fontWeight: '900', fontSize: 14 },
   btnGhost: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12 },

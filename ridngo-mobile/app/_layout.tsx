@@ -1,31 +1,45 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import { AuthProvider } from '../src/context/AuthContext';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { NetworkProvider } from '../src/context/NetworkContext';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 
 SplashScreen.preventAutoHideAsync();
 
+/** Accueil de chaque profil : landing hors connexion, radar pour le chauffeur, recherche pour le passager. */
+export const homeFor = (role?: string) =>
+  !role ? '/(auth)/landing' : role === 'DRIVER' ? '/(driver)/dashboard' : '/(passenger)/ride';
+
+/** Garde unique : chacun reste dans son espace, et toute déconnexion ramène à la landing. */
+function useSessionGuard() {
+  const { user, isLoading } = useAuth();
+  const segments = useSegments();
+  const group = segments[0];
+
+  useEffect(() => {
+    if (isLoading) return;
+    const home = homeFor(user?.role);
+    const allowed = !user ? group === '(auth)'
+      : user.role === 'DRIVER' ? group === '(driver)'
+      : group === '(passenger)';
+    if (!allowed) router.replace(home as any);
+  }, [user, isLoading, group]);
+}
+
 function AppContent() {
   const { isDark, Colors } = useTheme();
   useEffect(() => { SplashScreen.hideAsync(); }, []);
+  useSessionGuard();
 
   return (
     <>
-      {/*
-        translucent={false} → Android respecte la SafeArea correctement.
-        backgroundColor aligné sur le thème → pas de barre noire résiduelle.
-      */}
-      <StatusBar
-        style={isDark ? 'light' : 'dark'}
-        backgroundColor={Colors.background}
-        translucent={false}
-      />
+      {/* SDK 58 : barre d'état edge-to-edge, backgroundColor/translucent n'existent plus */}
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <OfflineBanner />
       <Stack
         screenOptions={{

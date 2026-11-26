@@ -92,8 +92,7 @@ export default function OffersPage() {
   useEffect(() => {
     const init = async () => {
       if (typeof window !== 'undefined' && !localStorage.getItem('accessToken')) {
-        router.replace('/login');
-        return;
+        return; // RouteGuard renvoie vers la landing
       }
 
       const storedOffers = sortOffers(readStoredOffers());

@@ -130,9 +130,9 @@ export default function PassengerDashboard() {
           onPress={() => router.push('/(passenger)/ride')}
           activeOpacity={0.85}
         >
-          <Ionicons name="car" size={18} color="#0D0D0D" />
+          <Ionicons name="car" size={18} color="#FFFFFF" />
           <Text style={styles.orderBtnText}>Commander une course</Text>
-          <Ionicons name="arrow-forward" size={16} color="#0D0D0D" />
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
         </TouchableOpacity>
 
         {/* Courses récentes */}
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, elevation: 8,
   },
-  orderBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
+  orderBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
 
   section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },

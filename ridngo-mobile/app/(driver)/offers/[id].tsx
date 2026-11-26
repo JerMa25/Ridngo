@@ -14,6 +14,7 @@
  *   → redirect /(driver)/ride/{rideId}
  */
 
+import { KEYCHAIN } from '../../../src/services/api';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
@@ -237,7 +238,7 @@ export default function OfferDetailScreen() {
         return;
       }
       const ride: RideResponse = await rideService.driverAccepts(id, challenge.challengeToken, code.trim());
-      await SecureStore.setItemAsync('activeRideId', ride.id);
+      await SecureStore.setItemAsync('activeRideId', ride.id, KEYCHAIN);
       router.replace(`/(driver)/ride/${ride.id}` as any);
     } catch (e: any) {
       const msg = e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur lors de la confirmation.';
@@ -390,10 +391,10 @@ export default function OfferDetailScreen() {
               activeOpacity={0.85}
             >
               {applying
-                ? <ActivityIndicator color="#0D0D0D" />
+                ? <ActivityIndicator color="#FFFFFF" />
                 : <>
                     <Text style={s.acceptBtnTxt}>ACCEPTER</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#0D0D0D" />
+                    <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
                   </>
               }
             </TouchableOpacity>
@@ -553,7 +554,7 @@ const s = StyleSheet.create({
     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, elevation: 6,
   },
-  acceptBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 15, letterSpacing: 2 },
+  acceptBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, letterSpacing: 2 },
   waitingBlock: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: Radius.lg, borderWidth: 1, padding: Spacing.md,
@@ -754,9 +755,9 @@ const s = StyleSheet.create({
 //             disabled={accepting}
 //           >
 //             {accepting
-//               ? <ActivityIndicator color={Colors.dark} />
+//               ? <ActivityIndicator color={Colors.white} />
 //               : <>
-//                 <Ionicons name="checkmark-circle" size={20} color={Colors.dark} />
+//                 <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
 //                 <Text style={styles.btnText}>Accepter la course</Text>
 //               </>
 //             }
@@ -773,9 +774,9 @@ const s = StyleSheet.create({
 //             disabled={applying}
 //           >
 //             {applying
-//               ? <ActivityIndicator color={Colors.dark} />
+//               ? <ActivityIndicator color={Colors.white} />
 //               : <>
-//                 <Ionicons name="hand-right" size={20} color={Colors.dark} />
+//                 <Ionicons name="hand-right" size={20} color={Colors.white} />
 //                 <Text style={styles.btnText}>Postuler à cette course</Text>
 //               </>
 //             }
@@ -847,7 +848,7 @@ const s = StyleSheet.create({
 //     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
 //     shadowColor: Colors.green, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, elevation: 6,
 //   },
-//   btnText: { color: Colors.dark, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+//   btnText: { color: Colors.white, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
 //   appliedBanner: {
 //     flexDirection: 'row', alignItems: 'center', gap: 10,
 //     backgroundColor: Colors.orangeBg, borderRadius: Radius.lg, padding: Spacing.md, justifyContent: 'center',

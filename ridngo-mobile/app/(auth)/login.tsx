@@ -102,7 +102,7 @@ export default function LoginScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              {loading ? <ActivityIndicator color={Colors.dark} /> : <Text style={styles.btnText}>Valider le code</Text>}
+              {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.btnText}>Valider le code</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setMfa(null); setCode(''); }}>
               <Text style={[styles.forgotText, { textAlign: 'center' }]}>← Changer de compte</Text>
@@ -162,11 +162,11 @@ export default function LoginScreen() {
               activeOpacity={0.85}
             >
               {loading ? (
-                <ActivityIndicator color={Colors.dark} />
+                <ActivityIndicator color={Colors.white} />
               ) : (
                 <>
                   <Text style={styles.btnText}>Se connecter</Text>
-                  <Ionicons name="arrow-forward" size={20} color={Colors.dark} />
+                  <Ionicons name="arrow-forward" size={20} color={Colors.white} />
                 </>
               )}
             </TouchableOpacity>
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: Spacing.sm,
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
   },
-  btnText: { color: Colors.dark, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: Colors.white, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },
