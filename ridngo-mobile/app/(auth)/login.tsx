@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
+import { authService } from '../../src/services/auth';
 import { Colors, Spacing, Radius } from '../../src/types/theme';
 
 export default function LoginScreen() {
@@ -30,6 +31,15 @@ export default function LoginScreen() {
       router.replace('/');
     } else if (result.mfa) {
       setMfa(result.mfa);
+    } else if (/pas encore vérifié/i.test(result.message || '')) {
+      // compte créé mais email non confirmé : proposer le renvoi du lien
+      Alert.alert('Email non vérifié', result.message, [
+        { text: 'Plus tard' },
+        { text: 'Renvoyer le lien', onPress: async () => {
+          try { await authService.resendVerification(identifier.trim()); Alert.alert('Email envoyé', 'Cliquez sur le lien reçu, puis reconnectez-vous.'); }
+          catch { Alert.alert('Erreur', "Impossible de renvoyer l'email pour le moment."); }
+        } },
+      ]);
     } else {
       Alert.alert('Erreur de connexion', result.message || 'Identifiants invalides.');
     }
@@ -207,4 +217,4 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },
-});
+});

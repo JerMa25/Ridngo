@@ -134,6 +134,9 @@ export const rideService = {
       const response = await api.get<RideResponse[]>('/api/v1/trips/history?page=0&size=1');
       const latest = response.data[0];
       if (!latest) return null;
+      // l'historique mêle les courses faites comme chauffeur : ne reprendre que celles du passager
+      const me = JSON.parse(localStorage.getItem('user') || '{}');
+      if (me.id && latest.passengerId !== me.id) return null;
       
       if (latest.state === 'CREATED' || latest.state === 'ONGOING') {
         return latest;
