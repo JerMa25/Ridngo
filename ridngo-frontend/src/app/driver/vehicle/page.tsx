@@ -54,24 +54,24 @@ export default function MyVehiclePage() {
     try {
       // CONSTRUCTION DU PAYLOAD STRICT (Évite l'erreur 400 en filtrant les champs)
       // On ne prend que ce qui est défini dans le UpdateVehicleDto du Swagger
+      const brand = String(editForm.brand || '').trim();
+      const seats = Number(editForm.totalSeatNumber);
+      if (!brand) { toast.error('Indiquez la marque du véhicule.'); return; }
+      if (!Number.isInteger(seats) || seats < 1 || seats > 60) { toast.error('Nombre de places invalide (1 à 60).'); return; }
+      const numbers = ['tankCapacity', 'luggageMaxCapacity', 'averageFuelConsumptionPerKm', 'vehicleAgeAtStart', 'mileageSinceCommissioning'];
+      const bad = numbers.find(k => editForm[k] !== undefined && editForm[k] !== '' && (!Number.isFinite(Number(editForm[k])) || Number(editForm[k]) < 0));
+      if (bad) { toast.error('Les valeurs numériques doivent être positives.'); return; }
+
+      // Champs non envoyés = laissés tels quels côté backend (null = pas de modification)
       const payload = {
-        makeName: editForm.makeName || "",
-        modelName: editForm.modelName || "",
-        transmissionType: editForm.transmissionType || "",
-        manufacturerName: editForm.manufacturerName || "",
-        sizeName: editForm.sizeName || "",
-        typeName: editForm.typeName || "",
-        fuelTypeName: editForm.fuelTypeName || "",
-        vehicleSerialNumber: editForm.vehicleSerialNumber || "",
-        registrationNumber: editForm.registrationNumber || "",
+        makeName: brand, // le backend range la marque dans makeName
+        vehicleSerialNumber: editForm.vehicleSerialNumber || undefined,
         tankCapacity: Number(editForm.tankCapacity || 0),
         luggageMaxCapacity: Number(editForm.luggageMaxCapacity || 0),
-        totalSeatNumber: Number(editForm.totalSeatNumber || 0),
+        totalSeatNumber: seats,
         averageFuelConsumptionPerKm: Number(editForm.averageFuelConsumptionPerKm || 0),
-        mileageAtStart: Number(editForm.mileageAtStart || 0),
         mileageSinceCommissioning: Number(editForm.mileageSinceCommissioning || 0),
         vehicleAgeAtStart: Number(editForm.vehicleAgeAtStart || 0),
-        brand: editForm.brand || "",
         // Booléens
         airConditioned: !!editForm.airConditioned,
         comfortable: !!editForm.comfortable,
@@ -99,8 +99,7 @@ export default function MyVehiclePage() {
       setIsEditing(false);
       toast.success("Véhicule mis à jour !");
     } catch (e: any) {
-      console.error("Erreur 400 Details:", e.response?.data);
-      toast.error("Erreur de validation : " + (e.response?.data?.message || "Vérifiez les champs"));
+      toast.error(e.response?.data?.detail || e.response?.data?.message || "Mise à jour impossible : vérifiez les champs.");
     } finally {
       setUpdateLoading(false);
     }
@@ -141,17 +140,27 @@ export default function MyVehiclePage() {
            <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30 mt-2">Gestion des paramètres et services</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => {
-              if (vehicle) setIsEditing(true);
-              else setShowRegisterPrompt(true);
-            }}
-            className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-orange-btn text-white shadow-xl"
-          >
-            <Edit3 size={16}/> Modifier mon véhicule
-          </button>
+          {isEditing ? (
+            <button
+              onClick={handlePatchVehicle}
+              disabled={updateLoading}
+              className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-green-600 text-white shadow-xl disabled:opacity-60"
+            >
+              {updateLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16}/>} Enregistrer
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (vehicle) setIsEditing(true);
+                else setShowRegisterPrompt(true);
+              }}
+              className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-orange-btn text-white shadow-xl"
+            >
+              <Edit3 size={16}/> Modifier mon véhicule
+            </button>
+          )}
           {isEditing && (
-            <button onClick={() => setIsEditing(false)} className="p-4 bg-foreground/5 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-colors">
+            <button onClick={() => { setIsEditing(false); setEditForm(vehicle); }} aria-label="Annuler les modifications" className="p-4 bg-foreground/5 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-colors">
               <X size={20} />
             </button>
           )}
@@ -216,7 +225,7 @@ export default function MyVehiclePage() {
                            name={item.key}
                            type={item.type || 'text'} 
                            className="bg-transparent font-black text-sm w-full outline-none text-orange-btn border-b border-orange-btn/20" 
-                           value={editForm[item.key]} 
+                           value={editForm[item.key] ?? ""} 
                            onChange={handleInputChange}
                          />
                        ) : (

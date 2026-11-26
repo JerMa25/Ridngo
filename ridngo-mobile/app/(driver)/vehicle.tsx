@@ -69,24 +69,26 @@ export default function VehicleScreen() {
 
   const handleSave = async () => {
     if (!vehicle?.id) return;
+    const seats = Number(editForm.totalSeatNumber);
+    if (!editForm.registrationNumber?.trim()) { Alert.alert('Champ requis', "Indiquez la plaque d'immatriculation."); return; }
+    if (!Number.isInteger(seats) || seats < 1 || seats > 60) { Alert.alert('Places invalides', 'Indiquez un nombre de places entre 1 et 60.'); return; }
     try {
       setLoading(true);
       const payload = {
         registrationNumber: editForm.registrationNumber,
         color: editForm.color,
-        totalSeatNumber: parseInt(editForm.totalSeatNumber) || 4,
+        totalSeatNumber: seats,
         airConditioned: editForm.airConditioned,
         wifi: editForm.wifi,
         screen: editForm.screen,
         petsAllow: editForm.petsAllow,
       };
-      console.log('[Vehicle] Patching vehicle:', payload);
       await api.patch(`/api/v1/vehicles/${vehicle.id}`, payload);
       setIsEditing(false);
       await fetchVehicle();
       Alert.alert("Succès", "Informations du véhicule mises à jour.");
-    } catch (err) {
-      Alert.alert("Erreur", "Impossible de mettre à jour le véhicule.");
+    } catch (err: any) {
+      Alert.alert("Erreur", err.response?.data?.detail || err.response?.data?.message || "Impossible de mettre à jour le véhicule.");
     } finally {
       setLoading(false);
     }

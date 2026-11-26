@@ -6,6 +6,11 @@ import { useState, useEffect } from 'react';
 import { get, set, del } from 'idb-keyval';
 import { Persister } from '@tanstack/react-query-persist-client';
 
+const CACHE_KEY = 'ridngo-offline-cache';
+
+/** Vide le cache hors ligne : sans ça le profil du compte précédent réapparaît après déconnexion. */
+export const clearOfflineCache = () => del(CACHE_KEY).catch(() => undefined);
+
 /**
  * Creates an IndexedDB persister to store cache locally
  */
@@ -43,7 +48,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only initialize IDB on client side (browser)
     if (typeof window !== 'undefined') {
-      setPersister(createIDBPersister('ridngo-offline-cache'));
+      setPersister(createIDBPersister(CACHE_KEY));
     }
   }, []);
 

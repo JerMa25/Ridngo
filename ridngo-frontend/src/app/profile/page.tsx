@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { clearOfflineCache } from '@/components/providers/QueryProvider';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
@@ -48,6 +49,9 @@ export default function ProfilePage() {
       const res = await api.post('/api/v1/users/me/photo', form, { headers: { 'Content-Type': 'multipart/form-data' } });
       const full = JSON.parse(localStorage.getItem('user-full') || '{}');
       localStorage.setItem('user-full', JSON.stringify({ ...full, photoUri: res.data.photoUri }));
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...stored, photoUri: res.data.photoUri }));
+      window.dispatchEvent(new Event('storage'));
       await queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
       toast.success('Photo de profil mise à jour');
     } catch (err: any) {
@@ -96,10 +100,16 @@ export default function ProfilePage() {
         phone: editData.phone
       };
       await api.put('/api/v1/users/profile', updateReq);
+      // la Navbar et les modales lisent le localStorage : sans ça l'ancien nom revient à l'actualisation
+      const full = JSON.parse(localStorage.getItem('user-full') || '{}');
+      localStorage.setItem('user-full', JSON.stringify({ ...full, firstName: updateReq.firstName, lastName: updateReq.lastName, telephone: updateReq.phone }));
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...stored, name: `${updateReq.firstName} ${updateReq.lastName}`.trim(), phone: updateReq.phone }));
+      window.dispatchEvent(new Event('storage'));
+      await queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
       toast.success("Profil mis à jour !");
-      queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
-    } catch (err) {
-      toast.error("Erreur lors de la mise à jour");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Erreur lors de la mise à jour");
     } finally {
       setSaving(false);
     }
@@ -120,7 +130,7 @@ export default function ProfilePage() {
       toast.success("Mot de passe modifié !");
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Erreur mot de passe.");
+      toast.error(err.response?.data?.detail || err.response?.data?.message || "Erreur mot de passe.");
     } finally {
       setChangingPassword(false);
     }
@@ -129,7 +139,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
       localStorage.clear();
-      window.location.href = "/login";
+      clearOfflineCache().finally(() => { window.location.href = "/login"; });
     }
   };
 

@@ -86,6 +86,7 @@ const finalizeSession = async (authData: AuthResponse): Promise<AuthResult> => {
     name: userProfile.name || `${userProfile.firstName} ${userProfile.lastName}`,
     username: userProfile.username || userProfile.name?.split(' ')[0] || userProfile.firstName,
     email: userProfile.email,
+    photoUri: userProfile.photoUri,
     phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
     // Priorité ADMIN > DRIVER > PASSENGER (l'ordre des rôles renvoyés n'est pas garanti)
     role: ['ADMIN', 'DRIVER', 'PASSENGER'].find(r =>

@@ -238,8 +238,9 @@ public class RemoteUserAdapter implements ExternalUserPort {
      */
     @Override
     public Mono<Void> changePassword(UUID userId, String currentPassword, String newPassword) {
-        log.warn("⚠️ changePassword : non supporté par Kernel Core pour le moment.");
-        return Mono.empty();
+        // pas d'endpoint de changement de mot de passe connu côté Kernel : on le dit au lieu d'un faux succès
+        return Mono.error(new IllegalStateException(
+                "Le changement de mot de passe se fait depuis votre compte Yowyob (yowauth.yowyob.com)."));
     }
 
     // ─── MAPPER ────────────────────────────────────────────────────────────────

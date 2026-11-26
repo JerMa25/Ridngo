@@ -16,8 +16,14 @@ export const NavbarWrapper = () => {
 
   useEffect(() => {
     setMounted(true);
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+    const load = () => {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) setUser(JSON.parse(savedUser));
+    };
+    load();
+    // le profil émet 'storage' après une modification (nom, photo)
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
   }, [pathname]); // Se déclenche au changement de page pour rafraîchir le user
 
   if (!mounted) return null;

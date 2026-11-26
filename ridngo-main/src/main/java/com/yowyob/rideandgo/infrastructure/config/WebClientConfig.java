@@ -161,11 +161,13 @@ public class WebClientConfig {
 
     @Bean
     public NotificationApiClient notificationApiClient(WebClient.Builder builder,
-            @Value("${application.notification.url}") String url) {
+            @Value("${application.notification.url}") String url,
+            @Value("${application.vehicle.organization-id}") String organizationId) {
         // X-Service-Token retiré : le Kernel Core utilise X-Client-Id + X-Api-Key +
-        // Bearer
+        // Bearer ; sans X-Organization-Id les deliveries sont refusées (ORGANIZATION_CONTEXT_REQUIRED)
         WebClient webClient = builder
                 .baseUrl(url)
+                .defaultHeader("X-Organization-Id", organizationId)
                 .filter(kernelAuthFilter())
                 .filter(addBearerToken())
                 .build();

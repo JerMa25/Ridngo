@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
+import { clearOfflineCache } from '@/components/providers/QueryProvider';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -95,6 +96,7 @@ api.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       localStorage.clear();
+      await clearOfflineCache();
       // On ne redirige vers login que si on n'est pas déjà sur une page publique
       if (window.location.pathname !== '/') {
         window.location.href = '/login';

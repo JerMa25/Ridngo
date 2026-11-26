@@ -7,6 +7,7 @@ import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert, LogOut, AlertTriangle, Ma
 import { UserLocation } from '@/utils/geolocation';
 import { userService } from '@/lib/userService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clearOfflineCache } from '@/components/providers/QueryProvider';
 
 // --- Modale de confirmation déconnexion ---
 const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => (
@@ -87,7 +88,8 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
     localStorage.clear();
     setUser(null);
     setShowLogoutModal(false);
-    router.push('/');
+    // rechargement complet : vide aussi le cache React Query en mémoire
+    clearOfflineCache().finally(() => { window.location.href = '/'; });
   };
 
   return (
@@ -196,7 +198,9 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
               </Link>
 
               <Link href="/profile" className="flex items-center gap-3 bg-foreground/5 pl-2 pr-2 sm:pr-4 py-1.5 rounded-full border border-foreground/5 hover:bg-foreground/10 transition-all group">
-                <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">{user.name[0]}</div>
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">
+                  {user.photoUri ? <img src={user.photoUri} alt="" className="w-full h-full object-cover" /> : user.name?.[0]}
+                </div>
                 <div className="hidden sm:flex flex-col -space-y-1 text-left">
                   <span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>
                   <span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>

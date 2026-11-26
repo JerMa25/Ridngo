@@ -32,6 +32,12 @@ export const userService = {
 
   updateProfile: async (data: { firstName?: string; lastName?: string; phone?: string }) => {
     const res = await api.put('/api/v1/users/profile', data);
+    // la session locale garde l'ancien nom sinon (en-têtes, accueil)
+    try {
+      const stored = JSON.parse((await SecureStore.getItemAsync('user')) || '{}');
+      const name = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+      await SecureStore.setItemAsync('user', JSON.stringify({ ...stored, ...(name && { name }), ...(data.phone && { phone: data.phone }) }));
+    } catch { /* session absente */ }
     return res.data;
   },
 

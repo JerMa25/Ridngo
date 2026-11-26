@@ -72,7 +72,11 @@ public class UserR2dbcAdapter implements UserRepositoryPort {
                 .flatMap(userRepository::save)
                 .flatMap(savedEntity -> syncRoles(user, savedEntity))
                 .flatMap(savedEntity -> syncActorTables(user, savedEntity))
-                .map(savedEntity -> user);
+                // renvoie la photo conservée en base, sinon le profil Kernel (sans photo) l'efface de la réponse
+                .map(savedEntity -> user.photoUri() != null ? user
+                        : new User(user.id(), user.name(), user.firstName(), user.lastName(), user.email(),
+                                user.telephone(), user.password(), savedEntity.getPhotoUri(), user.roles(),
+                                user.directPermissions()));
     }
 
     /**

@@ -73,7 +73,7 @@ export default function DriverProfileScreen() {
       setShowPassForm(false);
       setPassData({ current: '', next: '', confirm: '' });
     } catch (e: any) {
-      Alert.alert('Erreur', e.response?.data?.message || 'Impossible de changer le mot de passe.');
+      Alert.alert('Erreur', e.response?.data?.detail || e.response?.data?.message || 'Impossible de changer le mot de passe.');
     } finally { setChangingPass(false); }
   };
 
