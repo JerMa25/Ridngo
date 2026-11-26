@@ -191,9 +191,10 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
       console.log("status :", err.response?.status);
       console.log("data :", err.response?.data);
 
-      toast.error(JSON.stringify(err.response?.data, null, 2));
+      toast.error(err.response?.data?.detail || err.response?.data?.message || "Inscription du véhicule impossible.");
 
       setErrorStatus(err.response?.status || 500);
+      setLoading(false);
     }
   };
 

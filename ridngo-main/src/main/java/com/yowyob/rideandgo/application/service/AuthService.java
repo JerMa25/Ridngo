@@ -53,15 +53,32 @@ public class AuthService implements AuthUseCase {
     }
 
     @Override
+    public Mono<AuthPort.AuthResponse> confirmLoginMfa(String mfaToken, String code) {
+        return authPort.confirmLoginMfa(mfaToken, code).flatMap(this::withLocalRoles);
+    }
+
+    @Override
+    public Mono<Void> resendEmailVerification(String principal) {
+        return authPort.resendEmailVerification(principal);
+    }
+
+    @Override
+    public Mono<AuthPort.CaptchaChallenge> captcha() {
+        return authPort.captcha();
+    }
+
+    @Override
     public Mono<AuthPort.AuthResponse> refreshToken(String refreshToken) {
         return authPort.refreshToken(refreshToken).flatMap(this::withLocalRoles);
     }
 
     @Override
     public Mono<AuthPort.AuthResponse> register(String username, String email, String password, String phone,
-            String firstName, String lastName, List<RoleType> roles, FilePart photo) {
+            String firstName, String lastName, List<RoleType> roles, FilePart photo,
+            String captchaToken, String captchaAnswer) {
 
-        return authPort.register(username, email, password, phone, firstName, lastName, roles, photo)
+        return authPort.register(username, email, password, phone, firstName, lastName, roles, photo,
+                captchaToken, captchaAnswer)
                 .flatMap(response -> {
                     boolean isDriver = roles.contains(RoleType.RIDE_AND_GO_DRIVER);
 

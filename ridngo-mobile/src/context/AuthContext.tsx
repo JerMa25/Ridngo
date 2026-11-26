@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService } from '../services/auth';
+import { authService, AuthResult } from '../services/auth';
 import { UserObj } from '../types/api';
 
 interface AuthContextType {
   user: UserObj | null;
   isLoading: boolean;
   isGuest: boolean;
-  login: (identifier: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  login: (identifier: string, password: string) => Promise<AuthResult>;
+  confirmMfa: (mfaToken: string, code: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setAsGuest: () => void;
@@ -47,6 +48,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return result;
   };
 
+  const confirmMfa = async (mfaToken: string, code: string) => {
+    const result = await authService.confirmMfa(mfaToken, code);
+    if (result.success) {
+      await loadUser();
+    }
+    return result;
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -62,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isGuest, login, logout, refreshUser, setAsGuest }}>
+    <AuthContext.Provider value={{ user, isLoading, isGuest, login, confirmMfa, logout, refreshUser, setAsGuest }}>
       {children}
     </AuthContext.Provider>
   );

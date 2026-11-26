@@ -122,11 +122,13 @@ export const rideService = {
     return res.data;
   },
 
-  // Chauffeur confirme pickup → crée le Trip
-  // POST /api/v1/offers/{id}/accept?driverId={driverId}
-  driverAccepts: async (offerId: string, driverId: string): Promise<RideResponse> => {
-    const res = await api.post<RideResponse>(
-      `/api/v1/offers/${offerId}/accept?driverId=${driverId}`);
+  // La commission est débitée du wallet Kernel, qui exige un code MFA : étape 1 = demander le code
+  requestAcceptCode: async (offerId: string): Promise<{ challengeToken: string; commission: number }> =>
+    (await api.post(`/api/v1/offers/${offerId}/accept/challenge`)).data,
+
+  // Étape 2 : confirmation avec le code reçu → commission débitée, Trip créé
+  driverAccepts: async (offerId: string, challengeToken: string, code: string): Promise<RideResponse> => {
+    const res = await api.post<RideResponse>(`/api/v1/offers/${offerId}/accept`, { challengeToken, code });
     const ride = res.data;
     await removeAppliedOffer(offerId);
     await addActiveTrip(ride.id, offerId);
@@ -202,6 +204,18 @@ export const rideService = {
     const res = await api.get<Wallet>('/api/v1/wallets/me');
     return res.data;
   },
+
+  // Recharge via le paiement du Kernel (MyCoolPay / Stripe) : page de paiement puis suivi de l'ordre
+  rechargeWallet: async (amount: number, payerReference: string, method: string) =>
+    (await api.post<{ orderId: string; status: string; redirectUrl?: string }>('/api/v1/wallets/me/recharge', { amount, payerReference, method })).data,
+  refreshRechargeOrder: async (orderId: string) =>
+    (await api.post<{ orderId: string; status: string; redirectUrl?: string }>(`/api/v1/wallets/recharge-orders/${orderId}/refresh`)).data,
+
+  // Retrait en 2 étapes Kernel : code de confirmation, puis envoi vers le Mobile Money
+  startWithdrawal: async (amount: number, phoneNumber: string) =>
+    (await api.post<{ challengeToken: string }>('/api/v1/wallets/me/withdrawals/challenge', { amount, phoneNumber })).data,
+  confirmWithdrawal: async (payload: { amount: number; phoneNumber: string; method: string; recipientName: string; challengeToken: string; code: string }) =>
+    (await api.post<{ status: string }>('/api/v1/wallets/me/withdrawals', payload)).data,
 
   getRideHistory: async (): Promise<RideResponse[]> => {
     const res = await api.get<RideResponse[]>('/api/v1/trips/history');

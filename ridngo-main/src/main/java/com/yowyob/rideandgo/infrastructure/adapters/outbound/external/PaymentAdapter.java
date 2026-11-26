@@ -44,8 +44,13 @@ public class PaymentAdapter implements PaymentPort {
         public Mono<Wallet> createWallet(UUID ownerId, String ownerName) {
                 String label = "Wallet_" + ownerId.toString().substring(0, 5);
                 log.info("💳 [Kernel] Création du wallet pour owner {} (label={})", ownerId, label);
-                return client.createWallet(
-                                new PaymentApiClient.CreateWalletRequest(ownerId.toString(), label))
+                // Un wallet personnel se crée avec le token de son titulaire (/wallets/mine) ; créé "pour" un
+                // autre id, le Kernel répond 403 WALLET_ACCESS_DENIED (vu en réel sur le tenant cad65f4e).
+                return isCurrentUser(ownerId)
+                                .flatMap(self -> self
+                                                ? client.createMyWallet(new PaymentApiClient.CreateWalletRequest(null, label))
+                                                : client.createWallet(new PaymentApiClient.CreateWalletRequest(
+                                                                ownerId.toString(), label)))
                                 .flatMap(resp -> {
                                         if (!resp.success() || resp.data() == null) {
                                                 log.error("❌ Réponse Kernel invalide pour createWallet: {}",
@@ -64,10 +69,19 @@ public class PaymentAdapter implements PaymentPort {
                                 });
         }
 
+        private Mono<Boolean> isCurrentUser(UUID ownerId) {
+                return org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext()
+                                .map(ctx -> ctx.getAuthentication() != null
+                                                && ownerId.toString().equals(ctx.getAuthentication().getName()))
+                                .defaultIfEmpty(false);
+        }
+
         @Override
         public Mono<Wallet> getWalletByOwnerId(UUID ownerId) {
                 log.info("💳 [Kernel] Récupération wallet pour owner {}", ownerId);
-                return client.getWalletByOwnerId(ownerId.toString())
+                return isCurrentUser(ownerId)
+                                .flatMap(self -> self ? client.getMyWallet()
+                                                : client.getWalletByOwnerId(ownerId.toString()))
                                 .flatMap(resp -> {
                                         if (!resp.success() || resp.data() == null) {
                                                 log.warn("⚠️ Wallet introuvable pour owner {}: {}", ownerId,
@@ -94,23 +108,27 @@ public class PaymentAdapter implements PaymentPort {
          * La signature est simplifiée (à renforcer si le Kernel valide la crypto).
          */
         @Override
-        public Mono<Void> processPayment(UUID walletId, double offerPrice) {
+        public Mono<String> startPayment(UUID walletId, double amount, String reference) {
+                log.info("🔐 [Kernel] Épreuve de paiement de {} XAF ({}) pour le wallet {}", amount, reference, walletId);
+                return client.payChallenge(walletId.toString(), new PaymentApiClient.PayChallengeRequest(amount, reference))
+                                .flatMap(resp -> resp.success() && resp.data() != null && resp.data().challengeToken() != null
+                                                ? Mono.just(resp.data().challengeToken())
+                                                : Mono.error(new IllegalStateException(resp.message() != null ? resp.message()
+                                                                : "Le Kernel n'a pas pu préparer le paiement.")))
+                                .onErrorMap(WebClientResponseException.class, ex -> {
+                                        log.error("❌ Épreuve de paiement refusée : {} — {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+                                        return new IllegalStateException(kernelMessage(ex, "Paiement impossible pour le moment."));
+                                });
+        }
+
+        @Override
+        public Mono<Void> processPayment(UUID walletId, double offerPrice, String sourceRef, String challengeToken,
+                        String code) {
                 log.info("💸 [Kernel] Paiement de {} XAF depuis le wallet {}", offerPrice, walletId);
-                String sourceRef = "RIDE_PAYMENT_" + System.currentTimeMillis();
-                String payload = "{\"amount\":" + offerPrice + ",\"currency\":\"XAF\",\"source\":\"ridngo-backend\"}";
 
                 return client.payFromWallet(
                                 walletId.toString(),
-                                new PaymentApiClient.PaymentRequest(
-                                                walletId.toString(), // organizationId = ownerId du wallet
-                                                "RIDNGO", // chainCode
-                                                "RIDE_PAYMENT", // transactionType
-                                                "ridngo-backend", // sourceService
-                                                sourceRef, // sourceReference
-                                                payload, // payload
-                                                Integer.toHexString(payload.hashCode()), // payloadHash simplifié
-                                                null, // senderPublicKey (optionnel)
-                                                null)) // signature (optionnel)
+                                new PaymentApiClient.PayRequest(offerPrice, "XAF", sourceRef, challengeToken, code))
                                 .flatMap(resp -> {
                                         if (!resp.success() || resp.data() == null) {
                                                 log.error("❌ Paiement Kernel rejeté pour wallet {}: {}", walletId,
@@ -125,8 +143,9 @@ public class PaymentAdapter implements PaymentPort {
                                 .onErrorResume(WebClientResponseException.class, ex -> {
                                         log.error("❌ Paiement échoué pour wallet {}: {} — {}",
                                                         walletId, ex.getStatusCode(), ex.getResponseBodyAsString());
-                                        return Mono.error(new RuntimeException(
-                                                        "Échec de la transaction de paiement. Vérifiez votre solde."));
+                                        // IllegalStateException → 400 avec le motif Kernel (solde, code requis…) au lieu d'un 500
+                                        return Mono.error(new IllegalStateException(
+                                                        "Commission non prélevée : " + kernelMessage(ex, "vérifiez votre solde.")));
                                 })
                                 .then();
         }
@@ -134,13 +153,14 @@ public class PaymentAdapter implements PaymentPort {
         // ─── Recharge ─────────────────────────────────────────────────────────────
 
         @Override
-        public Mono<RechargeOrder> rechargeWallet(UUID walletId, double amount, String payerReference) {
-                log.info("💰 [Kernel] Recharge de {} XAF pour wallet {} (payerRef={})", amount, walletId,
-                                payerReference);
+        public Mono<RechargeOrder> rechargeWallet(UUID walletId, double amount, String payerReference, String method) {
+                log.info("💰 [Kernel] Recharge de {} XAF pour wallet {} (payerRef={}, méthode={})", amount, walletId,
+                                payerReference, method);
                 String idempotencyKey = walletId + "_" + System.currentTimeMillis();
 
                 return client.rechargeWallet(walletId.toString(),
-                                new PaymentApiClient.RechargeRequest(amount, payerReference, kernelClientId,
+                                new PaymentApiClient.RechargeRequest(amount, "XAF", kernelClientId,
+                                                "CARD".equals(method) ? "STRIPE" : "MYCOOLPAY", method, payerReference,
                                                 idempotencyKey))
                                 .flatMap(resp -> {
                                         if (!resp.success() || resp.data() == null) {
@@ -150,7 +170,11 @@ public class PaymentAdapter implements PaymentPort {
                                                                 "Impossible de démarrer la recharge : "
                                                                                 + resp.message()));
                                         }
-                                        return Mono.just(mapRechargeOrderToDomain(resp.data()));
+                                        var o = resp.data();
+                                        log.info("💰 [Kernel] Ordre de recharge {} : statut={} provider={} paymentOrder={} redirectUrl={}",
+                                                        o.orderId(), o.status(), o.providerReference(), o.paymentOrderId(),
+                                                        o.redirectUrl() == null ? "aucune" : o.redirectUrl().replaceAll("\\?.*", "?…"));
+                                        return Mono.just(mapRechargeOrderToDomain(o));
                                 })
                                 .onErrorResume(WebClientResponseException.class, ex -> {
                                         log.error("❌ Recharge échouée pour wallet {}: {} — {}",
@@ -158,6 +182,49 @@ public class PaymentAdapter implements PaymentPort {
                                         return Mono.error(new RuntimeException(
                                                         "Impossible de démarrer la recharge Kernel."));
                                 });
+        }
+
+        @Override
+        public Mono<String> startWithdrawal(UUID walletId, double amount, String phoneNumber) {
+                log.info("🏧 [Kernel] Demande de retrait de {} XAF du wallet {}", amount, walletId);
+                return client.withdrawalChallenge(walletId.toString(),
+                                new PaymentApiClient.WithdrawalChallengeRequest(amount, phoneNumber))
+                                .flatMap(resp -> resp.success() && resp.data() != null && resp.data().challengeToken() != null
+                                                ? Mono.just(resp.data().challengeToken())
+                                                : Mono.error(new IllegalStateException(resp.message() != null ? resp.message()
+                                                                : "Le Kernel n'a pas pu préparer le retrait.")))
+                                .onErrorMap(WebClientResponseException.class, ex -> {
+                                        log.error("❌ Préparation du retrait refusée : {} — {}", ex.getStatusCode(),
+                                                        ex.getResponseBodyAsString());
+                                        return new IllegalStateException(kernelMessage(ex, "Retrait impossible pour le moment."));
+                                });
+        }
+
+        @Override
+        public Mono<String> confirmWithdrawal(UUID walletId, double amount, String phoneNumber, String method,
+                        String recipientName, String challengeToken, String code) {
+                log.info("🏧 [Kernel] Confirmation du retrait de {} XAF du wallet {} ({})", amount, walletId, method);
+                return client.withdraw(walletId.toString(), new PaymentApiClient.WithdrawalRequest(amount, "XAF",
+                                phoneNumber, method, recipientName, challengeToken, code))
+                                .flatMap(resp -> resp.success() && resp.data() != null
+                                                ? Mono.just(resp.data().status() == null ? "SUBMITTED" : resp.data().status())
+                                                : Mono.error(new IllegalStateException(resp.message() != null ? resp.message()
+                                                                : "Le retrait a été refusé.")))
+                                .onErrorMap(WebClientResponseException.class, ex -> {
+                                        log.error("❌ Retrait refusé : {} — {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+                                        return new IllegalStateException(kernelMessage(ex, "Le retrait a été refusé."));
+                                });
+        }
+
+        /** Message Kernel lisible (ex. solde insuffisant, nom du titulaire différent, code invalide). */
+        private static String kernelMessage(WebClientResponseException ex, String fallback) {
+                try {
+                        String m = new com.fasterxml.jackson.databind.ObjectMapper().readTree(ex.getResponseBodyAsString())
+                                        .path("message").asText("");
+                        return m.isBlank() ? fallback : m;
+                } catch (Exception e) {
+                        return fallback;
+                }
         }
 
         @Override
@@ -172,7 +239,11 @@ public class PaymentAdapter implements PaymentPort {
                                                                 "Impossible de rafraîchir le statut de la recharge : "
                                                                                 + resp.message()));
                                         }
-                                        return Mono.just(mapRechargeOrderToDomain(resp.data()));
+                                        var o = resp.data();
+                                        log.info("💰 [Kernel] Ordre de recharge {} : statut={} provider={} paymentOrder={} redirectUrl={}",
+                                                        o.orderId(), o.status(), o.providerReference(), o.paymentOrderId(),
+                                                        o.redirectUrl() == null ? "aucune" : o.redirectUrl().replaceAll("\\?.*", "?…"));
+                                        return Mono.just(mapRechargeOrderToDomain(o));
                                 })
                                 .onErrorResume(WebClientResponseException.class, ex -> {
                                         log.error("❌ Refresh recharge échoué pour {}: {} — {}",

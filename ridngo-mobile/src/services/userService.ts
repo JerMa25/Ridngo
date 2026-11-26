@@ -36,37 +36,25 @@ export const userService = {
   },
 
   updateProfileWithPhoto: async (data: { firstName?: string; lastName?: string; phone?: string }, photo?: any) => {
-    try {
-      const token = await SecureStore.getItemAsync('accessToken');
-      const formData = new FormData();
-      formData.append('data', {
-        string: JSON.stringify(data),
-        type: 'application/json',
-      } as any);
-      if (photo) {
-        const mimeType = photo.mimeType || photo.type || 'image/jpeg';
-        const ext = mimeType.includes('png') ? 'png' : 'jpg';
-        const fileName = photo.fileName || photo.name || `profile_${Date.now()}.${ext}`;
-        formData.append('file', { uri: photo.uri, name: fileName, type: mimeType } as any);
-      }
-      const headers: any = { 'Accept': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(`${BASE_URL}/api/v1/users/profile`, {
-        method: 'PUT',
-        headers,
-        body: formData,
-      });
-
-      const text = await res.text();
-
-      if (!res.ok) {
-        throw new Error(text || "Erreur lors de la mise à jour");
-      }
-
-      return text ? JSON.parse(text) : {};
-    } catch {
-      return userService.updateProfile(data);
+    const profile = await userService.updateProfile(data);
+    if (!photo) return profile;
+    // Photo stockée dans le Kernel (file-core) via POST /api/v1/users/me/photo (multipart, champ "file")
+    const token = await SecureStore.getItemAsync('accessToken');
+    const mimeType = photo.mimeType || photo.type || 'image/jpeg';
+    const ext = mimeType.includes('png') ? 'png' : 'jpg';
+    const fileName = photo.fileName || photo.name || `profile_${Date.now()}.${ext}`;
+    const formData = new FormData();
+    formData.append('file', { uri: photo.uri, name: fileName, type: mimeType } as any);
+    const headers: any = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${BASE_URL}/api/v1/users/me/photo`, { method: 'POST', headers, body: formData });
+    const text = await res.text();
+    if (!res.ok) {
+      let msg = "Impossible d'envoyer la photo.";
+      try { msg = JSON.parse(text).detail || msg; } catch {}
+      throw new Error(msg);
     }
+    return { ...profile, ...(text ? JSON.parse(text) : {}) };
   },
 
   changePassword: async (currentPassword: string, newPassword: string) => {

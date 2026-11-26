@@ -58,6 +58,32 @@ public class UserController {
                 .map(this::mapToResponse);
     }
 
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Change ma photo de profil (stockée dans le Kernel, file-core)")
+    public Mono<UserResponse> updatePhoto(@RequestPart("file") FilePart file,
+            org.springframework.http.server.reactive.ServerHttpRequest request) {
+        if (file == null) {
+            return Mono.error(new IllegalArgumentException("Aucune photo envoyée."));
+        }
+        java.net.URI uri = request.getURI();
+        String base = uri.getScheme() + "://" + uri.getAuthority() + "/api/v1/users/photos/";
+        return UploadValidator.check(file)
+                .then(getCurrentUserId())
+                .flatMap(userId -> userUseCases.updateProfilePhoto(userId, file, base))
+                .map(this::mapToResponse);
+    }
+
+    @GetMapping("/photos/{fileId}")
+    @Operation(summary = "Contenu d'une photo de profil (public, pour <img>)")
+    public Mono<org.springframework.http.ResponseEntity<byte[]>> photo(@PathVariable String fileId) {
+        return userUseCases.getProfilePhoto(fileId)
+                .map(c -> org.springframework.http.ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(c.contentType()))
+                        .cacheControl(org.springframework.http.CacheControl.maxAge(java.time.Duration.ofDays(1)))
+                        .body(c.bytes()))
+                .defaultIfEmpty(org.springframework.http.ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/profile")
     @Operation(summary = "Update my profile")
     public Mono<UserResponse> updateProfile(@RequestBody UpdateUserProfileRequest request) {

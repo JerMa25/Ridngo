@@ -23,6 +23,10 @@ public class RemoteUserAdapter implements ExternalUserPort {
 
     private final AuthApiClient client;
     private final String tenantId;
+    private final String organizationId;
+    private final org.springframework.data.redis.core.ReactiveRedisTemplate<String, Object> redis;
+
+    private static final String PHOTO_KEY_PREFIX = "profile-photo:";
 
     // ─── READ ──────────────────────────────────────────────────────────────────
 
@@ -54,9 +58,11 @@ public class RemoteUserAdapter implements ExternalUserPort {
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     if (ex.getStatusCode() == HttpStatus.FORBIDDEN
                             || ex.getStatusCode() == HttpStatus.NOT_FOUND) {
-                        log.warn("⚠️ getUserById({}) interdit/introuvable, fallback sur /users/me", id);
+                        // /users/me renvoie l'appelant : valable seulement si on demande son propre profil
+                        log.warn("⚠️ getUserById({}) interdit/introuvable, repli sur /users/me si c'est l'appelant", id);
                         return client.getMe().mapNotNull(AuthApiClient.KernelUserDetailEnvelope::data)
-                                .map(this::mapToDomain);
+                                .map(this::mapToDomain)
+                                .filter(me -> id.equals(me.id()));
                     }
                     log.error("❌ fetchRemoteUserById({}) : {} — {}", id, ex.getStatusCode(),
                             ex.getResponseBodyAsString());
@@ -106,29 +112,29 @@ public class RemoteUserAdapter implements ExternalUserPort {
 
         return client.getRoles()
                 .flatMap(envelope -> {
-                    String kernelRoleId = (envelope != null && envelope.data() != null)
+                    AuthApiClient.KernelRoleDto kernelRole = (envelope != null && envelope.data() != null)
                             ? envelope.data().stream()
                                     .filter(r -> roleName.equalsIgnoreCase(r.code())
                                             || roleName.equalsIgnoreCase(r.name()))
                                     .findFirst()
-                                    .map(AuthApiClient.KernelRoleDto::id)
                                     .orElse(null)
                             : null;
 
-                    if (kernelRoleId == null) {
+                    if (kernelRole == null) {
                         log.error("❌ Rôle '{}' introuvable dans le catalogue Kernel du tenant {} — "
                                 + "à créer via POST /api/administration/roles.", roleName, tenantId);
                         return Mono.error(new RuntimeException(
                                 "Le rôle '" + roleName + "' n'existe pas dans le catalogue Kernel de ce tenant."));
                     }
 
-                    // Format confirmé par un test réel : {"roleId": ..., "scopeType": "TENANT"} —
-                    // pas de scopeId ni de scope pour un rôle TENANT.
-                    AuthApiClient.KernelAssignRoleRequest request = new AuthApiClient.KernelAssignRoleRequest(
-                            kernelRoleId, "TENANT", null, null);
+                    AuthApiClient.KernelAssignRoleRequest request = AuthApiClient.KernelAssignRoleRequest
+                            .forRole(kernelRole, organizationId);
 
-                    return client.assignRole(userId.toString(), request);
+                    return client.assignRole(userId.toString(), organizationId, request);
                 })
+                // attribuer un rôle exige des droits d'admin : sans contexte utilisateur, addBearerToken()
+                // utilise le compte de service (le token du chauffeur reçoit 403 ACCESS_DENIED)
+                .contextWrite(org.springframework.security.core.context.ReactiveSecurityContextHolder.clearContext())
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     log.error("❌ addRole '{}' pour {} : {} — {}",
                             roleName, userId, ex.getStatusCode(), ex.getResponseBodyAsString());
@@ -156,6 +162,61 @@ public class RemoteUserAdapter implements ExternalUserPort {
      * Mise à jour de l'identité self-service.
      * PUT /api/actors/me/identity
      */
+    @Override
+    public Mono<String> uploadProfilePhoto(org.springframework.http.codec.multipart.FilePart photo) {
+        String contentType = photo.headers().getContentType() == null ? "image/jpeg"
+                : photo.headers().getContentType().toString();
+        return org.springframework.core.io.buffer.DataBufferUtils.join(photo.content())
+                .map(buf -> {
+                    byte[] bytes = new byte[buf.readableByteCount()];
+                    buf.read(bytes);
+                    org.springframework.core.io.buffer.DataBufferUtils.release(buf);
+                    return bytes;
+                })
+                .flatMap(bytes -> client.uploadFile(new org.springframework.core.io.ByteArrayResource(bytes) {
+                    @Override
+                    public String getFilename() {
+                        return photo.filename();
+                    }
+                }, "PROFILE_PHOTO", true)
+                        .mapNotNull(env -> env == null || env.data() == null ? null : env.data().id())
+                        // Copie servie à <img> : le compte de service n'a pas forcément files:read sur le Kernel
+                        // "type|base64" : une Map.of (classe finale) n'était pas relisible par le template Redis typé
+                        .flatMap(fileId -> redis.opsForValue().set(PHOTO_KEY_PREFIX + fileId,
+                                contentType + "|" + java.util.Base64.getEncoder().encodeToString(bytes)).thenReturn(fileId)))
+                .switchIfEmpty(Mono.error(new IllegalStateException("Réponse Kernel invalide pour le dépôt de la photo.")))
+                // l'avatar Kernel est un plus (visible dans les autres apps Yowyob) : son échec ne bloque pas RidnGo
+                .flatMap(fileId -> client.updateAvatar(new AuthApiClient.KernelAvatarRequest(fileId))
+                        .onErrorResume(e -> {
+                            log.warn("⚠️ Avatar Kernel non mis à jour pour le fichier {} : {}", fileId, e.getMessage());
+                            return Mono.empty();
+                        })
+                        .thenReturn(fileId))
+                .onErrorMap(WebClientResponseException.class, ex -> {
+                    log.error("❌ Dépôt photo Kernel : {} — {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+                    return new IllegalStateException("Le Kernel a refusé la photo (" + ex.getStatusCode() + ").");
+                });
+    }
+
+    @Override
+    public Mono<FileContent> fetchProfilePhoto(String fileId) {
+        Mono<FileContent> fromKernel = client.fileContent(fileId)
+                .map(res -> new FileContent(res.getBody(), res.getHeaders().getContentType() == null
+                        ? "image/jpeg" : res.getHeaders().getContentType().toString()))
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    log.warn("⚠️ Photo {} illisible côté Kernel ({}) — ajouter files:read au compte de service.",
+                            fileId, ex.getStatusCode());
+                    return Mono.empty();
+                });
+        return redis.opsForValue().get(PHOTO_KEY_PREFIX + fileId)
+                .ofType(String.class)
+                .filter(v -> v.indexOf('|') > 0)
+                .map(v -> new FileContent(java.util.Base64.getDecoder().decode(v.substring(v.indexOf('|') + 1)),
+                        v.substring(0, v.indexOf('|'))))
+                .onErrorResume(e -> Mono.empty())
+                .switchIfEmpty(fromKernel);
+    }
+
     @Override
     public Mono<User> updateProfile(UUID userId, String firstName, String lastName, String phone) {
         log.info("🌍 Kernel : UPDATE IDENTITY pour user {}", userId);

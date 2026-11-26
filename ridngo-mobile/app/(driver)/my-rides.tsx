@@ -155,16 +155,8 @@ export default function MyRidesScreen() {
   const handleConfirm = async (offer: OfferResponse) => {
     const myId = driverId || user?.id;
     if (!myId) { Alert.alert('Erreur', 'Identifiant chauffeur introuvable.'); return; }
-    setConfirming(offer.id);
-    try {
-      const ride = await rideService.driverAccepts(offer.id, myId);
-      // L'offre a été retirée et le trip ajouté par rideService.driverAccepts
-      // Rafraîchir et naviguer
-      await loadAll();
-      router.push(`/(driver)/ride/${ride.id}` as any);
-    } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message || e?.message || 'Impossible de confirmer.');
-    } finally { setConfirming(null); }
+    // L'acceptation exige le code de commission (MFA Kernel) : saisie sur l'écran de l'offre
+    router.push(`/(driver)/offers/${offer.id}` as any);
   };
 
   const onRefresh = () => { setRefreshing(true); loadAll(); };

@@ -3,21 +3,46 @@ import api from './api';
 import { BASE_URL } from './api';
 import { AuthResponse, UserObj, UserRole } from '../types/api';
 
+export type AuthResult = {
+  success: boolean; role?: string; message?: string;
+  mfa?: { mfaToken: string; channel: string }; verifyEmail?: boolean;
+};
+
+// Spring ProblemDetail met le message dans `detail`
+const errorMessage = (error: any, fallback: string) =>
+  error.response?.data?.detail || error.response?.data?.message || error.message || fallback;
+
 export const authService = {
-  login: async (identifier: string, password: string): Promise<{ success: boolean; role?: string; message?: string }> => {
+  /** Connexion Kernel : session directe, ou 202 CONFIRM_MFA (code envoyé par email/SMS). */
+  login: async (identifier: string, password: string): Promise<AuthResult> => {
     try {
-      const response = await api.post<AuthResponse>('/api/v1/auth/login', { identifier, password });
+      const response = await api.post('/api/v1/auth/login', { principal: identifier, password });
+      if (response.status === 202 && response.data?.nextStep === 'CONFIRM_MFA') {
+        return { success: false, mfa: { mfaToken: response.data.mfaToken, channel: response.data.channel } };
+      }
       return await finalizeSession(response.data);
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.response?.data?.error || error.message || "Identifiants invalides";
-      return { success: false, message: msg };
+      return { success: false, message: errorMessage(error, "Identifiants invalides") };
     }
   },
+
+  confirmMfa: async (mfaToken: string, code: string): Promise<AuthResult> => {
+    try {
+      const response = await api.post<AuthResponse>('/api/v1/auth/login/mfa', { mfaToken, code: code.trim() });
+      return await finalizeSession(response.data);
+    } catch (error: any) {
+      return { success: false, message: errorMessage(error, "Code de vérification incorrect.") };
+    }
+  },
+
+  getCaptcha: async (): Promise<{ captchaToken: string; prompt: string }> =>
+    (await api.post('/api/v1/auth/captcha')).data,
 
   register: async (data: {
     username: string; password: string; email: string; phone: string;
     firstName: string; lastName: string; role: UserRole; photo?: any;
-  }): Promise<{ success: boolean; role?: string; message?: string }> => {
+    captchaToken?: string; captchaAnswer?: string;
+  }): Promise<AuthResult> => {
     try {
       const formData = new FormData();
 
@@ -29,6 +54,8 @@ export const authService = {
         firstName: data.firstName,
         lastName: data.lastName,
         roles: [data.role],
+        captchaToken: data.captchaToken,
+        captchaAnswer: data.captchaAnswer,
       };
 
       formData.append('data', {
@@ -64,10 +91,12 @@ export const authService = {
       }
 
       if (!res.ok) {
-        const msg = responseData?.message || responseData?.error || `Erreur ${res.status}`;
+        const msg = responseData?.detail || responseData?.message || responseData?.error || `Erreur ${res.status}`;
         return { success: false, message: msg };
       }
 
+      // Compte créé, mais le Kernel exige la confirmation de l'email avant toute connexion
+      if (!responseData?.accessToken) return { success: true, verifyEmail: true };
       return await finalizeSession(responseData as AuthResponse);
     } catch (error: any) {
       return { success: false, message: error.message || "Erreur lors de l'inscription" };

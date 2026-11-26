@@ -121,14 +121,26 @@ public class OfferController {
         return requireOwnOffer(id).then(Mono.defer(() -> selectDriverUseCase.selectDriver(id, driverId))).map(mapper::toResponse);
     }
 
+    @PostMapping("/{id}/accept/challenge")
+    @Operation(summary = "1. Driver: demande le code de confirmation de la commission (MFA Kernel)")
+    @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
+    public Mono<java.util.Map<String, Object>> acceptChallenge(@PathVariable UUID id) {
+        return currentUserId().flatMap(me -> offerService.startAcceptChallenge(id, me));
+    }
+
     @PostMapping("/{id}/accept")
-    @Operation(summary = "2. Driver confirms pickup", description = "Offer state -> VALIDATED. Creates Ride.")
+    @Operation(summary = "2. Driver confirms pickup", description = "Commission débitée avec le code reçu, offre VALIDATED, Ride créée.")
     @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
     public Mono<RideResponse> driverAccepts(@PathVariable UUID id,
-            @RequestParam(required = false) UUID driverId) { // ignoré : le chauffeur est celui du token
+            @RequestParam(required = false) UUID driverId, // ignoré : le chauffeur est celui du token
+            @RequestBody(required = false) AcceptRequest body) {
         return currentUserId()
-                .flatMap(me -> offerService.driverAcceptsOffer(id, me))
+                .flatMap(me -> offerService.driverAcceptsOffer(id, me,
+                        body == null ? null : body.challengeToken(), body == null ? null : body.code()))
                 .map(rideMapper::toResponse);
+    }
+
+    public record AcceptRequest(String challengeToken, String code) {
     }
 
     @PostMapping("/{id}/cancel")

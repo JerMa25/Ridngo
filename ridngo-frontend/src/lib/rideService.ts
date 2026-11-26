@@ -63,8 +63,12 @@ export const rideService = {
   },
 
   // 5. Handshake Step 2 : Driver accepte définitivement
-  driverAccepts: async (offerId: string, driverId: string): Promise<RideResponse> => {
-    const response = await api.post<RideResponse>(`/api/v1/offers/${offerId}/accept?driverId=${driverId}`);
+  // La commission est débitée du wallet Kernel, qui exige un code MFA : étape 1 = demander le code
+  requestAcceptCode: async (offerId: string): Promise<{ challengeToken: string; commission: number }> =>
+    (await api.post(`/api/v1/offers/${offerId}/accept/challenge`)).data,
+
+  driverAccepts: async (offerId: string, challengeToken: string, code: string): Promise<RideResponse> => {
+    const response = await api.post<RideResponse>(`/api/v1/offers/${offerId}/accept`, { challengeToken, code });
     return response.data;
   },
 
@@ -88,8 +92,12 @@ export const rideService = {
 
   getOfferById: async (id: string) => (await api.get<OfferResponse>(`/api/v1/offers/${id}`)).data,
   getMyWallet: async () => (await api.get<Wallet>('/api/v1/wallets/me')).data,
-  rechargeWallet: async (amount: number, payerReference: string) =>
-    (await api.post<RechargeOrder>('/api/v1/wallets/me/recharge', { amount, payerReference })).data,
+  rechargeWallet: async (amount: number, payerReference: string, method = 'MOBILE_MONEY') =>
+    (await api.post<RechargeOrder>('/api/v1/wallets/me/recharge', { amount, payerReference, method })).data,
+  startWithdrawal: async (amount: number, phoneNumber: string) =>
+    (await api.post<{ challengeToken: string }>('/api/v1/wallets/me/withdrawals/challenge', { amount, phoneNumber })).data,
+  confirmWithdrawal: async (payload: { amount: number; phoneNumber: string; method: string; recipientName: string; challengeToken: string; code: string }) =>
+    (await api.post<{ status: string }>('/api/v1/wallets/me/withdrawals', payload)).data,
   refreshRechargeOrder: async (orderId: string) =>
     (await api.post<RechargeOrder>(`/api/v1/wallets/recharge-orders/${orderId}/refresh`)).data,
   getMyWalletTransactions: async () => 

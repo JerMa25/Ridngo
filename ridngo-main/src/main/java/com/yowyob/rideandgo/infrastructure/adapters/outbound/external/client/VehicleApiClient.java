@@ -43,6 +43,35 @@ public interface VehicleApiClient {
         @PatchExchange("/resources/{id}")
         Mono<KernelResourceEnvelope> patchResource(@PathVariable String id, @RequestBody KernelResourceRequest request);
 
+        /** POST /api/resources/{id}/assignments — remet la ressource à son bénéficiaire (le chauffeur). */
+        @PostExchange("/resources/{id}/assignments")
+        Mono<KernelResourceEnvelope> assignResource(@PathVariable String id, @RequestBody KernelAssignRequest request);
+
+        record KernelAssignRequest(String assigneeType, String assigneeId) {
+        }
+
+        @GetExchange("/resources")
+        Mono<KernelResourceListEnvelope> listResources(
+                        @org.springframework.web.bind.annotation.RequestParam("organizationId") String organizationId,
+                        @org.springframework.web.bind.annotation.RequestParam("agencyId") String agencyId);
+
+        @GetExchange("/resources/{id}/assignments")
+        Mono<KernelAssignmentListEnvelope> getAssignments(@PathVariable String id);
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelResourceListEnvelope(boolean success, java.util.List<KernelResource> data, String message,
+                        String errorCode) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelAssignment(String id, String assigneeType, String assigneeId, String unassignedAt) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record KernelAssignmentListEnvelope(boolean success, java.util.List<KernelAssignment> data, String message,
+                        String errorCode) {
+        }
+
         /**
          * organizationId/agencyId/resourceCode sont injectés côté serveur (fixes pour
          * toute

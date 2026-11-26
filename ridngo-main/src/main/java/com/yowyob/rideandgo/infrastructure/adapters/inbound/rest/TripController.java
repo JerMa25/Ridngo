@@ -59,6 +59,18 @@ public class TripController {
                 .map(rideMapper::toResponse);
     }
 
+    @GetMapping("/driver/{driverId}/public")
+    @Operation(summary = "Courses récentes d'un chauffeur, sans les adresses des passagers (pour le choisir)")
+    @PreAuthorize("isAuthenticated()")
+    public Flux<PublicRide> getDriverPublicHistory(@PathVariable UUID driverId) {
+        return rideService.getHistoryForDriver(driverId, 0, 10)
+                .map(r -> new PublicRide(r.id(), r.createdAt(), r.distance(), r.duration(), r.state()));
+    }
+
+    public record PublicRide(UUID id, java.time.LocalDateTime date, double distance, int duration,
+            com.yowyob.rideandgo.domain.model.enums.RideState state) {
+    }
+
     @GetMapping("/enriched-history")
     @Operation(summary = "Get my ride history with full details", description = "Aggregates Ride, User and Vehicle info. Never fails with 500.")
     public Flux<EnrichedRideResponse> getMyEnrichedHistory(

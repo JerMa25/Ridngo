@@ -25,7 +25,7 @@ public class FakeAuthAdapter implements AuthPort {
 
     @Override
     public Mono<AuthResponse> register(String username, String email, String password, String phone, String firstName,
-            String lastName, List<RoleType> roles, FilePart photo) {
+            String lastName, List<RoleType> roles, FilePart photo, String captchaToken, String captchaAnswer) {
         
         log.info("🛠 MODE FAKE AUTH : Register pour {} (Photo reçue: {})", username, (photo != null));
 
@@ -49,6 +49,21 @@ public class FakeAuthAdapter implements AuthPort {
                 "RefreshUser",
                 List.of("RIDE_AND_GO_DRIVER"),
                 List.of("*")));
+    }
+
+    @Override
+    public Mono<AuthResponse> confirmLoginMfa(String mfaToken, String code) {
+        return login("mfa-user", code);
+    }
+
+    @Override
+    public Mono<Void> resendEmailVerification(String principal) {
+        return Mono.empty();
+    }
+
+    @Override
+    public Mono<CaptchaChallenge> captcha() {
+        return Mono.just(new CaptchaChallenge("fake-captcha", "1 + 1 = ?"));
     }
 
     @Override

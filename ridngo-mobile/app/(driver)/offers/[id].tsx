@@ -17,7 +17,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Dimensions,
+  ScrollView, ActivityIndicator, Alert, Dimensions, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -110,6 +110,9 @@ export default function OfferDetailScreen() {
   const [viewState, setViewState] = useState<ViewState>('idle');
   const [applying, setApplying]   = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [challenge, setChallenge] = useState<{ challengeToken: string; commission: number } | null>(null);
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [driverId, setDriverId]   = useState<string | null>(null);
   const [mapKey, setMapKey]       = useState(0);
@@ -224,16 +227,21 @@ export default function OfferDetailScreen() {
       Alert.alert('Erreur', 'Identifiant chauffeur introuvable.');
       return;
     }
+    setCodeError('');
+    if (challenge && !/^\d{4,8}$/.test(code.trim())) { setCodeError('Saisissez le code reçu (4 à 8 chiffres).'); return; }
     setConfirming(true);
     try {
-      console.log('[OfferDetail] Confirmation:', id, 'driverId:', driverId);
-      const ride: RideResponse = await rideService.driverAccepts(id, driverId);
+      if (!challenge) {
+        // étape 1 : le Kernel envoie le code de confirmation de la commission
+        setChallenge(await rideService.requestAcceptCode(id));
+        return;
+      }
+      const ride: RideResponse = await rideService.driverAccepts(id, challenge.challengeToken, code.trim());
       await SecureStore.setItemAsync('activeRideId', ride.id);
       router.replace(`/(driver)/ride/${ride.id}` as any);
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || 'Erreur lors de la confirmation.';
-      console.error('[OfferDetail] confirm error:', msg);
-      Alert.alert('Erreur', msg);
+      const msg = e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur lors de la confirmation.';
+      if (challenge && /code|mfa|challenge|expir/i.test(msg)) setCodeError(msg); else Alert.alert('Erreur', msg);
     } finally {
       setConfirming(false);
     }
@@ -429,6 +437,24 @@ export default function OfferDetailScreen() {
                   Vous avez été choisi !
                 </Text>
               </View>
+              {challenge && (
+                <View style={{ gap: 6, marginBottom: 10 }}>
+                  <Text style={{ color: Colors.textSecondary, fontSize: 13, fontWeight: '700' }}>
+                    Commission de {challenge.commission} FCFA : saisissez le code reçu.
+                  </Text>
+                  <TextInput
+                    value={code}
+                    onChangeText={setCode}
+                    keyboardType="number-pad"
+                    textContentType="oneTimeCode"
+                    autoFocus
+                    accessibilityLabel="Code de confirmation"
+                    style={{ borderWidth: 1, borderColor: codeError ? '#ef4444' : Colors.inputBorder, backgroundColor: Colors.input,
+                      color: Colors.white, borderRadius: 12, paddingVertical: 12, textAlign: 'center', fontSize: 18, fontWeight: '900', letterSpacing: 6 }}
+                  />
+                  {!!codeError && <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '700' }}>{codeError}</Text>}
+                </View>
+              )}
               <TouchableOpacity
                 style={[s.acceptBtn, { backgroundColor: Colors.green }]}
                 onPress={handleConfirm}
@@ -438,7 +464,7 @@ export default function OfferDetailScreen() {
                 {confirming
                   ? <ActivityIndicator color="#fff" />
                   : <>
-                      <Text style={[s.acceptBtnTxt, { color: '#fff' }]}>CONFIRMER LA COURSE</Text>
+                      <Text style={[s.acceptBtnTxt, { color: '#fff' }]}>{challenge ? 'CONFIRMER ET DÉMARRER' : 'ACCEPTER LA COURSE'}</Text>
                       <Ionicons name="checkmark" size={18} color="#fff" />
                     </>
                 }

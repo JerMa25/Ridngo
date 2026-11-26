@@ -4,25 +4,29 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { rideService } from '@/lib/rideService';
 import { Wallet as WalletIcon, History, Loader2, Zap, ArrowUpRight, ArrowDownLeft, Landmark } from 'lucide-react';
 import { Wallet, TransactionSummary, RechargeOrder } from '@/types/api';
+import RechargeModal from './RechargeModal';
+import WithdrawModal from './WithdrawModal';
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<TransactionSummary[]>([]);
   const [rechargeOrders, setRechargeOrders] = useState<RechargeOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRecharge, setShowRecharge] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
 
   const loadWalletData = useCallback(async () => {
     try {
-      const w = await rideService.getMyWallet();
+      // 3 appels Kernel indépendants : en parallèle (en série, la page attendait leur somme)
+      const [w, txs, orders] = await Promise.all([
+        rideService.getMyWallet(),
+        rideService.getMyWalletTransactions().catch(() => []),
+        rideService.getMyRechargeOrders().catch(() => []),
+      ]);
       setWallet(w);
-      
-      // Charger également l'historique
-      const txs = await rideService.getMyWalletTransactions();
       setTransactions(txs || []);
-
-      const orders = await rideService.getMyRechargeOrders();
       setRechargeOrders(orders || []);
-      
+
       return w;
     } catch (err) {
       console.error("Erreur de chargement du wallet", err);
@@ -77,7 +81,7 @@ export default function WalletPage() {
           {/* Condition d'affichage des boutons */}
           {isWalletZero ? (
             <button
-              onClick={() => { window.location.href = 'https://kernel-core.yowyob.com/pay'; }}
+              onClick={() => setShowRecharge(true)}
               className="w-full bg-orange-btn hover:bg-white hover:text-orange-btn text-white py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer"
             >
               Recharger mon wallet
@@ -85,13 +89,13 @@ export default function WalletPage() {
           ) : (
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => { window.location.href = 'https://kernel-core.yowyob.com/pay'; }}
+                onClick={() => setShowRecharge(true)}
                 className="flex-1 bg-orange-btn hover:bg-white hover:text-orange-btn text-white py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer"
               >
                 Recharger
               </button>
               <button
-                onClick={() => { window.location.href = 'https://kernel-core.yowyob.com/pay'; }}
+                onClick={() => setShowWithdraw(true)}
                 className="flex-1 bg-[#E0E1DD] hover:bg-orange-btn hover:text-white text-[#1B263B] py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer"
               >
                 Retirer l&apos;argent
@@ -132,7 +136,7 @@ export default function WalletPage() {
                     <p className={`text-xs font-black ${
                       tx.transactionType === 'RIDE_PAYMENT' ? 'text-red-500' : 'text-green-500'
                     }`}>
-                      {tx.transactionType === 'RIDE_PAYMENT' ? '-' : '+'}{tx.sourceReference.includes('PAYMENT') ? '' : ''} Hash: {tx.transactionHash ? tx.transactionHash.substring(0, 8) : 'Pending'}
+                      {tx.transactionType === 'RIDE_PAYMENT' ? '-' : '+'} Hash: {tx.transactionHash ? tx.transactionHash.substring(0, 8) : 'Pending'}
                     </p>
                     <span className="text-[9px] uppercase font-black opacity-30">{tx.status}</span>
                   </div>
@@ -171,6 +175,8 @@ export default function WalletPage() {
           )}
         </div>
       </div>
+      {showWithdraw && <WithdrawModal balance={wallet?.balance || 0} onClose={() => setShowWithdraw(false)} onDone={loadWalletData} />}
+      {showRecharge && <RechargeModal onClose={() => setShowRecharge(false)} onPaid={() => { setShowRecharge(false); loadWalletData(); }} />}
     </main>
   );
 }

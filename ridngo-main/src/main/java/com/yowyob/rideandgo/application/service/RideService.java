@@ -31,6 +31,28 @@ public class RideService implements UpdateRideStatusUseCase {
     private final UserRepositoryPort userRepository;
     private final DriverRepositoryPort driverRepository;
     private final VehicleRepositoryPort vehicleRepository;
+    private final com.yowyob.rideandgo.domain.ports.out.LocationCachePort locationCachePort;
+    private final TrackingCalculatorService trackingCalculatorService;
+
+    /** Rayon autour de la destination dans lequel le chauffeur peut terminer la course (précision GPS urbaine). */
+    static final double ARRIVAL_RADIUS_M = 150;
+
+    /** Terminer exige que la dernière position envoyée par le chauffeur soit proche de la destination. */
+    private Mono<Void> ensureArrived(Ride ride) {
+        return offerRepository.findById(ride.offerId())
+                .filter(o -> o.endLat() != null && o.endLon() != null)
+                .flatMap(offer -> locationCachePort.getLocation(ride.driverId())
+                        .filter(l -> l.latitude() != null && l.longitude() != null)
+                        .switchIfEmpty(Mono.error(new IllegalStateException(
+                                "Position inconnue : activez la localisation pour terminer la course.")))
+                        .flatMap(l -> {
+                            double meters = 1000 * trackingCalculatorService.calculateDistance(
+                                    l.latitude(), l.longitude(), offer.endLat(), offer.endLon());
+                            return meters <= ARRIVAL_RADIUS_M ? Mono.<Void>empty()
+                                    : Mono.error(new IllegalStateException(String.format(
+                                            "Vous n'êtes pas encore arrivé : destination à %.0f m.", meters)));
+                        }));
+    }
 
     @Override
     @Transactional
@@ -73,7 +95,8 @@ public class RideService implements UpdateRideStatusUseCase {
                             .timeReal(ride.timeReal())
                             .build();
 
-                    return rideRepository.save(updatedRide)
+                    Mono<Void> arrival = newStatus == RideState.COMPLETED ? ensureArrived(ride) : Mono.empty();
+                    return arrival.then(rideRepository.save(updatedRide))
                             .doOnSuccess(r -> log.info("✅ Ride {} is now {}", rideId, newStatus));
                 });
     }

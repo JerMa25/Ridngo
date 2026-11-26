@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import api from '@/lib/api-client';
 import { UserResponse, UpdateUserProfileRequest } from '@/types/api';
 import { 
@@ -32,6 +32,30 @@ export default function ProfilePage() {
     confirmPassword: ''
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Photo stockée dans le Kernel (file-core) ; le backend renvoie le profil avec la nouvelle photoUri
+  const onPhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Photo trop lourde (5 Mo max).'); return; }
+    setUploadingPhoto(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await api.post('/api/v1/users/me/photo', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const full = JSON.parse(localStorage.getItem('user-full') || '{}');
+      localStorage.setItem('user-full', JSON.stringify({ ...full, photoUri: res.data.photoUri }));
+      await queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
+      toast.success('Photo de profil mise à jour');
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Impossible d'envoyer la photo.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const { data: fullProfile, isLoading: loading } = useQuery({
     queryKey: ['userProfileData'],
@@ -132,9 +156,12 @@ export default function ProfilePage() {
                     user?.name?.charAt(0) || user?.firstName?.charAt(0)
                   )}
                 </div>
-                <button className="absolute bottom-0 right-0 p-3 bg-foreground text-background rounded-2xl shadow-xl hover:scale-110 transition-transform">
-                   <Camera size={18} />
+                <button type="button" aria-label="Changer la photo de profil" disabled={uploadingPhoto}
+                  onClick={() => photoInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 p-3 bg-foreground text-background rounded-2xl shadow-xl hover:scale-110 transition-transform disabled:opacity-60">
+                   {uploadingPhoto ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
                 </button>
+                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhotoSelected} />
               </div>
 
               <h2 className="text-2xl font-black tracking-tight">{user?.name || `${user?.firstName} ${user?.lastName}`}</h2>

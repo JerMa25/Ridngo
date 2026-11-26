@@ -29,7 +29,7 @@ export const handleApiError = (
           return backendDetail || ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS;
 
         case 401:
-          return ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS;
+          return backendDetail || ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS;
 
         default:
           return backendDetail || ERROR_MESSAGES.SERVER;

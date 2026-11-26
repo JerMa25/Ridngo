@@ -25,6 +25,15 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(com.yowyob.rideandgo.domain.exception.MfaRequiredException.class)
+    public org.springframework.http.ResponseEntity<java.util.Map<String, String>> handleMfaRequired(
+            com.yowyob.rideandgo.domain.exception.MfaRequiredException e) {
+        return org.springframework.http.ResponseEntity.status(HttpStatus.ACCEPTED).body(java.util.Map.of(
+                "nextStep", "CONFIRM_MFA",
+                "mfaToken", e.getMfaToken(),
+                "channel", e.getChannel() == null ? "EMAIL" : e.getChannel()));
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ProblemDetail handleIllegalState(IllegalStateException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());

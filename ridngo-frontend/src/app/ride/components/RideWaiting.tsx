@@ -24,6 +24,7 @@ interface Props {
 const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelectDriver: any }) => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   
   useEffect(() => {
@@ -72,8 +73,8 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-orange-btn rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden border-2 border-background">
-            {driverUser?.photoUri ? (
-              <img src={driverUser.photoUri} className="w-full h-full object-cover" alt="" />
+            {driverUser?.photoUri && !photoFailed ? (
+              <img src={driverUser.photoUri} onError={() => setPhotoFailed(true)} className="w-full h-full object-cover" alt="" />
             ) : (
               <User size={24} />
             )}

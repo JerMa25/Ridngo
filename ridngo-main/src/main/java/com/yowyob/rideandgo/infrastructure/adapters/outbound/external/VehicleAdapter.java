@@ -51,6 +51,8 @@ public class VehicleAdapter implements VehicleRepositoryPort {
                                                                         // borne
 
         private final VehicleApiClient client;
+        private final com.yowyob.rideandgo.infrastructure.adapters.outbound.external.client.AuthApiClient authApiClient;
+        private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
         private final ReactiveRedisTemplate<String, Object> redisTemplate;
 
         @Value("${application.vehicle.organization-id}")
@@ -70,11 +72,45 @@ public class VehicleAdapter implements VehicleRepositoryPort {
                                 .switchIfEmpty(Mono.error(new IllegalStateException(
                                                 "Réponse Kernel invalide lors de la création de la ressource véhicule.")))
                                 .map(res -> mergeResourceIntoVehicle(res, domain))
+                                .flatMap(vehicle -> assignToCurrentActor(vehicle.id()).thenReturn(vehicle))
                                 .flatMap(vehicle -> cacheVehicle(vehicle).thenReturn(vehicle))
                                 .doOnSuccess(v -> log.info("✅ Véhicule/ressource créé avec l'ID : {}", v.id()))
                                 .doOnError(WebClientResponseException.class,
                                                 e -> log.error("❌ Erreur Kernel resources (create) : {} — {}",
-                                                                e.getStatusCode(), e.getResponseBodyAsString()));
+                                                                e.getStatusCode(), e.getResponseBodyAsString()))
+                                .onErrorResume(e -> e instanceof WebClientResponseException w
+                                                && w.getStatusCode() == org.springframework.http.HttpStatus.CONFLICT,
+                                                e -> reuseExistingResource(request.resourceCode(), domain));
+        }
+
+        /**
+         * 409 : la ressource de cette immatriculation existe déjà (ex. un onboarding interrompu après sa
+         * création). On la réutilise si elle est libre ou déjà affectée au chauffeur connecté ; sinon elle
+         * appartient à un autre chauffeur et on refuse.
+         */
+        private Mono<Vehicle> reuseExistingResource(String resourceCode, Vehicle domain) {
+                return client.listResources(organizationId, agencyId)
+                                .flatMapIterable(env -> env == null || env.data() == null ? java.util.List.of() : env.data())
+                                .filter(r -> resourceCode.equals(r.resourceCode()))
+                                .next()
+                                .switchIfEmpty(Mono.error(new IllegalStateException(
+                                                "Un véhicule avec cette immatriculation existe déjà.")))
+                                .flatMap(res -> Mono.zip(currentActorId().defaultIfEmpty(""),
+                                                client.getAssignments(res.id())
+                                                                .map(env -> env == null || env.data() == null
+                                                                                ? java.util.List.<VehicleApiClient.KernelAssignment>of()
+                                                                                : env.data().stream().filter(a -> a.unassignedAt() == null).toList()))
+                                                .flatMap(t -> {
+                                                        var active = t.getT2();
+                                                        if (active.stream().anyMatch(a -> !t.getT1().equals(a.assigneeId()))) {
+                                                                return Mono.error(new IllegalStateException(
+                                                                                "Ce véhicule est déjà enregistré par un autre chauffeur."));
+                                                        }
+                                                        Vehicle v = mergeResourceIntoVehicle(res, domain);
+                                                        Mono<Void> assign = active.isEmpty() ? assignToCurrentActor(v.id()) : Mono.empty();
+                                                        log.info("♻️ Ressource véhicule existante réutilisée : {}", v.id());
+                                                        return assign.then(cacheVehicle(v)).thenReturn(v);
+                                                }));
         }
 
         @Override
@@ -153,16 +189,81 @@ public class VehicleAdapter implements VehicleRepositoryPort {
 
         @Override
         public Mono<Void> cacheVehicle(Vehicle vehicle) {
-                return redisTemplate.opsForValue()
-                                .set(REDIS_KEY_PREFIX + vehicle.id(), vehicle, CACHE_TTL)
+                // Stocké en texte JSON : le default typing Redis (NON_FINAL) n'écrit pas le type d'un record
+                // (classe finale) et sa relecture échouait systématiquement ("Unexpected token START_OBJECT").
+                return Mono.fromCallable(() -> objectMapper.writeValueAsString(vehicle))
+                                .flatMap(json -> redisTemplate.opsForValue().set(REDIS_KEY_PREFIX + vehicle.id(), json, CACHE_TTL))
                                 .then();
         }
 
         // --- Helpers ---------------------------------------------------------------
 
+        /**
+         * Affecte la ressource à l'acteur Kernel du chauffeur connecté (claim actorId de son JWT,
+         * déjà vérifié par JwtAuthenticationManager). Non bloquant : le véhicule reste créé.
+         */
+        private Mono<String> currentActorId() {
+                return org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext()
+                                .mapNotNull(ctx -> ctx.getAuthentication() == null ? null
+                                                : actorIdFromJwt(String.valueOf(ctx.getAuthentication().getCredentials())))
+                                // les JWT du tenant cad65f4e ne portent pas actorId : repli sur GET /api/users/me
+                                .switchIfEmpty(Mono.defer(() -> authApiClient.getMe()
+                                                .mapNotNull(env -> env == null || env.data() == null ? null
+                                                                : env.data().actorId())));
+        }
+
+        private Mono<Void> assignToCurrentActor(UUID resourceId) {
+                return currentActorId()
+                                .switchIfEmpty(Mono.fromRunnable(() -> log.warn(
+                                                "⚠️ Ressource {} non affectée : actorId du chauffeur introuvable.", resourceId)))
+                                .flatMap(actorId -> client.assignResource(resourceId.toString(),
+                                                new VehicleApiClient.KernelAssignRequest("ACTOR", actorId))
+                                                .doOnSuccess(r -> log.info("🔗 Ressource {} affectée à l'acteur {}",
+                                                                resourceId, actorId)))
+                                .onErrorResume(e -> {
+                                        log.error("❌ Affectation de la ressource {} au chauffeur échouée : {}", resourceId,
+                                                        e instanceof WebClientResponseException w
+                                                                        ? w.getStatusCode() + " " + w.getResponseBodyAsString()
+                                                                        : e.getMessage());
+                                        return Mono.empty();
+                                })
+                                .then();
+        }
+
+        /**
+         * resourceCode est unique par organisation côté Kernel (409 RESOURCE_CODE_DUPLICATE) : un code fixe
+         * "VOITURE" n'autorisait qu'un seul véhicule. On le dérive donc de l'immatriculation.
+         */
+        static String resourceCode(String registrationNumber) {
+                String plate = registrationNumber == null ? ""
+                                : registrationNumber.toUpperCase().replaceAll("[^A-Z0-9]", "");
+                return RESOURCE_CODE + "-" + (plate.isEmpty() ? UUID.randomUUID().toString().substring(0, 8) : plate);
+        }
+
+        static String actorIdFromJwt(String jwt) {
+                String[] parts = jwt == null ? new String[0] : jwt.split("\\.");
+                if (parts.length < 2) {
+                        return null;
+                }
+                try {
+                        var claims = new com.fasterxml.jackson.databind.ObjectMapper()
+                                        .readTree(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                        return claims.hasNonNull("actorId") ? claims.get("actorId").asText() : null;
+                } catch (Exception e) {
+                        return null;
+                }
+        }
+
         private Mono<Vehicle> getCachedVehicle(UUID vehicleId) {
                 return redisTemplate.opsForValue().get(REDIS_KEY_PREFIX + vehicleId)
-                                .cast(Vehicle.class)
+                                .cast(String.class)
+                                .map(json -> {
+                                        try {
+                                                return objectMapper.readValue(json, Vehicle.class);
+                                        } catch (Exception e) {
+                                                throw new IllegalStateException(e.getMessage(), e);
+                                        }
+                                })
                                 .onErrorResume(e -> {
                                         log.warn("⚠️ Lecture cache véhicule {} impossible : {}", vehicleId,
                                                         e.getMessage());
@@ -184,7 +285,7 @@ public class VehicleAdapter implements VehicleRepositoryPort {
                 return new VehicleApiClient.KernelResourceRequest(
                                 organizationId,
                                 agencyId,
-                                RESOURCE_CODE,
+                                resourceCode(v.registrationNumber()),
                                 name,
                                 category,
                                 serialNumber,

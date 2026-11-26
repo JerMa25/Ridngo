@@ -64,12 +64,63 @@ public class WalletController {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Montant strictement positif et référence payeur obligatoires"));
         }
+        String method = request.method() == null || request.method().isBlank() ? "MOBILE_MONEY" : request.method();
+        if (!RECHARGE_METHODS.contains(method)) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mode de paiement inconnu : " + method));
+        }
         return getCurrentUserId()
                 .flatMap(id -> paymentPort.getOrCreateWallet(id, "User_" + id.toString().substring(0, 5)))
                 .flatMap(wallet -> paymentPort.rechargeWallet(
                         wallet.id(),
                         request.amount(),
-                        request.payerReference()));
+                        request.payerReference(),
+                        method));
+    }
+
+    // ─── Retrait (2 étapes : code envoyé par le Kernel, puis confirmation) ──────
+
+    @PostMapping("/me/withdrawals/challenge")
+    @Operation(summary = "Retrait étape 1 : envoie le code de confirmation au titulaire")
+    @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
+    public Mono<java.util.Map<String, String>> startWithdrawal(@RequestBody WithdrawalStartDto request) {
+        if (request == null || !Double.isFinite(request.amount()) || request.amount() <= 0
+                || request.phoneNumber() == null || request.phoneNumber().isBlank()) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Montant et numéro obligatoires"));
+        }
+        return getCurrentUserId()
+                .flatMap(paymentPort::getWalletByOwnerId)
+                .flatMap(wallet -> wallet.balance() < request.amount()
+                        ? Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Solde insuffisant ("
+                                + wallet.balance() + " FCFA disponibles)."))
+                        : paymentPort.startWithdrawal(wallet.id(), request.amount(), request.phoneNumber()))
+                .map(token -> java.util.Map.of("challengeToken", token));
+    }
+
+    @PostMapping("/me/withdrawals")
+    @Operation(summary = "Retrait étape 2 : confirme avec le code reçu")
+    @PreAuthorize("hasAuthority('RIDE_AND_GO_DRIVER')")
+    public Mono<java.util.Map<String, String>> confirmWithdrawal(@RequestBody WithdrawalConfirmDto request) {
+        String method = request.method() == null || request.method().isBlank() ? "MOBILE_MONEY" : request.method();
+        if (!RECHARGE_METHODS.contains(method) || "CARD".equals(method)) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mode de retrait inconnu : " + method));
+        }
+        if (request.code() == null || request.code().isBlank() || request.challengeToken() == null
+                || request.recipientName() == null || request.recipientName().isBlank()) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Code, nom du titulaire et jeton de confirmation obligatoires"));
+        }
+        return getCurrentUserId()
+                .flatMap(paymentPort::getWalletByOwnerId)
+                .flatMap(wallet -> paymentPort.confirmWithdrawal(wallet.id(), request.amount(), request.phoneNumber(),
+                        method, request.recipientName().trim(), request.challengeToken(), request.code().trim()))
+                .map(status -> java.util.Map.of("status", status));
+    }
+
+    public record WithdrawalStartDto(double amount, String phoneNumber) {
+    }
+
+    public record WithdrawalConfirmDto(double amount, String phoneNumber, String method, String recipientName,
+            String challengeToken, String code) {
     }
 
     @PostMapping("/recharge-orders/{orderId}/refresh")
@@ -133,9 +184,14 @@ public class WalletController {
     // ─── DTOs ─────────────────────────────────────────────────────────────────
 
     /** Corps de la requête de recharge. */
+    /** Modes acceptés par le Kernel (WalletRechargeRequest.method). */
+    private static final java.util.Set<String> RECHARGE_METHODS =
+            java.util.Set.of("MOBILE_MONEY", "ORANGE_MONEY", "MTN_MOBILE_MONEY", "CARD");
+
     public record RechargeRequestDto(
             double amount,
-            String payerReference) {
+            String payerReference,
+            String method) {
     }
 
     /** Réponse à can-operate. */

@@ -147,10 +147,9 @@ public class OfferService implements
                     UUID driverId = geoResult.driverId();
                     return driverRepositoryPort.findById(driverId)
                             .filter(d -> d.isOnline() && d.isProfileValidated())
-                            .flatMap(driver -> paymentPort.getWalletByOwnerId(driverId)
-                                    .filter(wallet -> wallet.balance() >= (offer.price() * commissionRate))
-                                    .flatMap(wallet -> userRepositoryPort.findUserById(driverId))); // On retourne le
-                                                                                                    // User
+                            // Le Kernel ne laisse lire un wallet qu'à son titulaire (403 WALLET_ACCESS_DENIED même
+                            // pour le compte de service) : le solde est vérifié à la candidature, avec le token du chauffeur.
+                            .flatMap(driver -> userRepositoryPort.findUserById(driverId));
                 })
                 .collectList()
                 .flatMap(users -> {
@@ -317,6 +316,9 @@ public class OfferService implements
         return ensureUserExistsLocally(driverId)
                 .flatMap(driverUser -> repository.findById(offerId)
                         .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
+                        // postuler ne doit pas rouvrir une offre attribuée, validée ou annulée
+                        .flatMap(offer -> isOpenForBids(offer) ? Mono.just(offer)
+                                : Mono.error(new OfferStatutNotMatchException(closedOfferMessage(offer))))
                         .flatMap(offer -> paymentPort.getWalletByOwnerId(driverId)
                                 .flatMap(wallet -> {
                                     // VÉRIFICATION COMMISSION : prix * taux < solde
@@ -353,6 +355,19 @@ public class OfferService implements
                         }));
     }
 
+    private static boolean isOpenForBids(Offer offer) {
+        return offer.state() == OfferState.PENDING || offer.state() == OfferState.BID_RECEIVED;
+    }
+
+    private static String closedOfferMessage(Offer offer) {
+        return switch (offer.state()) {
+            case CANCELLED -> "Cette offre a été annulée par le passager.";
+            case VALIDATED -> "Cette course a déjà démarré.";
+            case DRIVER_SELECTED -> "Le passager a déjà choisi un chauffeur.";
+            default -> "L'offre n'est plus disponible.";
+        };
+    }
+
     // ==================================================================================
     // 3bis. RETRAIT DE CANDIDATURE (CHAUFFEUR)
     // ==================================================================================
@@ -363,6 +378,10 @@ public class OfferService implements
                     if (offer.selectedDriverId() != null && offer.selectedDriverId().equals(driverId)) {
                         return Mono.error(new IllegalStateException(
                                 "Vous avez déjà été sélectionné pour cette course, impossible d'annuler votre candidature."));
+                    }
+                    if (!isOpenForBids(offer)) {
+                        // ne pas remettre "en attente" une offre attribuée, validée ou annulée
+                        return Mono.error(new OfferStatutNotMatchException(closedOfferMessage(offer)));
                     }
                     if (offer.bids() == null || offer.bids().stream().noneMatch(b -> b.driverId().equals(driverId))) {
                         // Rien à retirer, on renvoie l'offre telle quelle
@@ -387,9 +406,13 @@ public class OfferService implements
     @Override
     public Mono<Offer> selectDriver(UUID offerId, UUID driverId) {
         return repository.findById(offerId)
+                .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
                 .flatMap(offer -> {
+                    if (offer.state() != OfferState.BID_RECEIVED && offer.state() != OfferState.DRIVER_SELECTED) {
+                        return Mono.error(new OfferStatutNotMatchException(closedOfferMessage(offer)));
+                    }
                     if (!offer.hasDriverApplied(driverId)) {
-                        return Mono.error(new IllegalArgumentException("Driver has not applied."));
+                        return Mono.error(new IllegalArgumentException("Ce chauffeur n'a pas (ou plus) postulé à votre offre."));
                     }
                     Offer updated = offer.withDriverSelected(driverId);
                     return repository.save(updated)
@@ -410,9 +433,37 @@ public class OfferService implements
     // ==================================================================================
     // 5. CONFIRMATION & CRÉATION TRIP (CHAUFFEUR)
     // ==================================================================================
+    /**
+     * Étape 1 de l'acceptation : le Kernel exige un code MFA pour débiter un wallet (428 sinon).
+     * Renvoie le challengeToken ; le code part chez le chauffeur. La référence est rejouée à l'étape 2.
+     */
+    public Mono<java.util.Map<String, Object>> startAcceptChallenge(UUID offerId, UUID driverId) {
+        return repository.findById(offerId)
+                .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
+                .flatMap(offer -> {
+                    if (offer.state() != OfferState.DRIVER_SELECTED) {
+                        return Mono.error(new OfferStatutNotMatchException("L'offre n'est plus disponible."));
+                    }
+                    if (offer.selectedDriverId() == null || !offer.selectedDriverId().equals(driverId)) {
+                        return Mono.error(new IllegalStateException("Vous n'êtes pas le chauffeur sélectionné."));
+                    }
+                    double commission = offer.price() * commissionRate;
+                    return paymentPort.getWalletByOwnerId(driverId)
+                            .flatMap(wallet -> paymentPort.startPayment(wallet.id(), commission, commissionReference(offerId)))
+                            .map(token -> java.util.Map.<String, Object>of("challengeToken", token, "commission", commission));
+                });
+    }
+
+    private static String commissionReference(UUID offerId) {
+        return "RIDE-COMMISSION-" + offerId;
+    }
+
     @Transactional
-    public Mono<Ride> driverAcceptsOffer(UUID offerId, UUID driverId) {
+    public Mono<Ride> driverAcceptsOffer(UUID offerId, UUID driverId, String challengeToken, String code) {
         log.info("🏁 Driver {} is accepting Offer {}", driverId, offerId);
+        if (challengeToken == null || code == null || code.isBlank()) {
+            return Mono.error(new IllegalStateException("Code de confirmation de la commission requis."));
+        }
 
         return repository.findById(offerId)
                 .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
@@ -428,7 +479,8 @@ public class OfferService implements
                     // 1. Paiement effectif de la commission
                     // On débite la commission (prix * taux), le même montant que celui vérifié à la candidature
                     return paymentPort.getWalletByOwnerId(driverId)
-                            .flatMap(wallet -> paymentPort.processPayment(wallet.id(), offer.price() * commissionRate))
+                            .flatMap(wallet -> paymentPort.processPayment(wallet.id(), offer.price() * commissionRate,
+                                    commissionReference(offerId), challengeToken, code.trim()))
                             // 2. Mise à jour de l'Offre vers VALIDATED (Retrait de Redis Geo automatique)
                             .then(Mono.defer(() -> updateOfferState(offer, OfferState.VALIDATED)))
                             .thenReturn(offer);
@@ -508,14 +560,10 @@ public class OfferService implements
         log.info("📢 Notifying eligible drivers for offer {} (Number of places: {}, Price: {})", offer.id(),
                 offer.numberOfPlaces(), offer.price());
 
-        double requiredBalance = offer.price() * commissionRate;
-
         return driverRepositoryPort.findAll()
                 .filter(d -> d.isOnline() && d.isProfileCompleted() && d.isProfileValidated())
-                .flatMap(driver -> paymentPort.getWalletByOwnerId(driver.id())
-                        .filter(wallet -> wallet.balance() >= requiredBalance)
-                        .flatMap(wallet -> userRepositoryPort.findUserById(driver.id()))
-                        .map(User::email))
+                // wallet illisible pour un tiers (voir notifyNearbyDrivers) : solde vérifié à la candidature
+                .flatMap(driver -> userRepositoryPort.findUserById(driver.id()).map(User::email))
                 .collectList()
                 .flatMap(emails -> {
                     if (emails.isEmpty())
