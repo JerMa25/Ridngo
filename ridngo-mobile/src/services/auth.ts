@@ -35,6 +35,10 @@ export const authService = {
     }
   },
 
+  resendVerification: async (principal: string): Promise<void> => {
+    await api.post('/api/v1/auth/email-verification/resend', { principal });
+  },
+
   getCaptcha: async (): Promise<{ captchaToken: string; prompt: string }> =>
     (await api.post('/api/v1/auth/captcha')).data,
 

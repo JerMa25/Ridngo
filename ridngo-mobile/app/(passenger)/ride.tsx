@@ -433,10 +433,13 @@ export default function RideScreen() {
   // Utilise rideService.createOffer (Axios + token auto)
   // ─────────────────────────────────────────────
   const handlePublishOffer = async () => {
-    if (!pickup || !dest || !priceNum) return;
-    const phone = forTiers ? thirdPartyPhone : myPhone;
-    if (!phone) {
-      Alert.alert('Téléphone requis', 'Veuillez saisir un numéro de téléphone.');
+    // retour silencieux remplacé par un message précis pour chaque champ incomplet ou incorrect
+    if (!pickup || !dest) { Alert.alert('Trajet incomplet', 'Choisissez un départ et une destination dans la liste.'); return; }
+    if (pickup.lat === dest.lat && pickup.lon === dest.lon) { Alert.alert('Trajet invalide', 'Le départ et la destination sont identiques.'); return; }
+    if (!priceNum || priceNum < 100) { Alert.alert('Prix invalide', 'Le prix doit être d’au moins 100 FCFA.'); return; }
+    const phone = (forTiers ? thirdPartyPhone : myPhone || '').replace(/\s/g, '');
+    if (!/^\+?\d{8,15}$/.test(phone)) {
+      Alert.alert('Téléphone invalide', 'Saisissez un numéro valide (ex. 6XXXXXXXX).');
       return;
     }
     setLoading(true);

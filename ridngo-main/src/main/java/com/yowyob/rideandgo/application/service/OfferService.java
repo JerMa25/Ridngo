@@ -222,6 +222,10 @@ public class OfferService implements
     public Flux<Offer> getAvailableOffers() {
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> UUID.fromString(ctx.getAuthentication().getName()))
+                // hors ligne (bouton STOP) ou profil non validé : aucune offre proposée
+                .flatMap(driverId -> driverRepositoryPort.findById(driverId)
+                        .filter(d -> d.isOnline() && d.isProfileValidated())
+                        .map(d -> driverId))
                 .flatMapMany(driverId ->
                 // TENTATIVE 1 : Recherche Géo
                 locationCachePort.getLocation(driverId)
@@ -319,6 +323,13 @@ public class OfferService implements
                         // postuler ne doit pas rouvrir une offre attribuée, validée ou annulée
                         .flatMap(offer -> isOpenForBids(offer) ? Mono.just(offer)
                                 : Mono.error(new OfferStatutNotMatchException(closedOfferMessage(offer))))
+                        .flatMap(offer -> driverRepositoryPort.findById(driverId)
+                                .switchIfEmpty(Mono.error(new IllegalStateException("Profil chauffeur introuvable : terminez votre inscription véhicule.")))
+                                .flatMap(d -> !d.isProfileValidated()
+                                        ? Mono.<Offer>error(new IllegalStateException("Votre profil chauffeur n'est pas encore validé."))
+                                        : !d.isOnline()
+                                                ? Mono.<Offer>error(new IllegalStateException("Vous êtes hors ligne : passez en ligne pour postuler."))
+                                                : Mono.just(offer)))
                         .flatMap(offer -> paymentPort.getWalletByOwnerId(driverId)
                                 .flatMap(wallet -> {
                                     // VÉRIFICATION COMMISSION : prix * taux < solde
