@@ -152,4 +152,4 @@ const finalizeSession = async (authData: AuthResponse): Promise<{ success: boole
 
   await SecureStore.setItemAsync('user', JSON.stringify(userObj));
   return { success: true, role: userObj.role };
-};
+};

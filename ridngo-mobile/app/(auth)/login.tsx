@@ -217,4 +217,4 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },
-});
+});
