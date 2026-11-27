@@ -32,7 +32,7 @@ export default function DriverPerformanceScreen() {
         key={i} 
         name="star" 
         size={size} 
-        color={i < rating ? '#EAB308' : 'rgba(255,255,255,0.1)'} 
+        color={i < rating ? '#EAB308' : Colors.cardBorder} 
       />
     ));
   };

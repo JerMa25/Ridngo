@@ -1,23 +1,27 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
+
+// expo-router 58 : `href: null` cache l'écran ET redirige vers le premier onglet ; on ne cache que le bouton
+const HIDDEN = { tabBarButton: () => null };
 
 export default function DriverLayout() {
+  const { Colors } = useTheme();
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#16202F',
-          borderTopColor: 'rgba(255,255,255,0.07)',
+          backgroundColor: Colors.darkCard,
+          borderTopColor: Colors.cardBorder,
           borderTopWidth: 1,
           paddingBottom: 8,
           paddingTop: 8,
           height: 65,
         },
         tabBarActiveTintColor: Colors.orange,
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
+        tabBarInactiveTintColor: Colors.textMuted,
         tabBarLabelStyle: { fontWeight: '900', fontSize: 10, letterSpacing: 0.5 },
       }}
     >
@@ -51,15 +55,15 @@ export default function DriverLayout() {
       />
 
       {/* Écrans cachés */}
-      <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="support" options={{ href: null }} />
-      <Tabs.Screen name="heatmap" options={{ href: null }} />
-      <Tabs.Screen name="history" options={{ href: null }} />
-      <Tabs.Screen name="performance" options={{ href: null }} />
-      <Tabs.Screen name="vehicle" options={{ href: null }} />
-      <Tabs.Screen name="onboarding" options={{ href: null }} />
-      <Tabs.Screen name="offers/[id]" options={{ href: null }} />
-      <Tabs.Screen name="ride/[id]" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={HIDDEN} />
+      <Tabs.Screen name="support" options={HIDDEN} />
+      <Tabs.Screen name="heatmap" options={HIDDEN} />
+      <Tabs.Screen name="history" options={HIDDEN} />
+      <Tabs.Screen name="performance" options={HIDDEN} />
+      <Tabs.Screen name="vehicle" options={HIDDEN} />
+      <Tabs.Screen name="onboarding" options={HIDDEN} />
+      <Tabs.Screen name="offers/[id]" options={HIDDEN} />
+      <Tabs.Screen name="ride/[id]" options={HIDDEN} />
     </Tabs>
   );
 }

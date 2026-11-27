@@ -76,7 +76,7 @@ export default function ProfileScreen() {
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true, aspect: [1, 1], quality: 0.75,
     });
     if (!result.canceled) setNewPhoto(result.assets[0]);

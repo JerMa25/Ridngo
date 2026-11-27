@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert, Image
@@ -8,9 +8,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { authService } from '../../src/services/auth';
-import { Colors, Spacing, Radius } from '../../src/types/theme';
+import { DarkColors, Spacing, Radius } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 
 export default function RegisterScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { role } = useLocalSearchParams<{ role: string }>();
   const isDriver = role === 'driver';
 
@@ -37,7 +40,7 @@ export default function RegisterScreen() {
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true, aspect: [1, 1], quality: 0.7,
     });
     if (!result.canceled) setPhoto(result.assets[0]);
@@ -114,7 +117,7 @@ export default function RegisterScreen() {
           <View style={styles.header}>
             <View style={[styles.badge, isDriver && styles.badgeDriver]}>
               <Ionicons name={isDriver ? 'car-sport' : 'person'} size={14} color={Colors.white} />
-              <Text style={[styles.badgeText, isDriver && { color: Colors.white }]}>
+              <Text style={[styles.badgeText, isDriver && { color: '#FFFFFF' }]}>
                 {isDriver ? 'CHAUFFEUR' : 'PASSAGER'}
               </Text>
             </View>
@@ -274,11 +277,11 @@ export default function RegisterScreen() {
             activeOpacity={0.85}
           >
             {loading ? (
-              <ActivityIndicator color={Colors.white} />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
                 <Text style={styles.btnText}>Créer mon compte</Text>
-                <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </>
             )}
           </TouchableOpacity>
@@ -295,14 +298,14 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: typeof DarkColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.xl },
   back: { marginBottom: Spacing.md },
   header: { marginBottom: Spacing.lg, gap: 8 },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: Colors.input, paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: Radius.full,
   },
   badgeDriver: { backgroundColor: Colors.orange },
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
     marginBottom: Spacing.lg,
   },
-  btnText: { color: Colors.white, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },

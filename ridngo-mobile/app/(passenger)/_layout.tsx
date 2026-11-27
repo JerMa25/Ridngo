@@ -1,23 +1,27 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
+
+// expo-router 58 : `href: null` cache l'écran ET redirige vers le premier onglet ; on ne cache que le bouton
+const HIDDEN = { tabBarButton: () => null };
 
 export default function PassengerLayout() {
+  const { Colors } = useTheme();
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#16202F',
-          borderTopColor: 'rgba(255,255,255,0.07)',
+          backgroundColor: Colors.darkCard,
+          borderTopColor: Colors.cardBorder,
           borderTopWidth: 1,
           paddingBottom: 8,
           paddingTop: 8,
           height: 65,
         },
         tabBarActiveTintColor: Colors.orange,
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
+        tabBarInactiveTintColor: Colors.textMuted,
         tabBarLabelStyle: { fontWeight: '900', fontSize: 10, letterSpacing: 0.5 },
       }}
     >
@@ -52,9 +56,9 @@ export default function PassengerLayout() {
       />
 
       {/* ── Écrans cachés (naviguables via router.push) ── */}
-      <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="support" options={{ href: null }} />
-      <Tabs.Screen name="my-offer" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={HIDDEN} />
+      <Tabs.Screen name="support" options={HIDDEN} />
+      <Tabs.Screen name="my-offer" options={HIDDEN} />
     </Tabs>
   );
 }

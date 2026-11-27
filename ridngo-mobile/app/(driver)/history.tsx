@@ -60,7 +60,7 @@ export default function DriverHistoryScreen() {
         key={i} 
         name="star" 
         size={12} 
-        color={i < rating ? '#FF8C00' : 'rgba(255,255,255,0.1)'} 
+        color={i < rating ? '#FF8C00' : Colors.cardBorder} 
       />
     ));
   };

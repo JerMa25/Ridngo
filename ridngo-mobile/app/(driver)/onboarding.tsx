@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, ActivityIndicator, Alert, Switch
@@ -7,8 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { vehicleApi } from '../../src/services/api';
-import api, { BASE_URL } from '../../src/services/api';
-import { Colors, Spacing, Radius } from '../../src/types/theme';
+import api from '../../src/services/api';
+import { DarkColors, Spacing, Radius } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import * as SecureStore from 'expo-secure-store';
 import * as Linking from 'expo-linking';
 
@@ -26,6 +27,8 @@ const FALLBACKS = {
 };
 
 export default function DriverOnboarding() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddVehicleOnly = mode === 'addVehicle'; // Chauffeur existant sans véhicule : on saute l'étape syndicat
   const [step, setStep] = useState<Step>(0);
@@ -115,22 +118,8 @@ export default function DriverOnboarding() {
         type: 'application/json',
       } as any);
 
-      const token = await SecureStore.getItemAsync('accessToken');
-      const res = await fetch(`${BASE_URL}/api/v1/users/driver`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      const responseText = await res.text();
-      if (!res.ok) {
-        let msg = `Erreur ${res.status}`;
-        try { msg = JSON.parse(responseText)?.message || msg; } catch {}
-        throw new Error(msg);
-      }
+      // axios (XHR natif) et non fetch : le fetch d'Expo SDK 58 refuse les parts { string }
+      await api.post('/api/v1/users/driver', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
       if (isAddVehicleOnly) {
         // Le chauffeur existe déjà et a juste besoin d'un véhicule : pas de vérification syndicale à refaire.
@@ -141,7 +130,7 @@ export default function DriverOnboarding() {
       }
       setStep(1);
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message || "Impossible d'enregistrer le véhicule.");
+      Alert.alert('Erreur', e?.response?.data?.detail || e?.response?.data?.message || e?.message || "Impossible d'enregistrer le véhicule.");
     } finally {
       setLoading(false);
     }
@@ -251,10 +240,10 @@ export default function DriverOnboarding() {
             onPress={handleSubmitVehicle}
             disabled={loading}
           >
-            {loading ? <ActivityIndicator color={Colors.white} /> : (
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
               <>
                 <Text style={styles.btnText}>{isAddVehicleOnly ? 'Enregistrer le véhicule' : 'Continuer'}</Text>
-                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color={Colors.white} />
+                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color="#FFFFFF" />
               </>
             )}
           </TouchableOpacity>
@@ -289,7 +278,7 @@ export default function DriverOnboarding() {
           ) : (
             <>
               <TouchableOpacity style={styles.btnPrimary} onPress={handleConnectSyndicate}>
-                <Ionicons name="open" size={20} color={Colors.white} />
+                <Ionicons name="open" size={20} color="#FFFFFF" />
                 <Text style={styles.btnText}>Ouvrir UGate Compliance</Text>
               </TouchableOpacity>
             </>
@@ -301,7 +290,7 @@ export default function DriverOnboarding() {
       {step === 2 && (
         <View style={styles.doneContainer}>
           <View style={styles.doneIcon}>
-            <Ionicons name="checkmark" size={56} color={Colors.white} />
+            <Ionicons name="checkmark" size={56} color="#FFFFFF" />
           </View>
           <Text style={styles.doneTitle}>Félicitations !</Text>
           <Text style={styles.doneSub}>
@@ -311,7 +300,7 @@ export default function DriverOnboarding() {
             style={styles.btnPrimary}
             onPress={() => router.replace('/(driver)/dashboard')}
           >
-            <Ionicons name="radio" size={20} color={Colors.white} />
+            <Ionicons name="radio" size={20} color="#FFFFFF" />
             <Text style={styles.btnText}>Accéder au Radar</Text>
           </TouchableOpacity>
         </View>
@@ -320,7 +309,7 @@ export default function DriverOnboarding() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: typeof DarkColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   progress: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
   addVehicleHeader: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
@@ -367,7 +356,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, elevation: 6,
     marginTop: Spacing.sm,
   },
-  btnText: { color: Colors.white, fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
   btnSkip: { alignItems: 'center', padding: Spacing.md },
   btnSkipText: { color: Colors.textMuted, fontWeight: '700', fontSize: 13 },
 

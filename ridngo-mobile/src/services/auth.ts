@@ -1,7 +1,6 @@
 import { KEYCHAIN } from './api';
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
-import { BASE_URL } from './api';
 import { AuthResponse, UserObj, UserRole } from '../types/api';
 
 export type AuthResult = {
@@ -83,35 +82,14 @@ export const authService = {
         } as any);
       }
 
-      const res = await fetch(`${BASE_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-        },
-        body: formData,
-      });
-
-      const responseText = await res.text();
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch {
-        responseData = { message: responseText };
-      }
-
-      if (!res.ok) {
-        const msg = responseData?.detail || responseData?.message || responseData?.error || `Erreur ${res.status}`;
-        return { success: false, message: msg };
-      }
+      // axios (XHR natif) et non fetch : le fetch d'Expo SDK 58 refuse les parts { uri } / { string }
+      const responseData = (await api.post('/api/v1/auth/register', formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data;
 
       // Compte créé, mais le Kernel exige la confirmation de l'email avant toute connexion
       if (!responseData?.accessToken) return { success: true, verifyEmail: true };
       return await finalizeSession(responseData as AuthResponse);
     } catch (error: any) {
-      // fetch échoue sans réponse quand le backend est injoignable
-      return { success: false, message: error.message === 'Network request failed'
-        ? 'Impossible de joindre le serveur Ride&Go. Vérifiez que le téléphone est sur le même Wi-Fi.'
-        : error.message || "Erreur lors de l'inscription" };
+      return { success: false, message: errorMessage(error, "Erreur lors de l'inscription") };
     }
   },
 

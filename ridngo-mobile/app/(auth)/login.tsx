@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert
@@ -8,9 +8,12 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { authService } from '../../src/services/auth';
-import { Colors, Spacing, Radius } from '../../src/types/theme';
+import { DarkColors, Spacing, Radius } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 
 export default function LoginScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { login, confirmMfa } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -102,7 +105,7 @@ export default function LoginScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.btnText}>Valider le code</Text>}
+              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnText}>Valider le code</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setMfa(null); setCode(''); }}>
               <Text style={[styles.forgotText, { textAlign: 'center' }]}>← Changer de compte</Text>
@@ -162,11 +165,11 @@ export default function LoginScreen() {
               activeOpacity={0.85}
             >
               {loading ? (
-                <ActivityIndicator color={Colors.white} />
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <>
                   <Text style={styles.btnText}>Se connecter</Text>
-                  <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                 </>
               )}
             </TouchableOpacity>
@@ -185,13 +188,13 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: typeof DarkColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.xl },
   back: { marginBottom: Spacing.lg },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Spacing.xl },
   logoBox: { width: 36, height: 36, backgroundColor: Colors.orange, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  logoLetter: { color: Colors.white, fontWeight: '900', fontSize: 18, fontStyle: 'italic' },
+  logoLetter: { color: '#FFFFFF', fontWeight: '900', fontSize: 18, fontStyle: 'italic' },
   logoText: { color: Colors.white, fontWeight: '900', fontSize: 20 },
   title: { color: Colors.white, fontWeight: '900', fontSize: 32, letterSpacing: -0.5, marginBottom: 6 },
   subtitle: { color: Colors.textSecondary, fontSize: 15, marginBottom: Spacing.xl },
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: Spacing.sm,
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
   },
-  btnText: { color: Colors.white, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },
