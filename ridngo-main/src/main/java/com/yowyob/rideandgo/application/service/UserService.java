@@ -94,8 +94,8 @@ public class UserService implements UserUseCases {
         public Mono<User> updateProfile(UUID userId, String firstName, String lastName, String phone) {
                 return externalUserPort.updateProfile(userId, firstName, lastName, phone)
                                 .flatMap(updated -> userRepositoryPort.findUserById(userId)
-                                                .map(local -> new User(local.id(), local.name(), local.firstName(),
-                                                                local.lastName(), local.email(), phone,
+                                                .map(local -> new User(local.id(), local.name(), firstName,
+                                                                lastName, local.email(), phone,
                                                                 local.password(),
                                                                 local.photoUri(), local.roles(),
                                                                 local.directPermissions()))

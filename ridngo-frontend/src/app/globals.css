@@ -114,3 +114,27 @@ input.no-autofill::-webkit-contacts-auto-fill-button {
 input.no-autofill {
   background-image: none !important;
 }
+/* ── AppShell : sidebar 16rem (ordinateur), barre du haut 4rem, onglets en bas 4rem (téléphone) ── */
+:root {
+  --app-top: 0px;
+  --app-bottom: 0px;
+}
+body[data-shell] {
+  --app-top: 4rem;
+  --app-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  body[data-shell] { --app-bottom: 0px; }
+  body[data-shell] .app-content { padding-left: 16rem; }
+}
+body[data-shell] .app-content {
+  padding-top: var(--app-top);
+  padding-bottom: var(--app-bottom);
+}
+/* Hauteur disponible sous les barres, pour les pages plein écran (cartes) */
+.h-app {
+  height: calc(100dvh - var(--app-top) - var(--app-bottom));
+}
+.min-h-app {
+  min-height: calc(100dvh - var(--app-top) - var(--app-bottom));
+}

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService, AuthResult } from '../services/auth';
+import { onSessionExpired } from '../services/api';
 import { UserObj } from '../types/api';
+import { tr } from '../i18n';
 
 interface AuthContextType {
   user: UserObj | null;
@@ -22,6 +24,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     loadUser();
+    onSessionExpired(() => { setUser(null); setIsGuest(true); });
+    return () => onSessionExpired(null);
   }, []);
 
   const loadUser = async () => {
@@ -31,6 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(u);
         setIsGuest(false);
       } else {
+        setUser(null);
         setIsGuest(true);
       }
     } catch (e) {
@@ -79,6 +84,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error(tr("useAuth must be used within AuthProvider"));
   return ctx;
 };

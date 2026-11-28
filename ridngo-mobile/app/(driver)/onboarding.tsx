@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, ActivityIndicator, Alert, Switch
@@ -7,10 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { vehicleApi } from '../../src/services/api';
-import api, { BASE_URL } from '../../src/services/api';
-import { Colors, Spacing, Radius } from '../../src/types/theme';
+import api from '../../src/services/api';
+import { DarkColors, Spacing, Radius } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import * as SecureStore from 'expo-secure-store';
 import * as Linking from 'expo-linking';
+import { tr } from '../../src/i18n';
 
 type Step = 0 | 1 | 2;
 
@@ -26,6 +28,8 @@ const FALLBACKS = {
 };
 
 export default function DriverOnboarding() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddVehicleOnly = mode === 'addVehicle'; // Chauffeur existant sans véhicule : on saute l'étape syndicat
   const [step, setStep] = useState<Step>(0);
@@ -57,9 +61,13 @@ export default function DriverOnboarding() {
     // Check if returning from UGate compliance
     const sub = Linking.addEventListener('url', ({ url }) => {
       if (url.includes('action=verify')) {
+        // retour d'UGate : même validation finale que le web
         setLoading(true);
-        // Check compliance status
-        setTimeout(() => { setLoading(false); setStep(2); }, 2000);
+        api.patch('/api/v1/users/verify-compliance')
+          .then(() => setStep(2))
+          .catch((e: any) => Alert.alert(tr("Vérification non confirmée"),
+            e?.response?.data?.detail || tr("La vérification UGate n'a pas pu être confirmée. Contactez le support.")))
+          .finally(() => setLoading(false));
       }
     });
     return () => sub.remove();
@@ -69,7 +77,7 @@ export default function DriverOnboarding() {
 
   const handleSubmitVehicle = async () => {
     if (!form.licenseNumber || !form.registrationNumber) {
-      Alert.alert('Requis', 'Numéro de permis et immatriculation sont obligatoires.');
+      Alert.alert(tr("Requis"), tr("Numéro de permis et immatriculation sont obligatoires."));
       return;
     }
     setLoading(true);
@@ -111,33 +119,19 @@ export default function DriverOnboarding() {
         type: 'application/json',
       } as any);
 
-      const token = await SecureStore.getItemAsync('accessToken');
-      const res = await fetch(`${BASE_URL}/api/v1/users/driver`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      const responseText = await res.text();
-      if (!res.ok) {
-        let msg = `Erreur ${res.status}`;
-        try { msg = JSON.parse(responseText)?.message || msg; } catch {}
-        throw new Error(msg);
-      }
+      // axios (XHR natif) et non fetch : le fetch d'Expo SDK 58 refuse les parts { string }
+      await api.post('/api/v1/users/driver', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
       if (isAddVehicleOnly) {
         // Le chauffeur existe déjà et a juste besoin d'un véhicule : pas de vérification syndicale à refaire.
-        Alert.alert('Succès', 'Votre véhicule a été enregistré.', [
+        Alert.alert(tr("Succès"), tr("Votre véhicule a été enregistré."), [
           { text: 'OK', onPress: () => router.replace('/(driver)/vehicle' as any) },
         ]);
         return;
       }
       setStep(1);
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message || "Impossible d'enregistrer le véhicule.");
+      Alert.alert(tr("Erreur"), e?.response?.data?.detail || e?.response?.data?.message || e?.message || tr("Impossible d'enregistrer le véhicule."));
     } finally {
       setLoading(false);
     }
@@ -207,30 +201,30 @@ export default function DriverOnboarding() {
             <View style={styles.stepIcon}>
               <Ionicons name="car" size={32} color={Colors.orange} />
             </View>
-            <Text style={styles.stepTitle}>Enregistrez votre véhicule</Text>
-            <Text style={styles.stepSub}>Ces informations seront vérifiées avant activation</Text>
+            <Text style={styles.stepTitle}>{tr("Enregistrez votre véhicule")}</Text>
+            <Text style={styles.stepSub}>{tr("Ces informations seront vérifiées avant activation")}</Text>
           </View>
 
           <View style={styles.form}>
-            <InputField label="N° Permis de conduire *" field="licenseNumber" placeholder="Ex: CM-12345" />
-            <InputField label="N° Immatriculation *" field="registrationNumber" placeholder="Ex: LT-482-XY" />
-            <InputField label="N° Série du véhicule" field="vehicleSerialNumber" />
-            <SelectField label="Marque" field="makeName" options={FALLBACKS.makes} />
-            <SelectField label="Modèle" field="modelName" options={FALLBACKS.models} />
-            <SelectField label="Type" field="typeName" options={FALLBACKS.types} />
-            <SelectField label="Taille" field="sizeName" options={FALLBACKS.sizes} />
-            <SelectField label="Carburant" field="fuelTypeName" options={FALLBACKS.fuels} />
-            <SelectField label="Transmission" field="transmissionType" options={FALLBACKS.transmissions} />
-            <InputField label="Nombre de sièges" field="totalSeatNumber" keyboard="numeric" />
-            <InputField label="Capacité réservoir (L)" field="tankCapacity" keyboard="numeric" />
-            <InputField label="Âge du véhicule (ans)" field="vehicleAgeAtStart" keyboard="numeric" />
+            <InputField label={tr("N° Permis de conduire *")} field="licenseNumber" placeholder={tr("Ex: CM-12345")} />
+            <InputField label={tr("N° Immatriculation *")} field="registrationNumber" placeholder={tr("Ex: LT-482-XY")} />
+            <InputField label={tr("N° Série du véhicule")} field="vehicleSerialNumber" />
+            <SelectField label={tr("Marque")} field="makeName" options={FALLBACKS.makes} />
+            <SelectField label={tr("Modèle")} field="modelName" options={FALLBACKS.models} />
+            <SelectField label={tr("Type")} field="typeName" options={FALLBACKS.types} />
+            <SelectField label={tr("Taille")} field="sizeName" options={FALLBACKS.sizes} />
+            <SelectField label={tr("Carburant")} field="fuelTypeName" options={FALLBACKS.fuels} />
+            <SelectField label={tr("Transmission")} field="transmissionType" options={FALLBACKS.transmissions} />
+            <InputField label={tr("Nombre de sièges")} field="totalSeatNumber" keyboard="numeric" />
+            <InputField label={tr("Capacité réservoir (L)")} field="tankCapacity" keyboard="numeric" />
+            <InputField label={tr("Âge du véhicule (ans)")} field="vehicleAgeAtStart" keyboard="numeric" />
 
             {/* Comfort options */}
-            <Text style={styles.sectionLabel}>OPTIONS DU VÉHICULE</Text>
+            <Text style={styles.sectionLabel}>{tr("OPTIONS DU VÉHICULE")}</Text>
             {(['airConditioned', 'wifi', 'comfortable'] as const).map(key => (
               <View key={key} style={styles.switchRow}>
                 <Text style={styles.switchLabel}>
-                  {key === 'airConditioned' ? 'Climatisation' : key === 'wifi' ? 'Wi-Fi' : 'Confortable'}
+                  {key === 'airConditioned' ? tr("Climatisation") : key === 'wifi' ? 'Wi-Fi' : tr("Confortable")}
                 </Text>
                 <Switch
                   value={form[key]}
@@ -247,10 +241,10 @@ export default function DriverOnboarding() {
             onPress={handleSubmitVehicle}
             disabled={loading}
           >
-            {loading ? <ActivityIndicator color={Colors.dark} /> : (
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
               <>
-                <Text style={styles.btnText}>{isAddVehicleOnly ? 'Enregistrer le véhicule' : 'Continuer'}</Text>
-                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color={Colors.dark} />
+                <Text style={styles.btnText}>{isAddVehicleOnly ? tr("Enregistrer le véhicule") : tr("Continuer")}</Text>
+                <Ionicons name={isAddVehicleOnly ? 'checkmark' : 'arrow-forward'} size={20} color="#FFFFFF" />
               </>
             )}
           </TouchableOpacity>
@@ -264,32 +258,27 @@ export default function DriverOnboarding() {
             <View style={styles.stepIcon}>
               <Ionicons name="shield-checkmark" size={32} color={Colors.orange} />
             </View>
-            <Text style={styles.stepTitle}>Vérification Syndicale</Text>
+            <Text style={styles.stepTitle}>{tr("Vérification Syndicale")}</Text>
             <Text style={styles.stepSub}>
-              Connectez-vous à UGate pour confirmer votre adhésion au syndicat des transporteurs.
-            </Text>
+              {tr("Connectez-vous à UGate pour confirmer votre adhésion au syndicat des transporteurs.")}</Text>
           </View>
 
           <View style={styles.infoBox}>
             <Ionicons name="information-circle" size={20} color={Colors.orange} />
             <Text style={styles.infoText}>
-              Cette étape est obligatoire au Cameroun pour exercer en toute légalité et garantir la sécurité du réseau RidnGo.
-            </Text>
+              {tr("Cette étape est obligatoire au Cameroun pour exercer en toute légalité et garantir la sécurité du réseau RidnGo.")}</Text>
           </View>
 
           {loading ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator color={Colors.orange} size="large" />
-              <Text style={styles.loadingText}>Validation de conformité en cours...</Text>
+              <Text style={styles.loadingText}>{tr("Validation de conformité en cours...")}</Text>
             </View>
           ) : (
             <>
               <TouchableOpacity style={styles.btnPrimary} onPress={handleConnectSyndicate}>
-                <Ionicons name="open" size={20} color={Colors.dark} />
-                <Text style={styles.btnText}>Ouvrir UGate Compliance</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnSkip} onPress={() => setStep(2)}>
-                <Text style={styles.btnSkipText}>Passer (tester sans syndicat)</Text>
+                <Ionicons name="open" size={20} color="#FFFFFF" />
+                <Text style={styles.btnText}>{tr("Ouvrir UGate Compliance")}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -300,18 +289,17 @@ export default function DriverOnboarding() {
       {step === 2 && (
         <View style={styles.doneContainer}>
           <View style={styles.doneIcon}>
-            <Ionicons name="checkmark" size={56} color={Colors.white} />
+            <Ionicons name="checkmark" size={56} color="#FFFFFF" />
           </View>
-          <Text style={styles.doneTitle}>Félicitations !</Text>
+          <Text style={styles.doneTitle}>{tr("Félicitations !")}</Text>
           <Text style={styles.doneSub}>
-            Votre profil est complet. Vous pouvez maintenant recevoir des courses sur RidnGo.
-          </Text>
+            {tr("Votre profil est complet. Vous pouvez maintenant recevoir des courses sur RidnGo.")}</Text>
           <TouchableOpacity
             style={styles.btnPrimary}
             onPress={() => router.replace('/(driver)/dashboard')}
           >
-            <Ionicons name="radio" size={20} color={Colors.dark} />
-            <Text style={styles.btnText}>Accéder au Radar</Text>
+            <Ionicons name="radio" size={20} color="#FFFFFF" />
+            <Text style={styles.btnText}>{tr("Accéder au Radar")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -319,7 +307,7 @@ export default function DriverOnboarding() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: typeof DarkColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   progress: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
   addVehicleHeader: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
@@ -366,7 +354,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, elevation: 6,
     marginTop: Spacing.sm,
   },
-  btnText: { color: Colors.dark, fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
   btnSkip: { alignItems: 'center', padding: Spacing.md },
   btnSkipText: { color: Colors.textMuted, fontWeight: '700', fontSize: 13 },
 

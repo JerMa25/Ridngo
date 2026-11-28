@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert
@@ -8,9 +8,13 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { authService } from '../../src/services/auth';
-import { Colors, Spacing, Radius } from '../../src/types/theme';
+import { DarkColors, Spacing, Radius } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
+import { tr } from '../../src/i18n';
 
 export default function LoginScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { login, confirmMfa } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +25,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (mfa ? !code.trim() : !identifier.trim() || !password.trim()) {
-      Alert.alert('Champs requis', 'Veuillez remplir tous les champs.');
+      Alert.alert(tr("Champs requis"), tr("Veuillez remplir tous les champs."));
       return;
     }
     setLoading(true);
@@ -33,15 +37,15 @@ export default function LoginScreen() {
       setMfa(result.mfa);
     } else if (/pas encore vérifié/i.test(result.message || '')) {
       // compte créé mais email non confirmé : proposer le renvoi du lien
-      Alert.alert('Email non vérifié', result.message, [
-        { text: 'Plus tard' },
-        { text: 'Renvoyer le lien', onPress: async () => {
-          try { await authService.resendVerification(identifier.trim()); Alert.alert('Email envoyé', 'Cliquez sur le lien reçu, puis reconnectez-vous.'); }
-          catch { Alert.alert('Erreur', "Impossible de renvoyer l'email pour le moment."); }
+      Alert.alert(tr("Email non vérifié"), result.message, [
+        { text: tr("Plus tard") },
+        { text: tr("Renvoyer le lien"), onPress: async () => {
+          try { await authService.resendVerification(identifier.trim()); Alert.alert(tr("Email envoyé"), tr("Cliquez sur le lien reçu, puis reconnectez-vous.")); }
+          catch { Alert.alert(tr("Erreur"), tr("Impossible de renvoyer l'email pour le moment.")); }
         } },
       ]);
     } else {
-      Alert.alert('Erreur de connexion', result.message || 'Identifiants invalides.');
+      Alert.alert(tr("Erreur de connexion"), result.message || tr("Identifiants invalides."));
     }
   };
 
@@ -69,22 +73,22 @@ export default function LoginScreen() {
             <View style={styles.logoBox}>
               <Text style={styles.logoLetter}>R</Text>
             </View>
-            <Text style={styles.logoText}>RidnGo</Text>
+            <Text style={styles.logoText}>{tr("RidnGo")}</Text>
           </View>
 
-          <Text style={styles.title}>Bon retour 👋</Text>
-          <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
+          <Text style={styles.title}>{tr("Bon retour 👋")}</Text>
+          <Text style={styles.subtitle}>{tr("Connectez-vous pour continuer")}</Text>
 
           {mfa ? (
           <View style={styles.form}>
             <Text style={styles.subtitle}>
-              Un code vous a été envoyé par {mfa.channel === 'SMS' ? 'SMS' : 'email'}.
+              {tr("Un code vous a été envoyé par ")}{mfa.channel === 'SMS' ? 'SMS' : tr("email")}.
             </Text>
             <View style={styles.inputRow}>
               <Ionicons name="key" size={18} color={Colors.textMuted} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { letterSpacing: 6 }]}
-                placeholder="Code reçu"
+                placeholder={tr("Code reçu")}
                 placeholderTextColor={Colors.textMuted}
                 value={code}
                 onChangeText={setCode}
@@ -93,7 +97,7 @@ export default function LoginScreen() {
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
-                accessibilityLabel="Code de vérification"
+                accessibilityLabel={tr("Code de vérification")}
               />
             </View>
             <TouchableOpacity
@@ -102,21 +106,21 @@ export default function LoginScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              {loading ? <ActivityIndicator color={Colors.dark} /> : <Text style={styles.btnText}>Valider le code</Text>}
+              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnText}>{tr("Valider le code")}</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setMfa(null); setCode(''); }}>
-              <Text style={[styles.forgotText, { textAlign: 'center' }]}>← Changer de compte</Text>
+              <Text style={[styles.forgotText, { textAlign: 'center' }]}>{tr("← Changer de compte")}</Text>
             </TouchableOpacity>
           </View>
           ) : (
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email / Téléphone / Pseudo</Text>
+              <Text style={styles.label}>{tr("Email / Téléphone / Pseudo")}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="person" size={18} color={Colors.textMuted} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Votre identifiant"
+                  placeholder={tr("Votre identifiant")}
                   placeholderTextColor={Colors.textMuted}
                   value={identifier}
                   onChangeText={onChangeIdentifier}
@@ -130,12 +134,12 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Mot de passe</Text>
+              <Text style={styles.label}>{tr("Mot de passe")}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="lock-closed" size={18} color={Colors.textMuted} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
-                  placeholder="Votre mot de passe"
+                  placeholder={tr("Votre mot de passe")}
                   placeholderTextColor={Colors.textMuted}
                   value={password}
                   onChangeText={onChangePassword}
@@ -152,7 +156,7 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity style={styles.forgotRow}>
-              <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+              <Text style={styles.forgotText}>{tr("Mot de passe oublié ?")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -162,11 +166,11 @@ export default function LoginScreen() {
               activeOpacity={0.85}
             >
               {loading ? (
-                <ActivityIndicator color={Colors.dark} />
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <>
-                  <Text style={styles.btnText}>Se connecter</Text>
-                  <Ionicons name="arrow-forward" size={20} color={Colors.dark} />
+                  <Text style={styles.btnText}>{tr("Se connecter")}</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                 </>
               )}
             </TouchableOpacity>
@@ -174,9 +178,9 @@ export default function LoginScreen() {
           )}
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Pas encore de compte ? </Text>
+            <Text style={styles.footerText}>{tr("Pas encore de compte ? ")}</Text>
             <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/register', params: { role: 'passenger' } })}>
-              <Text style={styles.footerLink}>S'inscrire</Text>
+              <Text style={styles.footerLink}>{tr("S'inscrire")}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -185,13 +189,13 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: typeof DarkColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.xl },
   back: { marginBottom: Spacing.lg },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Spacing.xl },
   logoBox: { width: 36, height: 36, backgroundColor: Colors.orange, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  logoLetter: { color: Colors.white, fontWeight: '900', fontSize: 18, fontStyle: 'italic' },
+  logoLetter: { color: '#FFFFFF', fontWeight: '900', fontSize: 18, fontStyle: 'italic' },
   logoText: { color: Colors.white, fontWeight: '900', fontSize: 20 },
   title: { color: Colors.white, fontWeight: '900', fontSize: 32, letterSpacing: -0.5, marginBottom: 6 },
   subtitle: { color: Colors.textSecondary, fontSize: 15, marginBottom: Spacing.xl },
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: Spacing.sm,
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
   },
-  btnText: { color: Colors.dark, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },

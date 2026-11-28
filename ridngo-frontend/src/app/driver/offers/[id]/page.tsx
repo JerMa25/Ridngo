@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 // 1. IMPORT DYNAMIQUE DE LA CARTE
 const MapView = dynamic(() => import('@/components/home/MapView'), { 
@@ -19,7 +20,7 @@ const MapView = dynamic(() => import('@/components/home/MapView'), {
   loading: () => (
     <div className="h-full w-full bg-gray-100 flex flex-col items-center justify-center gap-2 opacity-50">
       <Loader2 className="animate-spin text-orange-btn" />
-      <span className="text-[10px] font-black uppercase tracking-widest">Chargement Carte...</span>
+      <span className="text-[10px] font-black uppercase tracking-widest">{tr("Chargement Carte...")}</span>
     </div>
   )
 });
@@ -57,7 +58,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   const [me, setMe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [commissionChallenge, setCommissionChallenge] = useState<{ challengeToken: string; commission: number } | null>(null);
+  const [commissionChallenge, setCommissionChallenge] = useState<{ challengeToken?: string; commission: number; subscribed?: boolean } | null>(null);
   const [commissionCode, setCommissionCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -134,7 +135,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
       const updated = await rideService.getOfferById(id);
       setOffer(updated);
     } catch (e: any) {
-      toast.error(e.response?.data?.message || "Erreur postulation");
+      toast.error(e.response?.data?.message || tr("Erreur postulation"));
     } finally {
       setActionLoading(false);
     }
@@ -146,9 +147,9 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
       await api.post(`/api/v1/offers/${id}/withdraw`);
       const updated = await rideService.getOfferById(id);
       setOffer(updated);
-      toast.success("Votre candidature a été annulée");
+      toast.success(tr("Votre candidature a été annulée"));
     } catch (e: any) {
-      toast.error(e.response?.data?.message || "Erreur lors de l'annulation");
+      toast.error(e.response?.data?.message || tr("Erreur lors de l'annulation"));
     } finally {
       setActionLoading(false);
     }
@@ -157,17 +158,23 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   const handleFinalAccept = async () => {
     setCodeError('');
     if (commissionChallenge && !/^\d{4,8}$/.test(commissionCode.trim())) {
-      setCodeError('Saisissez le code reçu (4 à 8 chiffres).');
+      setCodeError(tr("Saisissez le code reçu (4 à 8 chiffres)."));
       return;
     }
     setActionLoading(true);
     try {
       if (!commissionChallenge) {
-        // étape 1 : le Kernel envoie le code de confirmation de la commission
-        setCommissionChallenge(await rideService.requestAcceptCode(id));
+        // étape 1 : le Kernel envoie le code de confirmation de la commission (sauf chauffeur abonné)
+        const challenge = await rideService.requestAcceptCode(id);
+        if (challenge.subscribed) {
+          const rideRes = await rideService.driverAccepts(id, '', '');
+          router.push(`/driver/ride/${rideRes.id}`);
+          return;
+        }
+        setCommissionChallenge(challenge);
         return;
       }
-      const rideRes = await rideService.driverAccepts(id, commissionChallenge.challengeToken, commissionCode.trim());
+      const rideRes = await rideService.driverAccepts(id, commissionChallenge.challengeToken ?? '', commissionCode.trim());
       router.push(`/driver/ride/${rideRes.id}`);
     } catch (e: any) {
       const msg = e.response?.data?.detail || e.response?.data?.message || "Validation impossible pour le moment.";
@@ -202,17 +209,17 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   }, [offer?.startLat, offer?.startLon, offer?.endLat, offer?.endLon, offer?.startPoint, offer?.endPoint]);
 
   if (loading) return (
-    <div className="h-screen w-full bg-background flex flex-col items-center justify-center gap-4">
+    <div className="h-app w-full bg-background flex flex-col items-center justify-center gap-4">
       <Loader2 className="animate-spin text-orange-btn" size={40} />
       <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Chargement...</p>
     </div>
   );
 
   if (!offer) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center p-10 text-center bg-background">
+    <div className="h-app w-full flex flex-col items-center justify-center p-10 text-center bg-background">
        <AlertCircle size={48} className="text-red-500 mb-4" />
-       <h1 className="text-2xl font-black mb-2">Offre indisponible</h1>
-       <Link href="/driver/dashboard" className="text-orange-btn font-bold underline">Retour au dashboard</Link>
+       <h1 className="text-2xl font-black mb-2">{tr("Offre indisponible")}</h1>
+       <Link href="/driver/dashboard" className="text-orange-btn font-bold underline">{tr("Retour au dashboard")}</Link>
     </div>
   );
 
@@ -220,7 +227,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   const isSelected = offer.state === 'DRIVER_SELECTED' && offer.selectedDriverId === me?.id;
 
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row bg-background text-foreground overflow-hidden">
+    <div className="h-app w-full flex flex-col lg:flex-row bg-background text-foreground overflow-hidden">
       
       {/* GAUCHE : DÉTAILS */}
       <div className="w-full lg:w-[480px] h-1/2 lg:h-full flex flex-col border-r border-foreground/5 bg-background shadow-2xl relative z-20">
@@ -232,7 +239,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
           <div>
              <div className="flex justify-between items-start mb-4">
                 <span className="bg-orange-btn/10 text-orange-btn px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-orange-btn/20">
-                  Offre {offer.state}
+                  {tr("Offre ")}{offer.state}
                 </span>
                 <div className="flex items-center gap-1.5 opacity-50">
                   <Clock size={14} />
@@ -260,11 +267,11 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                 </div>
                 <div className="space-y-6 flex-1 pt-0.5">
                    <div>
-                      <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1">Départ</p>
+                      <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1">{tr("Départ")}</p>
                       <p className="font-bold text-sm leading-snug">{offer.startPoint}</p>
                    </div>
                    <div>
-                      <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1">Destination</p>
+                      <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1">{tr("Destination")}</p>
                       <p className="font-bold text-sm leading-snug">{offer.endPoint}</p>
                    </div>
                 </div>
@@ -279,16 +286,15 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                   <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-3 text-green-600">
                      <CheckCircle size={24} />
                      <div>
-                        <p className="font-black uppercase text-[10px] tracking-widest">Validé !</p>
-                        <p className="text-xs font-bold">Le client vous a sélectionné.</p>
+                        <p className="font-black uppercase text-[10px] tracking-widest">{tr("Validé !")}</p>
+                        <p className="text-xs font-bold">{tr("Le client vous a sélectionné.")}</p>
                      </div>
                   </div>
                   {commissionChallenge && (
                     <div className="space-y-2">
                       <p className="text-xs font-bold">
-                        Commission de {commissionChallenge.commission.toLocaleString()} FCFA : saisissez le code de confirmation reçu.
-                      </p>
-                      <input autoFocus inputMode="numeric" autoComplete="one-time-code" aria-label="Code de confirmation"
+                        {tr("Commission de ")}{commissionChallenge.commission.toLocaleString()} {tr(" FCFA : saisissez le code de confirmation reçu.")}</p>
+                      <input autoFocus inputMode="numeric" autoComplete="one-time-code" aria-label={tr("Code de confirmation")}
                         aria-invalid={!!codeError} value={commissionCode} onChange={e => setCommissionCode(e.target.value)}
                         className={`w-full bg-foreground/5 border rounded-xl py-3 px-4 text-center tracking-[0.4em] text-lg font-black outline-none focus:ring-2 focus:ring-orange-btn ${codeError ? 'border-red-500' : 'border-foreground/10'}`} />
                       {codeError && <p role="alert" className="text-[11px] font-bold text-red-500">{codeError}</p>}
@@ -299,15 +305,15 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                     disabled={actionLoading}
                     className="w-full py-5 bg-foreground text-background rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
-                    {actionLoading ? <Loader2 className="animate-spin" /> : commissionChallenge ? "Confirmer et démarrer" : "Accepter la course"}
+                    {actionLoading ? <Loader2 className="animate-spin" /> : commissionChallenge ? tr("Confirmer et démarrer") : tr("Accepter la course")}
                   </button>
                 </motion.div>
               ) : hasApplied ? (
                 <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                   <div className="p-6 border-2 border-dashed border-orange-btn/20 bg-orange-btn/5 rounded-2xl text-center">
                      <Loader2 className="animate-spin mx-auto text-orange-btn mb-3" />
-                     <p className="font-black uppercase text-[10px] tracking-widest opacity-60">Offre envoyée</p>
-                     <p className="text-xs font-bold mt-1">En attente de la réponse du client...</p>
+                     <p className="font-black uppercase text-[10px] tracking-widest opacity-60">{tr("Offre envoyée")}</p>
+                     <p className="text-xs font-bold mt-1">{tr("En attente de la réponse du client...")}</p>
                   </div>
                   <button
                     onClick={handleCancelApplication}
@@ -315,8 +321,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                     className="w-full py-3 border border-red-500/20 bg-red-500/10 text-red-500 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 hover:bg-red-500/20 transition-colors"
                   >
                     {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <XCircle size={16} />} 
-                    Annuler
-                  </button>
+                    {tr("Annuler")}</button>
                 </motion.div>
               ) : (
                 <motion.button 
@@ -327,7 +332,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                   disabled={actionLoading}
                   className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-orange-btn/20 flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors"
                 >
-                  {actionLoading ? <Loader2 className="animate-spin" /> : <>Accepter <ChevronRight size={18} /></>}
+                  {actionLoading ? <Loader2 className="animate-spin" /> : <>{tr("Accepter ")}<ChevronRight size={18} /></>}
                 </motion.button>
               )}
             </AnimatePresence>
@@ -343,8 +348,8 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                         {offer.passengerName?.[0] || 'C'}
                     </div>
                     <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Client</p>
-                        <p className="text-sm font-bold">{offer.passengerName || 'Client'}</p>
+                        <p className="text-[9px] font-black uppercase opacity-40">{tr("Client")}</p>
+                        <p className="text-sm font-bold">{offer.passengerName || tr("Client")}</p>
                     </div>
                  </div>
                  <button onClick={handleCopyPhone} className="w-10 h-10 bg-white shadow-md rounded-full flex items-center justify-center text-foreground hover:bg-green-500 hover:text-white transition-colors">

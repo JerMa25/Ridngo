@@ -3,6 +3,7 @@
 import React from 'react';
 import { Radar, Power, ShieldCheck, Star, CheckCircle2, Zap, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tr } from '@/lib/i18n';
 
 export const IdentityCard = ({ user, driver, vehicle, toggleStatus }: any) => {
   const isOnline = driver?.isOnline;
@@ -42,7 +43,7 @@ export const IdentityCard = ({ user, driver, vehicle, toggleStatus }: any) => {
             <div className="w-20 h-20 md:w-24 md:h-24 rounded-[24px] bg-foreground/5 p-1 relative z-10">
               <div className="w-full h-full rounded-[20px] overflow-hidden bg-orange-btn flex items-center justify-center border-2 border-background shadow-inner">
                 {user?.photoUri ? (
-                  <img src={user.photoUri} className="w-full h-full object-cover" alt="Profile" />
+                  <img src={user.photoUri} className="w-full h-full object-cover" alt={tr("Profile")} />
                 ) : (
                   <span className="text-3xl font-black text-white">{user?.name?.[0]}</span>
                 )}
@@ -69,7 +70,7 @@ export const IdentityCard = ({ user, driver, vehicle, toggleStatus }: any) => {
               )}
             </div>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">
-               {driver?.licenseNumber || 'ID-VÉRIFIÉ'}
+               {driver?.licenseNumber || tr("ID-VÉRIFIÉ")}
             </p>
 
             {/* Mini-Stats intégrées horizontalement */}
@@ -80,7 +81,7 @@ export const IdentityCard = ({ user, driver, vehicle, toggleStatus }: any) => {
                 </div>
                 <div className="flex items-center gap-1.5 bg-foreground/5 px-2 py-1 rounded-lg">
                     <CheckCircle2 size={10} className="text-green-500" />
-                    <span className="text-xs font-black">{driver?.totalReviewsCount || 0} Avis</span>
+                    <span className="text-xs font-black">{driver?.totalReviewsCount || 0} {tr(" Avis")}</span>
                 </div>
             </div>
           </div>

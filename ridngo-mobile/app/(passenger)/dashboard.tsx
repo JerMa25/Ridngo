@@ -12,6 +12,7 @@ import { rideService } from '../../src/services/rideService';
 import { userService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
+import { tr } from '../../src/i18n';
 
 const STATE_CONFIG: Record<string, { color: string; bgColor: string; label: string; icon: string }> = {
   COMPLETED: { color: '#22C55E', bgColor: 'rgba(34,197,94,0.1)', label: 'Terminée', icon: 'checkmark-circle' },
@@ -76,9 +77,9 @@ export default function PassengerDashboard() {
         {/* Header bienvenue */}
         <View style={styles.welcomeRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.welcomeSub, { color: Colors.textMuted }]}>TABLEAU DE BORD</Text>
+            <Text style={[styles.welcomeSub, { color: Colors.textMuted }]}>{tr("TABLEAU DE BORD")}</Text>
             <Text style={[styles.welcomeTitle, { color: Colors.text }]}>
-              Bonjour, <Text style={{ color: Colors.orange }}>{firstName}</Text>
+              {tr("Bonjour, ")}<Text style={{ color: Colors.orange }}>{firstName}</Text>
             </Text>
           </View>
           <ThemeToggle />
@@ -94,11 +95,11 @@ export default function PassengerDashboard() {
             <View style={styles.activeBannerLeft}>
               <View style={styles.activePulse} />
               <Text style={styles.activeBannerLabel}>
-                Course {activeRide.state === 'ONGOING' ? 'en cours' : 'en attente'}
+                {tr("Course ")}{activeRide.state === 'ONGOING' ? tr("en cours") : tr("en attente")}
               </Text>
             </View>
             <View style={styles.activeBannerRight}>
-              <Text style={styles.activeBannerAction}>Suivre</Text>
+              <Text style={styles.activeBannerAction}>{tr("Suivre")}</Text>
               <Ionicons name="chevron-forward" size={16} color="#fff" />
             </View>
           </TouchableOpacity>
@@ -112,13 +113,13 @@ export default function PassengerDashboard() {
             </View>
             <Text style={[styles.statLabel, { color: Colors.textMuted }]}>TRAJETS</Text>
             <Text style={[styles.statValue, { color: Colors.text }]}>{totalTrips}</Text>
-            <Text style={[styles.statSuffix, { color: Colors.textMuted }]}>courses</Text>
+            <Text style={[styles.statSuffix, { color: Colors.textMuted }]}>{tr("courses")}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <View style={[styles.statIcon, { backgroundColor: '#F59E0B' }]}>
               <Ionicons name="trending-up" size={20} color="#fff" />
             </View>
-            <Text style={[styles.statLabel, { color: Colors.textMuted }]}>DÉPENSÉ</Text>
+            <Text style={[styles.statLabel, { color: Colors.textMuted }]}>{tr("DÉPENSÉ")}</Text>
             <Text style={[styles.statValue, { color: Colors.text }]}>{totalSpent.toLocaleString()}</Text>
             <Text style={[styles.statSuffix, { color: Colors.textMuted }]}>FCFA</Text>
           </View>
@@ -130,21 +131,21 @@ export default function PassengerDashboard() {
           onPress={() => router.push('/(passenger)/ride')}
           activeOpacity={0.85}
         >
-          <Ionicons name="car" size={18} color="#0D0D0D" />
-          <Text style={styles.orderBtnText}>Commander une course</Text>
-          <Ionicons name="arrow-forward" size={16} color="#0D0D0D" />
+          <Ionicons name="car" size={18} color="#FFFFFF" />
+          <Text style={styles.orderBtnText}>{tr("Commander une course")}</Text>
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
         </TouchableOpacity>
 
         {/* Courses récentes */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.sectionTitle, { color: Colors.text }]}>Commandes récentes</Text>
-              <Text style={[styles.sectionSub, { color: Colors.textMuted }]}>VOS DERNIERS TRAJETS</Text>
+              <Text style={[styles.sectionTitle, { color: Colors.text }]}>{tr("Commandes récentes")}</Text>
+              <Text style={[styles.sectionSub, { color: Colors.textMuted }]}>{tr("VOS DERNIERS TRAJETS")}</Text>
             </View>
             {rides.length > 5 && (
               <TouchableOpacity onPress={() => router.push('/(passenger)/history')}>
-                <Text style={[styles.seeAll, { color: Colors.orange }]}>Tout voir</Text>
+                <Text style={[styles.seeAll, { color: Colors.orange }]}>{tr("Tout voir")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -152,16 +153,15 @@ export default function PassengerDashboard() {
           {rides.length === 0 ? (
             <View style={[styles.emptyCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
               <Ionicons name="calendar-outline" size={40} color={Colors.textMuted} />
-              <Text style={[styles.emptyTitle, { color: Colors.text }]}>Aucune course pour le moment</Text>
+              <Text style={[styles.emptyTitle, { color: Colors.text }]}>{tr("Aucune course pour le moment")}</Text>
               <Text style={[styles.emptyText, { color: Colors.textMuted }]}>
-                Vos trajets apparaîtront ici après votre première course.
-              </Text>
+                {tr("Vos trajets apparaîtront ici après votre première course.")}</Text>
               <TouchableOpacity
                 style={[styles.emptyBtn, { backgroundColor: Colors.orangeBg }]}
                 onPress={() => router.push('/(passenger)/ride')}
               >
                 <Ionicons name="car-outline" size={14} color={Colors.orange} />
-                <Text style={[styles.emptyBtnText, { color: Colors.orange }]}>Commander maintenant</Text>
+                <Text style={[styles.emptyBtnText, { color: Colors.orange }]}>{tr("Commander maintenant")}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -189,7 +189,7 @@ export default function PassengerDashboard() {
                     </View>
                     <View style={[styles.stateBadge, { backgroundColor: stateConf.bgColor }]}>
                       <Ionicons name={stateConf.icon as any} size={11} color={stateConf.color} />
-                      <Text style={[styles.stateText, { color: stateConf.color }]}>{stateConf.label}</Text>
+                      <Text style={[styles.stateText, { color: stateConf.color }]}>{tr(stateConf.label)}</Text>
                     </View>
                   </View>
 
@@ -198,14 +198,14 @@ export default function PassengerDashboard() {
                     <View style={styles.routeRow}>
                       <View style={[styles.dotOrange, { backgroundColor: Colors.orange }]} />
                       <Text style={[styles.routeText, { color: Colors.textMuted }]} numberOfLines={1}>
-                        {ride.startPoint || 'Point de départ'}
+                        {ride.startPoint || tr("Point de départ")}
                       </Text>
                     </View>
                     <View style={[styles.routeVLine, { backgroundColor: Colors.cardBorder }]} />
                     <View style={styles.routeRow}>
                       <View style={[styles.dotBlue, { borderColor: Colors.text }]} />
                       <Text style={[styles.routeText, { color: Colors.text }]} numberOfLines={1}>
-                        {ride.endPoint || 'Destination'}
+                        {ride.endPoint || tr("Destination")}
                       </Text>
                     </View>
                   </View>
@@ -220,8 +220,7 @@ export default function PassengerDashboard() {
                       <View style={styles.distanceWrap}>
                         <Ionicons name="navigate-outline" size={12} color={Colors.textMuted} />
                         <Text style={[styles.distanceText, { color: Colors.textMuted }]}>
-                          {ride.distance?.toFixed(1)} km
-                        </Text>
+                          {ride.distance?.toFixed(1)} {tr(" km")}</Text>
                       </View>
                     )}
                   </View>
@@ -270,7 +269,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, elevation: 8,
   },
-  orderBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
+  orderBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
 
   section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },

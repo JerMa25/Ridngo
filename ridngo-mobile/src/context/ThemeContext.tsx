@@ -1,6 +1,8 @@
+import { KEYCHAIN } from '../services/api';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { LightColors, DarkColors } from '../types/theme';
+import { tr } from '../i18n';
 
 type ThemeColors = typeof DarkColors;
 
@@ -25,7 +27,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const toggleTheme = async () => {
     const next = !isDark;
     setIsDark(next);
-    await SecureStore.setItemAsync('theme', next ? 'dark' : 'light');
+    await SecureStore.setItemAsync('theme', next ? 'dark' : 'light', KEYCHAIN);
   };
 
   const Colors = isDark ? DarkColors : LightColors;
@@ -39,6 +41,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
 export const useTheme = () => {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  if (!ctx) throw new Error(tr("useTheme must be used within ThemeProvider"));
   return ctx;
 };

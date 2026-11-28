@@ -10,6 +10,7 @@ import com.yowyob.rideandgo.domain.ports.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -25,6 +26,10 @@ public class AuthService implements AuthUseCase {
     private final DriverRepositoryPort driverRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
 
+    // Emails promus admin à la connexion (ADMIN_EMAILS="a@x.com,b@y.com")
+    @Value("${application.admin.emails:}")
+    private List<String> adminEmails = List.of();
+
     @Override
     public Mono<AuthPort.AuthResponse> login(String principal, String password) {
         return authPort.login(principal, password).flatMap(this::withLocalRoles);
@@ -36,6 +41,7 @@ public class AuthService implements AuthUseCase {
             return Mono.just(res);
         }
         return userRepositoryPort.findUserById(res.userId())
+                .flatMap(this::promoteConfiguredAdmin)
                 .map(user -> {
                     java.util.LinkedHashSet<String> roles = new java.util.LinkedHashSet<>(
                             res.roles() == null ? List.of() : res.roles());
@@ -50,6 +56,17 @@ public class AuthService implements AuthUseCase {
                     log.warn("Rôles locaux indisponibles pour {} : {}", res.userId(), e.getMessage());
                     return Mono.just(res);
                 });
+    }
+
+    private Mono<com.yowyob.rideandgo.domain.model.User> promoteConfiguredAdmin(com.yowyob.rideandgo.domain.model.User user) {
+        boolean listed = user.email() != null && adminEmails.stream().anyMatch(e -> e.trim().equalsIgnoreCase(user.email()));
+        boolean isAdmin = user.roles() != null && user.roles().stream().anyMatch(r -> r.type() == RoleType.RIDE_AND_GO_ADMIN);
+        if (!listed || isAdmin) {
+            return Mono.just(user);
+        }
+        log.info("👑 Promoting {} to admin (application.admin.emails)", user.email());
+        return userRepositoryPort.addRoleToUser(user.id(), RoleType.RIDE_AND_GO_ADMIN)
+                .then(userRepositoryPort.findUserById(user.id()));
     }
 
     @Override

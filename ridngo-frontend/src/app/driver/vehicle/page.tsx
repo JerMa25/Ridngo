@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 export default function MyVehiclePage() {
   const [vehicle, setVehicle] = useState<any>(null);
@@ -54,24 +55,24 @@ export default function MyVehiclePage() {
     try {
       // CONSTRUCTION DU PAYLOAD STRICT (Évite l'erreur 400 en filtrant les champs)
       // On ne prend que ce qui est défini dans le UpdateVehicleDto du Swagger
+      const brand = String(editForm.brand || '').trim();
+      const seats = Number(editForm.totalSeatNumber);
+      if (!brand) { toast.error(tr("Indiquez la marque du véhicule.")); return; }
+      if (!Number.isInteger(seats) || seats < 1 || seats > 60) { toast.error(tr("Nombre de places invalide (1 à 60).")); return; }
+      const numbers = ['tankCapacity', 'luggageMaxCapacity', 'averageFuelConsumptionPerKm', 'vehicleAgeAtStart', 'mileageSinceCommissioning'];
+      const bad = numbers.find(k => editForm[k] !== undefined && editForm[k] !== '' && (!Number.isFinite(Number(editForm[k])) || Number(editForm[k]) < 0));
+      if (bad) { toast.error(tr("Les valeurs numériques doivent être positives.")); return; }
+
+      // Champs non envoyés = laissés tels quels côté backend (null = pas de modification)
       const payload = {
-        makeName: editForm.makeName || "",
-        modelName: editForm.modelName || "",
-        transmissionType: editForm.transmissionType || "",
-        manufacturerName: editForm.manufacturerName || "",
-        sizeName: editForm.sizeName || "",
-        typeName: editForm.typeName || "",
-        fuelTypeName: editForm.fuelTypeName || "",
-        vehicleSerialNumber: editForm.vehicleSerialNumber || "",
-        registrationNumber: editForm.registrationNumber || "",
+        makeName: brand, // le backend range la marque dans makeName
+        vehicleSerialNumber: editForm.vehicleSerialNumber || undefined,
         tankCapacity: Number(editForm.tankCapacity || 0),
         luggageMaxCapacity: Number(editForm.luggageMaxCapacity || 0),
-        totalSeatNumber: Number(editForm.totalSeatNumber || 0),
+        totalSeatNumber: seats,
         averageFuelConsumptionPerKm: Number(editForm.averageFuelConsumptionPerKm || 0),
-        mileageAtStart: Number(editForm.mileageAtStart || 0),
         mileageSinceCommissioning: Number(editForm.mileageSinceCommissioning || 0),
         vehicleAgeAtStart: Number(editForm.vehicleAgeAtStart || 0),
-        brand: editForm.brand || "",
         // Booléens
         airConditioned: !!editForm.airConditioned,
         comfortable: !!editForm.comfortable,
@@ -97,10 +98,9 @@ export default function MyVehiclePage() {
       
       await fetchVehicle();
       setIsEditing(false);
-      toast.success("Véhicule mis à jour !");
+      toast.success(tr("Véhicule mis à jour !"));
     } catch (e: any) {
-      console.error("Erreur 400 Details:", e.response?.data);
-      toast.error("Erreur de validation : " + (e.response?.data?.message || "Vérifiez les champs"));
+      toast.error(e.response?.data?.detail || e.response?.data?.message || tr("Mise à jour impossible : vérifiez les champs."));
     } finally {
       setUpdateLoading(false);
     }
@@ -117,16 +117,16 @@ export default function MyVehiclePage() {
       });
       fetchVehicle();
     } catch (e) {
-      toast.error("Erreur lors de l'upload");
+      toast.error(tr("Erreur lors de l'upload"));
     } finally {
       setUpdateLoading(false);
     }
   };
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4">
+    <div className="h-app flex flex-col items-center justify-center gap-4">
       <Loader2 className="animate-spin text-orange-btn" size={40} />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Accès au garage...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{tr("Accès au garage...")}</p>
     </div>
   );
 
@@ -137,21 +137,29 @@ export default function MyVehiclePage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-5xl font-black tracking-tighter italic">Mon Véhicule</h1>
-           <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30 mt-2">Gestion des paramètres et services</p>
+           <h1 className="text-5xl font-black tracking-tighter italic">{tr("Mon Véhicule")}</h1>
+           <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30 mt-2">{tr("Gestion des paramètres et services")}</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => {
-              if (vehicle) setIsEditing(true);
-              else setShowRegisterPrompt(true);
-            }}
-            className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-orange-btn text-white shadow-xl"
-          >
-            <Edit3 size={16}/> Modifier mon véhicule
-          </button>
+          {isEditing ? (
+            <button
+              onClick={handlePatchVehicle}
+              disabled={updateLoading}
+              className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-green-600 text-white shadow-xl disabled:opacity-60"
+            >
+              {updateLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16}/>} {tr(" Enregistrer")}</button>
+          ) : (
+            <button
+              onClick={() => {
+                if (vehicle) setIsEditing(true);
+                else setShowRegisterPrompt(true);
+              }}
+              className="flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-orange-btn text-white shadow-xl"
+            >
+              <Edit3 size={16}/> {tr(" Modifier mon véhicule")}</button>
+          )}
           {isEditing && (
-            <button onClick={() => setIsEditing(false)} className="p-4 bg-foreground/5 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-colors">
+            <button onClick={() => { setIsEditing(false); setEditForm(vehicle); }} aria-label={tr("Annuler les modifications")} className="p-4 bg-foreground/5 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-colors">
               <X size={20} />
             </button>
           )}
@@ -161,8 +169,8 @@ export default function MyVehiclePage() {
       {!vehicle ? (
         <div className="glass p-20 text-center bg-background border-none shadow-2xl rounded-[48px] flex flex-col items-center">
           <div className="w-24 h-24 bg-orange-btn/10 text-orange-btn rounded-[40px] flex items-center justify-center mb-8"><Car size={48} /></div>
-          <h2 className="text-3xl font-black mb-4">Garage vide</h2>
-          <Link href="/driver/onboarding" className="bg-orange-btn text-white px-12 py-5 rounded-[24px] font-black uppercase text-xs tracking-widest shadow-xl">Enregistrer un véhicule</Link>
+          <h2 className="text-3xl font-black mb-4">{tr("Garage vide")}</h2>
+          <Link href="/driver/onboarding" className="bg-orange-btn text-white px-12 py-5 rounded-[24px] font-black uppercase text-xs tracking-widest shadow-xl">{tr("Enregistrer un véhicule")}</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -181,10 +189,10 @@ export default function MyVehiclePage() {
             </div>
 
             <div className="space-y-4">
-               <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Documents</h3>
+               <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">{tr("Documents")}</h3>
                <div className="grid grid-cols-2 gap-4">
                   <div className="group relative aspect-video rounded-3xl overflow-hidden bg-foreground/5">
-                     <img src={vehicle.registrationPhoto} className="w-full h-full object-cover" alt="Grise" />
+                     <img src={vehicle.registrationPhoto} className="w-full h-full object-cover" alt={tr("Grise")} />
                   </div>
                   <div className="group relative aspect-video rounded-3xl overflow-hidden bg-foreground/5">
                      <img src={vehicle.vehicleSerialPhoto} className="w-full h-full object-cover" alt="VIN" />
@@ -199,13 +207,13 @@ export default function MyVehiclePage() {
             {/* GRILLE TECHNIQUE */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                {[
-                 { label: "VIN / Châssis", value: vehicle.vehicleSerialNumber, icon: <ClipboardList size={18}/>, key: 'vehicleSerialNumber', editable: true },
-                 { label: "Réservoir (L)", value: vehicle.tankCapacity, icon: <Fuel size={18}/>, key: 'tankCapacity', editable: true, type: 'number' },
-                 { label: "Places", value: vehicle.totalSeatNumber, icon: <Users size={18}/>, key: 'totalSeatNumber', editable: true, type: 'number' },
-                 { label: "Coffre (L)", value: vehicle.luggageMaxCapacity, icon: <ImageIcon size={18}/>, key: 'luggageMaxCapacity', editable: true, type: 'number' },
-                 { label: "Conso (L/km)", value: vehicle.averageFuelConsumptionPerKm, icon: <Gauge size={18}/>, key: 'averageFuelConsumptionPerKm', editable: true, type: 'number' },
-                 { label: "Âge (ans)", value: vehicle.vehicleAgeAtStart, icon: <Calendar size={18}/>, key: 'vehicleAgeAtStart', editable: true, type: 'number' },
-                 { label: "Kilométrage", value: vehicle.mileageSinceCommissioning, icon: <HardDrive size={18}/>, key: 'mileageSinceCommissioning', editable: true, type: 'number' },
+                 { label: tr("VIN / Châssis"), value: vehicle.vehicleSerialNumber, icon: <ClipboardList size={18}/>, key: 'vehicleSerialNumber', editable: true },
+                 { label: tr("Réservoir (L)"), value: vehicle.tankCapacity, icon: <Fuel size={18}/>, key: 'tankCapacity', editable: true, type: 'number' },
+                 { label: tr("Places"), value: vehicle.totalSeatNumber, icon: <Users size={18}/>, key: 'totalSeatNumber', editable: true, type: 'number' },
+                 { label: tr("Coffre (L)"), value: vehicle.luggageMaxCapacity, icon: <ImageIcon size={18}/>, key: 'luggageMaxCapacity', editable: true, type: 'number' },
+                 { label: tr("Conso (L/km)"), value: vehicle.averageFuelConsumptionPerKm, icon: <Gauge size={18}/>, key: 'averageFuelConsumptionPerKm', editable: true, type: 'number' },
+                 { label: tr("Âge (ans)"), value: vehicle.vehicleAgeAtStart, icon: <Calendar size={18}/>, key: 'vehicleAgeAtStart', editable: true, type: 'number' },
+                 { label: tr("Kilométrage"), value: vehicle.mileageSinceCommissioning, icon: <HardDrive size={18}/>, key: 'mileageSinceCommissioning', editable: true, type: 'number' },
                ].map((item, i) => (
                  <div key={i} className="glass p-5 border-none bg-background shadow-lg rounded-3xl flex items-center gap-4">
                     <div className="p-3 bg-foreground/5 rounded-2xl text-orange-btn">{item.icon}</div>
@@ -216,7 +224,7 @@ export default function MyVehiclePage() {
                            name={item.key}
                            type={item.type || 'text'} 
                            className="bg-transparent font-black text-sm w-full outline-none text-orange-btn border-b border-orange-btn/20" 
-                           value={editForm[item.key]} 
+                           value={editForm[item.key] ?? ""} 
                            onChange={handleInputChange}
                          />
                        ) : (
@@ -229,17 +237,17 @@ export default function MyVehiclePage() {
 
             {/* SECTION SERVICES & OPTIONS (CHECKBOXES) */}
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Confort & Services embarqués</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">{tr("Confort & Services embarqués")}</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {[
-                        { key: 'airConditioned', label: 'Climatisation', icon: <Wind size={16}/> },
-                        { key: 'wifi', label: 'WiFi Gratuit', icon: <Wifi size={16}/> },
-                        { key: 'screen', label: 'Écran / TV', icon: <Monitor size={16}/> },
-                        { key: 'petsAllow', label: 'Animaux', icon: <Dog size={16}/> },
-                        { key: 'tollCharge', label: 'Péage Inclus', icon: <MapPin size={16}/> },
-                        { key: 'carParking', label: 'Parking', icon: <Info size={16}/> },
-                        { key: 'alarm', label: 'Alarme', icon: <ShieldAlert size={16}/> },
-                        { key: 'pickupAndDrop', label: 'Porte à Porte', icon: <Car size={16}/> },
+                        { key: 'airConditioned', label: tr("Climatisation"), icon: <Wind size={16}/> },
+                        { key: 'wifi', label: tr("WiFi Gratuit"), icon: <Wifi size={16}/> },
+                        { key: 'screen', label: tr("Écran / TV"), icon: <Monitor size={16}/> },
+                        { key: 'petsAllow', label: tr("Animaux"), icon: <Dog size={16}/> },
+                        { key: 'tollCharge', label: tr("Péage Inclus"), icon: <MapPin size={16}/> },
+                        { key: 'carParking', label: tr("Parking"), icon: <Info size={16}/> },
+                        { key: 'alarm', label: tr("Alarme"), icon: <ShieldAlert size={16}/> },
+                        { key: 'pickupAndDrop', label: tr("Porte à Porte"), icon: <Car size={16}/> },
                     ].map((opt) => (
                         <label key={opt.key} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${editForm[opt.key] ? 'border-orange-btn bg-orange-btn/5' : 'border-foreground/5 bg-foreground/[0.02]'} ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>
                             <div className="flex items-center gap-3">
@@ -265,17 +273,16 @@ export default function MyVehiclePage() {
             {/* GALERIE */}
             <div className="space-y-6">
                <div className="flex items-center justify-between px-2">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40">Galerie Photos</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40">{tr("Galerie Photos")}</h3>
                   <label className="flex items-center gap-2 cursor-pointer bg-foreground text-background px-4 py-2 rounded-xl font-black text-[10px] uppercase">
-                     <Plus size={14}/> Ajouter
-                     <input type="file" hidden accept="image/*" onChange={handleUploadGallery} />
+                     <Plus size={14}/> {tr(" Ajouter")}<input type="file" hidden accept="image/*" onChange={handleUploadGallery} />
                   </label>
                </div>
 
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {vehicle.illustrationImages?.map((url: string, i: number) => (
                     <div key={i} className="group relative aspect-square rounded-[32px] overflow-hidden bg-foreground/5">
-                       <img src={url} className="w-full h-full object-cover" alt="Illustr" />
+                       <img src={url} className="w-full h-full object-cover" alt={tr("Illustr")} />
                        {isEditing && (
                            <div className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
                                <Trash2 size={24} className="text-white" />
@@ -309,11 +316,11 @@ export default function MyVehiclePage() {
     {showRegisterPrompt && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
         <div className="glass p-8 rounded-3xl max-w-md w-full text-center">
-          <h3 className="text-2xl font-black mb-4">Aucun véhicule enregistré</h3>
-          <p className="mb-6">Vous n'avez pas encore enregistré de véhicule. Enregistrez-en un pour pouvoir le modifier.</p>
+          <h3 className="text-2xl font-black mb-4">{tr("Aucun véhicule enregistré")}</h3>
+          <p className="mb-6">{tr("Vous n'avez pas encore enregistré de véhicule. Enregistrez-en un pour pouvoir le modifier.")}</p>
           <div className="flex gap-3 justify-center">
-            <Link href="/driver/onboarding" className="px-6 py-3 bg-orange-btn text-white rounded-xl font-black">Enregistrer</Link>
-            <button onClick={() => setShowRegisterPrompt(false)} className="px-6 py-3 bg-foreground rounded-xl font-black">Retour</button>
+            <Link href="/driver/onboarding" className="px-6 py-3 bg-orange-btn text-white rounded-xl font-black">{tr("Enregistrer")}</Link>
+            <button onClick={() => setShowRegisterPrompt(false)} className="px-6 py-3 bg-foreground rounded-xl font-black">{tr("Retour")}</button>
           </div>
         </div>
       </div>

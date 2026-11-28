@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api-client';
 import { User, XCircle, Star, Phone, Car, UserCircle } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 /**
  * DriverProfilePopup
@@ -79,7 +80,7 @@ useEffect(() => {
             {/* ── Bouton fermeture ── */}
             <button
               onClick={onClose}
-              aria-label="Fermer"
+              aria-label={tr("Fermer")}
               className="absolute top-4 right-4 p-1.5 rounded-full bg-foreground/5 hover:bg-red-500/10 hover:text-red-500 transition-colors"
             >
               <XCircle size={16} className="opacity-50" />
@@ -105,27 +106,27 @@ useEffect(() => {
 
             <InfoRow
               icon={<User size={14} className="text-orange-btn" />}
-              label="Nom"
+              label={tr("Nom")}
               value={driverUser?.firstName || "—"}
             />
 
             <InfoRow
               icon={<UserCircle size={14} className="text-orange-btn" />}
-              label="Prénom"
+              label={tr("Prénom")}
               value={driverUser?.lastName || "—"}
             />
 
             {/* ── Téléphone ── */}
             <InfoRow
               icon={<Phone size={14} className="text-orange-btn" />}
-              label="Téléphone"
+              label={tr("Téléphone")}
               value={driverUser?.telephone || "—"}
             />
 
             {/* ── Véhicule ── */}
             <InfoRow
               icon={<Car size={14} className="text-orange-btn" />}
-              label="Véhicule"
+              label={tr("Véhicule")}
               value={`${vehicle?.brand || ""} ${vehicle?.vehicleModelId || ""}`.trim() || "—"}
               sub={[vehicle?.registrationNumber, vehicle?.vehicleTypeId, vehicle?.totalSeatNumber ? `${vehicle.totalSeatNumber} places` : null, vehicle?.fuelTypeId, vehicle?.transmissionTypeId]
                 .filter(Boolean).join(' · ')}
@@ -134,9 +135,9 @@ useEffect(() => {
             {/* ── Expérience ── */}
             <div className="grid grid-cols-3 gap-2 w-full">
               {[
-                { label: 'Courses', value: completedRides },
-                { label: 'Avis', value: reviews.length },
-                { label: 'Note', value: reviews.length ? averageRating.toFixed(1) : '—' },
+                { label: tr("Courses"), value: completedRides },
+                { label: tr("Avis"), value: reviews.length },
+                { label: tr("Note"), value: reviews.length ? averageRating.toFixed(1) : '—' },
               ].map(s => (
                 <div key={s.label} className="bg-foreground/5 rounded-xl py-2 text-center">
                   <p className="text-base font-black">{s.value}</p>
@@ -151,19 +152,19 @@ useEffect(() => {
           {/* ── Confort & Services ── */}
 {(() => {
   const features = [
-    { key: "airConditioned",   label: "Climatisation" },
-    { key: "comfortable",      label: "Confortable" },
-    { key: "soft",             label: "Sièges moelleux" },
-    { key: "screen",           label: "Écran" },
+    { key: "airConditioned",   label: tr("Climatisation") },
+    { key: "comfortable",      label: tr("Confortable") },
+    { key: "soft",             label: tr("Sièges moelleux") },
+    { key: "screen",           label: tr("Écran") },
     { key: "wifi",             label: "Wi-Fi" },
-    { key: "internet",         label: "Internet" },
-    { key: "tollCharge",       label: "Péage inclus" },
-    { key: "carParking",       label: "Parking" },
-    { key: "alarm",            label: "Alarme" },
-    { key: "stateTax",         label: "Taxes incluses" },
-    { key: "driverAllowance",  label: "Indemnité chauffeur" },
-    { key: "pickupAndDrop",    label: "Prise en charge" },
-    { key: "petsAllow",        label: "Animaux permis" },
+    { key: "internet",         label: tr("Internet") },
+    { key: "tollCharge",       label: tr("Péage inclus") },
+    { key: "carParking",       label: tr("Parking") },
+    { key: "alarm",            label: tr("Alarme") },
+    { key: "stateTax",         label: tr("Taxes incluses") },
+    { key: "driverAllowance",  label: tr("Indemnité chauffeur") },
+    { key: "pickupAndDrop",    label: tr("Prise en charge") },
+    { key: "petsAllow",        label: tr("Animaux permis") },
   ].filter(f => !!vehicle?.[f.key]);
 
   if (features.length === 0) return null;
@@ -171,8 +172,7 @@ useEffect(() => {
   return (
     <div className="w-full">
       <p className="text-[9px] font-black uppercase opacity-30 tracking-widest px-1 mb-2">
-        Confort & Services
-      </p>
+        {tr("Confort & Services")}</p>
       <div className="flex flex-wrap gap-1.5">
         {features.map(f => (
           <span
@@ -198,14 +198,14 @@ useEffect(() => {
           {/* ── Courses récentes (sans les adresses des autres passagers) ── */}
           {rides.length > 0 && (
             <div className="w-full mt-4">
-              <p className="text-[10px] font-black uppercase opacity-40 tracking-widest mb-2">Courses récentes</p>
+              <p className="text-[10px] font-black uppercase opacity-40 tracking-widest mb-2">{tr("Courses récentes")}</p>
               <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
                 {rides.slice(0, 5).map(r => (
                   <div key={r.id} className="flex justify-between items-center bg-foreground/5 rounded-lg px-3 py-2 text-[11px]">
                     <span className="font-bold">{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</span>
                     <span className="opacity-60">{r.distance ? `${Number(r.distance).toFixed(1)} km` : ''}</span>
                     <span className={`font-black ${r.state === 'COMPLETED' ? 'text-green-500' : r.state === 'CANCELLED' ? 'text-red-500' : 'text-orange-btn'}`}>
-                      {r.state === 'COMPLETED' ? 'Terminée' : r.state === 'CANCELLED' ? 'Annulée' : 'En cours'}
+                      {r.state === 'COMPLETED' ? tr("Terminée") : r.state === 'CANCELLED' ? tr("Annulée") : tr("En cours")}
                     </span>
                   </div>
                 ))}
@@ -217,16 +217,14 @@ useEffect(() => {
           <div className="w-full mt-4">
 
             <p className="text-[10px] font-black uppercase opacity-40 tracking-widest mb-2">
-              Avis passagers
-            </p>
+              {tr("Avis passagers")}</p>
 
             {loadingReviews ? (
               <p className="text-xs opacity-50">Chargement...</p>
 
             ) : reviews.length === 0 ? (
               <p className="text-xs opacity-50 italic">
-                Aucun commentaire pour le moment.
-              </p>
+                {tr("Aucun commentaire pour le moment.")}</p>
 
             ) : (
               <div className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">

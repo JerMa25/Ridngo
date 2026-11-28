@@ -10,6 +10,7 @@ import api from '@/lib/api-client';
 import toast from 'react-hot-toast';
 
 import DriverProfilePopup from './DriverProfile';
+import { tr } from '@/lib/i18n';
 
 interface Props {
   offer: any;
@@ -93,17 +94,15 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
                   </span>
                </div>
                <span className="text-[10px] font-bold opacity-30 uppercase tracking-tighter">
-                 {driverStats?.totalReviewsCount || 0} avis
-               </span>
+                 {driverStats?.totalReviewsCount || 0} {tr(" avis")}</span>
             </div>
           </div>
         </div>
 
         <div className="text-right">
            <div className="flex items-center gap-1 text-green-600 font-black italic text-xs">
-              <Clock size={12} /> ~{bid.eta || 5} min
-           </div>
-           <p className="text-[8px] font-bold opacity-30 uppercase">Arrivée</p>
+              <Clock size={12} /> ~{bid.eta || 5} {tr(" min")}</div>
+           <p className="text-[8px] font-bold opacity-30 uppercase">{tr("Arrivée")}</p>
         </div>
       </div>
 
@@ -116,7 +115,7 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
                 {vehicle?.brand} {vehicle?.modelName}
               </p>
               <p className="text-[9px] font-bold opacity-40 uppercase">
-                {vehicle?.fuelTypeId?.split('-')[0] || "Standard"}
+                {vehicle?.fuelTypeId?.split('-')[0] || tr("Standard")}
               </p>
            </div>
         </div>
@@ -130,15 +129,14 @@ const BidCard = ({ bid, offer, onSelectDriver }: { bid: any, offer: any, onSelec
         {isSelected ? (
           <div className="w-full py-4 bg-orange-btn/10 border border-orange-btn/20 text-orange-btn rounded-2xl flex items-center justify-center gap-3 animate-pulse">
              <ShieldCheck size={18} />
-             <span className="text-xs font-black uppercase tracking-widest">En attente du chauffeur...</span>
+             <span className="text-xs font-black uppercase tracking-widest">{tr("En attente du chauffeur...")}</span>
           </div>
         ) : (
           <button 
             onClick={() => onSelectDriver(bid.driverId)} 
             className="w-full py-4 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-orange-btn hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2"
           >
-            Choisir ce chauffeur
-          </button>
+            {tr("Choisir ce chauffeur")}</button>
         )}
       </div>
     </motion.div>
@@ -160,7 +158,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
     new Promise<boolean>((resolve) => {
       toast((t) => (
         <div className="flex flex-col gap-3">
-          <p>Voulez-vous vraiment annuler cette offre ?</p>
+          <p>{tr("Voulez-vous vraiment annuler cette offre ?")}</p>
 
           <div className="flex justify-end gap-2">
             <button
@@ -170,8 +168,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
               }}
               className="px-3 py-1 rounded-lg border"
             >
-              Cancel
-            </button>
+              {tr("Cancel")}</button>
 
             <button
               onClick={() => {
@@ -180,8 +177,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
               }}
               className="px-3 py-1 rounded-lg bg-red-500 text-white"
             >
-              Yes
-            </button>
+              {tr("Yes")}</button>
           </div>
         </div>
       ), {
@@ -199,7 +195,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
       localStorage.removeItem('activeOfferId');
       window.location.reload();
     } catch (error: any) {
-      toast.error("Erreur lors de l'annulation.");
+      toast.error(tr("Erreur lors de l'annulation."));
       setIsCancelling(false);
     }
   };
@@ -216,8 +212,8 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
       <div className="flex items-center gap-4 py-5 px-6 bg-orange-btn/10 rounded-3xl text-orange-btn border border-orange-btn/10 shadow-sm">
         <Loader2 className="animate-spin" size={20} />
         <div className="flex flex-col">
-          <span className="font-black uppercase text-xs tracking-widest">Radar actif</span>
-          <span className="text-[10px] font-bold opacity-70 italic">Analyse des chauffeurs...</span>
+          <span className="font-black uppercase text-xs tracking-widest">{tr("Radar actif")}</span>
+          <span className="text-[10px] font-bold opacity-70 italic">{tr("Analyse des chauffeurs...")}</span>
         </div>
       </div>
       
@@ -228,14 +224,12 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
               <Car size={32} />
            </div>
            <p className="italic font-bold text-sm tracking-tight px-10 leading-relaxed text-foreground">
-             Votre offre est visible. Les chauffeurs vont bientôt répondre.
-           </p>
+             {tr("Votre offre est visible. Les chauffeurs vont bientôt répondre.")}</p>
         </div>
       ) : (
         <div className="space-y-4">
           <p className="text-[10px] font-black uppercase opacity-40 ml-2 tracking-[0.2em]">
-            {offer.bids.length} chauffeur(s) à proximité
-          </p>
+            {offer.bids.length} {tr(" chauffeur(s) à proximité")}</p>
 
           {offer.bids.map((bid: any) => (
             <BidCard 
@@ -255,8 +249,7 @@ export default function RideWaiting({ offer, onSelectDriver }: Props) {
         onClick={handleCancelOffer}
       >
         {isCancelling ? <Loader2 className="animate-spin" size={14} /> : <XCircle size={14} />}
-        Annuler ma demande
-      </button>
+        {tr("Annuler ma demande")}</button>
 
       <style jsx>{`
         .glass {

@@ -1,11 +1,14 @@
+import { KEYCHAIN } from '../../src/services/api';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
+  View, Text, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Alert, TextInput,
   FlatList, KeyboardAvoidingView, Platform, Dimensions
 } from 'react-native';
 import { router, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { RideChat } from '../../src/components/RideChat';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../../src/context/AuthContext';
@@ -16,6 +19,7 @@ import { DriverProfileSheet } from '../../src/components/DriverProfileSheet';
 import { rideService, clearPassengerRideData } from '../../src/services/rideService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { Location, OfferResponse, Bid } from '../../src/types/api';
+import { tr } from '../../src/i18n';
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -211,8 +215,6 @@ export default function RideScreen() {
   const [dest, setDest] = useState<Location | null>(null);
   const [mapKey, setMapKey] = useState(0);
   const [routeGeoJson, setRouteGeoJson] = useState<object | null>(null);
-  const webviewRef = useRef<WebView>(null);
-
   // ── Estimation tarifaire
   const [fareEstimate, setFareEstimate] = useState<FareEstimate | null>(null);
   const [priceNum, setPriceNum] = useState(0); // Price per seat
@@ -293,7 +295,7 @@ export default function RideScreen() {
             if (rideData.state === 'COMPLETED' || rideData.state === 'CANCELLED') {
               await clearPassengerRideData();
             } else {
-              await SecureStore.setItemAsync('activeRideId', rideData.id);
+              await SecureStore.setItemAsync('activeRideId', rideData.id, KEYCHAIN);
               setActiveRideId(rideData.id);
               setStep('active');
               startTrackingPolling(rideData.id);
@@ -336,7 +338,7 @@ export default function RideScreen() {
         setRouteGeoJson(data.routes[0].geometry);
         return;
       }
-      throw new Error('OSRM : geometry absent');
+      throw new Error(tr("OSRM : geometry absent"));
     } catch (e: any) {
       console.warn('[OSRM] Echec :', e?.message ?? e);
     }
@@ -420,7 +422,7 @@ export default function RideScreen() {
         'Erreur inconnue';
       console.error('[Estimate] ERREUR:', msg, e);
       Alert.alert(
-        'Erreur estimation',
+        tr("Erreur estimation"),
         `Détail : ${msg}\n\nVérifiez votre connexion et réessayez.`
       );
     } finally {
@@ -434,12 +436,12 @@ export default function RideScreen() {
   // ─────────────────────────────────────────────
   const handlePublishOffer = async () => {
     // retour silencieux remplacé par un message précis pour chaque champ incomplet ou incorrect
-    if (!pickup || !dest) { Alert.alert('Trajet incomplet', 'Choisissez un départ et une destination dans la liste.'); return; }
-    if (pickup.lat === dest.lat && pickup.lon === dest.lon) { Alert.alert('Trajet invalide', 'Le départ et la destination sont identiques.'); return; }
-    if (!priceNum || priceNum < 100) { Alert.alert('Prix invalide', 'Le prix doit être d’au moins 100 FCFA.'); return; }
+    if (!pickup || !dest) { Alert.alert(tr("Trajet incomplet"), tr("Choisissez un départ et une destination dans la liste.")); return; }
+    if (pickup.lat === dest.lat && pickup.lon === dest.lon) { Alert.alert(tr("Trajet invalide"), tr("Le départ et la destination sont identiques.")); return; }
+    if (!priceNum || priceNum < 100) { Alert.alert(tr("Prix invalide"), tr("Le prix doit être d’au moins 100 FCFA.")); return; }
     const phone = (forTiers ? thirdPartyPhone : myPhone || '').replace(/\s/g, '');
     if (!/^\+?\d{8,15}$/.test(phone)) {
-      Alert.alert('Téléphone invalide', 'Saisissez un numéro valide (ex. 6XXXXXXXX).');
+      Alert.alert(tr("Téléphone invalide"), tr("Saisissez un numéro valide (ex. 6XXXXXXXX)."));
       return;
     }
     setLoading(true);
@@ -459,7 +461,7 @@ export default function RideScreen() {
       });
 
       console.log('[Publish] Offre créée :', offer.id);
-      await SecureStore.setItemAsync('currentOfferId', offer.id);
+      await SecureStore.setItemAsync('currentOfferId', offer.id, KEYCHAIN);
       setCurrentOffer(offer);
       setStep('waiting');
       startPolling(offer.id);
@@ -470,7 +472,7 @@ export default function RideScreen() {
         e?.message                ||
         "Impossible de publier l'offre.";
       console.error('[Publish] ERREUR:', msg);
-      Alert.alert('Erreur publication', msg);
+      Alert.alert(tr("Erreur publication"), msg);
     } finally {
       setLoading(false);
     }
@@ -528,15 +530,15 @@ export default function RideScreen() {
     try {
       await rideService.selectDriver(currentOffer.id, driverId);
     } catch {
-      Alert.alert('Erreur', 'Impossible de sélectionner ce chauffeur.');
+      Alert.alert(tr("Erreur"), tr("Impossible de sélectionner ce chauffeur."));
     }
   };
 
   const handleCancelOffer = () => {
-    Alert.alert('Annuler', 'Voulez-vous annuler la recherche ?', [
-      { text: 'Non' },
+    Alert.alert(tr("Annuler"), tr("Voulez-vous annuler la recherche ?"), [
+      { text: tr("Non") },
       {
-        text: 'Oui', style: 'destructive', onPress: async () => {
+        text: tr("Oui"), style: 'destructive', onPress: async () => {
           if (pollRef.current) clearInterval(pollRef.current);
           try { await SecureStore.deleteItemAsync('currentOfferId'); } catch { /* silent */ }
           setCurrentOffer(null);
@@ -558,7 +560,7 @@ export default function RideScreen() {
       await rideService.submitReview(activeRideId, stars, comment, anonymous);
     } catch (e: any) {
       const msg = e?.response?.data?.message || "Impossible d'enregistrer votre avis.";
-      Alert.alert('Erreur', msg);
+      Alert.alert(tr("Erreur"), msg);
     }
     await clearPassengerRideData();
     setStep('search');
@@ -626,7 +628,6 @@ export default function RideScreen() {
       <View style={styles.mapContainer}>
         <WebView
           key={mapKey}
-          ref={webviewRef}
           source={{ html: mapHTML }}
           style={styles.map}
           javaScriptEnabled
@@ -653,11 +654,11 @@ export default function RideScreen() {
             <View style={[styles.panelHandle, { backgroundColor: Colors.cardBorder }]} />
             <View style={styles.headerRow}>
               <Text style={[styles.panelTitle, { color: Colors.text }]}>
-                {step === 'search' && 'Où allez-vous ?'}
-                {step === 'price' && 'Votre tarif'}
-                {step === 'waiting' && 'En attente…'}
-                {step === 'active' && 'Course en cours'}
-                {step === 'review' && 'Évaluation'}
+                {step === 'search' && tr("Où allez-vous ?")}
+                {step === 'price' && tr("Votre tarif")}
+                {step === 'waiting' && tr("En attente…")}
+                {step === 'active' && tr("Course en cours")}
+                {step === 'review' && tr("Évaluation")}
               </Text>
               <ThemeToggle />
             </View>
@@ -670,7 +671,7 @@ export default function RideScreen() {
             <View style={styles.searchSection}>
               {/* Champ départ */}
               <LocationSearch
-                placeholder="Lieu de départ (ex : Bastos)"
+                placeholder={tr("Lieu de départ (ex : Bastos)")}
                 value={pickup?.name || ''}
                 onSelect={setPickup}
                 icon="navigate"
@@ -680,7 +681,7 @@ export default function RideScreen() {
 
               {/* Champ destination */}
               <LocationSearch
-                placeholder="Destination (ex : Marché Central)"
+                placeholder={tr("Destination (ex : Marché Central)")}
                 value={dest?.name || ''}
                 onSelect={setDest}
                 icon="location"
@@ -689,8 +690,7 @@ export default function RideScreen() {
 
               {/* Info tap carte */}
               <Text style={[styles.tapHint, { color: Colors.textMuted }]}>
-                Vous pouvez aussi taper directement sur la carte pour sélectionner un point.
-              </Text>
+                {tr("Vous pouvez aussi taper directement sur la carte pour sélectionner un point.")}</Text>
 
               {/* Bouton discret "Mon offre en cours" */}
               {hasActiveOffer && (
@@ -701,8 +701,7 @@ export default function RideScreen() {
                 >
                   <View style={[styles.activeOfferDot, { backgroundColor: Colors.orange }]} />
                   <Text style={[styles.activeOfferTxt, { color: Colors.orange }]}>
-                    Offre en cours — voir les chauffeurs
-                  </Text>
+                    {tr("Offre en cours — voir les chauffeurs")}</Text>
                   <Ionicons name="chevron-forward" size={14} color={Colors.orange} />
                 </TouchableOpacity>
               )}
@@ -718,8 +717,8 @@ export default function RideScreen() {
                 activeOpacity={0.8}
               >
                 {loadingFare
-                  ? <ActivityIndicator color="#0D0D0D" />
-                  : <Text style={styles.primaryBtnText}>Estimer le prix</Text>
+                  ? <ActivityIndicator color="#FFFFFF" />
+                  : <Text style={styles.primaryBtnText}>{tr("Estimer le prix")}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -733,8 +732,8 @@ export default function RideScreen() {
 
               {/* Titre */}
               <View style={styles.priceTitleBlock}>
-                <Text style={[styles.priceTitleMain, { color: Colors.text }]}>Finalisez votre offre</Text>
-                <Text style={[styles.priceTitleSub, { color: Colors.textMuted }]}>AJUSTEZ LE PRIX ET LE CONTACT</Text>
+                <Text style={[styles.priceTitleMain, { color: Colors.text }]}>{tr("Finalisez votre offre")}</Text>
+                <Text style={[styles.priceTitleSub, { color: Colors.textMuted }]}>{tr("AJUSTEZ LE PRIX ET LE CONTACT")}</Text>
               </View>
 
               {/* Contrôle prix +/- */}
@@ -755,7 +754,7 @@ export default function RideScreen() {
                   onPress={() => setPriceNum(p => p + 50)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.priceBtnText, { color: '#0D0D0D' }]}>+</Text>
+                  <Text style={[styles.priceBtnText, { color: '#FFFFFF' }]}>+</Text>
                 </TouchableOpacity>
               </View>
 
@@ -772,7 +771,7 @@ export default function RideScreen() {
                 <View style={styles.seatInfo}>
                   <Text style={[styles.seatCountVal, { color: Colors.text }]}>{seatCount}</Text>
                   <Text style={[styles.seatCountLbl, { color: Colors.textMuted }]}>
-                    {seatCount > 1 ? 'places' : 'place'}
+                    {seatCount > 1 ? tr("places") : tr("place")}
                   </Text>
                 </View>
 
@@ -787,7 +786,7 @@ export default function RideScreen() {
 
               {/* Total PRIX affiché grand */}
               <View style={styles.totalPriceContainer}>
-                <Text style={[styles.totalPriceLabel, { color: Colors.textSecondary }]}>PRIX TOTAL :</Text>
+                <Text style={[styles.totalPriceLabel, { color: Colors.textSecondary }]}>{tr("PRIX TOTAL :")}</Text>
                 <Text style={[styles.totalPriceValue, { color: Colors.orange }]}>
                   {priceNum * seatCount} FCFA
                 </Text>
@@ -802,19 +801,19 @@ export default function RideScreen() {
                         ? `${(fareEstimate.distance / 1000).toFixed(1)} km`
                         : `${Math.round(fareEstimate.distance)} m`}
                     </Text>
-                    <Text style={[styles.fareInfoLbl, { color: Colors.textMuted }]}>Distance</Text>
+                    <Text style={[styles.fareInfoLbl, { color: Colors.textMuted }]}>{tr("Distance")}</Text>
                   </View>
                   <View style={[styles.fareInfoDiv, { backgroundColor: Colors.cardBorder }]} />
                   <View style={styles.fareInfoItem}>
                     <Text style={[styles.fareInfoVal, { color: Colors.text }]}>
                       {fareEstimate.duree > 0 ? `${Math.round(fareEstimate.duree / 60)} min` : '--'}
                     </Text>
-                    <Text style={[styles.fareInfoLbl, { color: Colors.textMuted }]}>Durée</Text>
+                    <Text style={[styles.fareInfoLbl, { color: Colors.textMuted }]}>{tr("Durée")}</Text>
                   </View>
                   <View style={[styles.fareInfoDiv, { backgroundColor: Colors.cardBorder }]} />
                   <View style={styles.fareInfoItem}>
                     <Text style={[styles.fareInfoVal, { color: Colors.text }]}>{fareEstimate.prix_min} F</Text>
-                    <Text style={[styles.fareInfoLbl, { color: Colors.textMuted }]}>Prix min</Text>
+                    <Text style={[styles.fareInfoLbl, { color: Colors.textMuted }]}>{tr("Prix min")}</Text>
                   </View>
                 </View>
               )}
@@ -828,8 +827,7 @@ export default function RideScreen() {
                 >
                   <Ionicons name="person-outline" size={14} color={!forTiers ? '#FF8C00' : Colors.textMuted} />
                   <Text style={[styles.toggleBtnText, { color: !forTiers ? '#FF8C00' : Colors.textMuted }]}>
-                    POUR MOI
-                  </Text>
+                    {tr("POUR MOI")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.toggleBtn, forTiers && { borderBottomWidth: 2, borderBottomColor: '#FF8C00' }]}
@@ -838,8 +836,7 @@ export default function RideScreen() {
                 >
                   <Ionicons name="people-outline" size={14} color={forTiers ? '#FF8C00' : Colors.textMuted} />
                   <Text style={[styles.toggleBtnText, { color: forTiers ? '#FF8C00' : Colors.textMuted }]}>
-                    POUR UN TIERS
-                  </Text>
+                    {tr("POUR UN TIERS")}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -852,7 +849,7 @@ export default function RideScreen() {
                     value={thirdPartyPhone}
                     onChangeText={setThirdPartyPhone}
                     keyboardType="phone-pad"
-                    placeholder="Numéro du bénéficiaire"
+                    placeholder={tr("Numéro du bénéficiaire")}
                     placeholderTextColor={Colors.textMuted}
                     autoFocus
                   />
@@ -862,7 +859,7 @@ export default function RideScreen() {
                     value={myPhone}
                     onChangeText={setMyPhone}
                     keyboardType="phone-pad"
-                    placeholder="Votre numéro de téléphone"
+                    placeholder={tr("Votre numéro de téléphone")}
                     placeholderTextColor={Colors.textMuted}
                   />
                 )}
@@ -877,10 +874,10 @@ export default function RideScreen() {
                   onChangeText={v => {
                     try { setDepartureTime(new Date(v.replace(' ', 'T')).toISOString()); } catch {}
                   }}
-                  placeholder="AAAA-MM-JJ HH:MM"
+                  placeholder={tr("AAAA-MM-JJ HH:MM")}
                   placeholderTextColor={Colors.textMuted}
                 />
-                <Text style={[styles.toggleBtnText, { color: Colors.textMuted }]}>DÉPART</Text>
+                <Text style={[styles.toggleBtnText, { color: Colors.textMuted }]}>{tr("DÉPART")}</Text>
               </View>
 
               {/* Boutons */}
@@ -889,7 +886,7 @@ export default function RideScreen() {
                   style={[styles.secondaryBtn, { borderColor: Colors.cardBorder }]}
                   onPress={() => { setStep('search'); setRouteGeoJson(null); setFareEstimate(null); }}
                 >
-                  <Text style={[styles.secondaryBtnText, { color: Colors.text }]}>Retour</Text>
+                  <Text style={[styles.secondaryBtnText, { color: Colors.text }]}>{tr("Retour")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.publishBtn, { backgroundColor: priceNum > 0 ? '#FF8C00' : Colors.cardBorder }]}
@@ -898,8 +895,8 @@ export default function RideScreen() {
                   activeOpacity={0.8}
                 >
                   {loading
-                    ? <ActivityIndicator color="#0D0D0D" />
-                    : <Text style={styles.primaryBtnText}>LANCER LA RECHERCHE</Text>
+                    ? <ActivityIndicator color="#FFFFFF" />
+                    : <Text style={styles.primaryBtnText}>{tr("LANCER LA RECHERCHE")}</Text>
                   }
                 </TouchableOpacity>
               </View>
@@ -912,26 +909,24 @@ export default function RideScreen() {
             <View style={styles.waitingSection}>
               <ActivityIndicator size="large" color="#FF8C00" style={{ marginBottom: 12 }} />
               <Text style={[styles.waitingTitle, { color: Colors.text }]}>
-                Votre offre est visible !
-              </Text>
+                {tr("Votre offre est visible !")}</Text>
               <Text style={[styles.waitingSubtitle, { color: Colors.textMuted }]}>
-                Les chauffeurs disponibles vont répondre…
-              </Text>
+                {tr("Les chauffeurs disponibles vont répondre…")}</Text>
 
               {/* Résumé offre */}
               <View style={[styles.offerSummary, { backgroundColor: Colors.background, borderColor: Colors.cardBorder }]}>
                 <Text style={[styles.offerSummaryText, { color: Colors.text }]}>
-                  De : {currentOffer.startPoint}
+                  {tr("De : ")}{currentOffer.startPoint}
                 </Text>
                 <Text style={[styles.offerSummaryText, { color: Colors.text }]}>
-                  Vers : {currentOffer.endPoint}
+                  {tr("Vers : ")}{currentOffer.endPoint}
                 </Text>
                 <Text style={[styles.offerSummaryPrice, { color: '#FF8C00' }]}>
                   {currentOffer.price} FCFA
                 </Text>
                 {!!currentOffer.numberOfPlaces && (
                   <Text style={[styles.offerSummaryText, { color: Colors.textMuted }]}>
-                    {currentOffer.numberOfPlaces} place{currentOffer.numberOfPlaces > 1 ? 's' : ''}
+                    {currentOffer.numberOfPlaces} {tr(" place")}{currentOffer.numberOfPlaces > 1 ? 's' : ''}
                   </Text>
                 )}
               </View>
@@ -940,18 +935,17 @@ export default function RideScreen() {
               {(currentOffer as any).bids?.length > 0 && (
                 <>
                   <Text style={[styles.bidsTitle, { color: Colors.text }]}>
-                    {(currentOffer as any).bids.length} chauffeur(s) intéressé(s)
-                  </Text>
+                    {(currentOffer as any).bids.length} {tr(" chauffeur(s) intéressé(s)")}</Text>
                   {((currentOffer as any).bids as Bid[]).map((bid: Bid) => (
                     <View key={bid.driverId} style={[styles.bidCard, { backgroundColor: Colors.background, borderColor: Colors.cardBorder }]}>
-                      <TouchableOpacity onPress={() => setProfileDriverId(bid.driverId)} accessibilityRole="button" accessibilityHint="Voir le profil détaillé">
+                      <TouchableOpacity onPress={() => setProfileDriverId(bid.driverId)} accessibilityRole="button" accessibilityHint={tr("Voir le profil détaillé")}>
                         <Text style={[styles.bidName, { color: Colors.text }]}>
                           {bid.driverName || `Chauffeur #${bid.driverId.slice(-4)}`}
                         </Text>
-                        <Text style={{ color: Colors.orange, fontSize: 12, fontWeight: '800' }}>Voir le profil ›</Text>
+                        <Text style={{ color: Colors.orange, fontSize: 12, fontWeight: '800' }}>{tr("Voir le profil ›")}</Text>
                         {bid.proposedPrice && (
                           <Text style={[styles.bidPrice, { color: Colors.textMuted }]}>
-                            Prix proposé : {bid.proposedPrice} FCFA
+                            {tr("Prix proposé : ")}{bid.proposedPrice} FCFA
                           </Text>
                         )}
                       </TouchableOpacity>
@@ -959,7 +953,7 @@ export default function RideScreen() {
                         style={styles.chooseBtn}
                         onPress={() => handleSelectDriver(bid.driverId)}
                       >
-                        <Text style={styles.chooseBtnText}>Choisir</Text>
+                        <Text style={styles.chooseBtnText}>{tr("Choisir")}</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -971,8 +965,7 @@ export default function RideScreen() {
                 onPress={handleCancelOffer}
               >
                 <Text style={[styles.cancelBtnText, { color: '#EF4444' }]}>
-                  Annuler ma demande
-                </Text>
+                  {tr("Annuler ma demande")}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -985,8 +978,7 @@ export default function RideScreen() {
               <View style={[styles.activeBadge, { backgroundColor: Colors.greenBg }]}>
                 <View style={[styles.activePulse, { backgroundColor: Colors.green }]} />
                 <Text style={{ color: Colors.green, fontWeight: '900', fontSize: 13 }}>
-                  Course en cours
-                </Text>
+                  {tr("Course en cours")}</Text>
               </View>
               <Text style={[styles.activeHint, { color: Colors.textMuted }]}>
                 
@@ -1001,8 +993,7 @@ export default function RideScreen() {
           {step === 'review' && (
             <View style={styles.reviewSection}>
               <Text style={[styles.reviewTitle, { color: Colors.text }]}>
-                Comment s'est passé le trajet ?
-              </Text>
+                {tr("Comment s'est passé le trajet ?")}</Text>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map(s => (
                   <TouchableOpacity key={s} onPress={() => setStars(s)}>
@@ -1022,7 +1013,7 @@ export default function RideScreen() {
                 }]}
                 value={comment}
                 onChangeText={setComment}
-                placeholder="Un commentaire… (optionnel)"
+                placeholder={tr("Un commentaire… (optionnel)")}
                 placeholderTextColor={Colors.textMuted}
                 multiline
                 numberOfLines={3}
@@ -1031,13 +1022,13 @@ export default function RideScreen() {
                 style={[styles.primaryBtn, { backgroundColor: '#FF8C00' }]}
                 onPress={() => handleSubmitReview(false)}
               >
-                <Text style={styles.primaryBtnText}>Envoyer l&apos;évaluation</Text>
+                <Text style={styles.primaryBtnText}>{tr("Envoyer l'évaluation")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.anonymousBtn]}
                 onPress={() => handleSubmitReview(true)}
               >
-                <Text style={styles.anonymousBtnText}>Envoyer de façon anonyme</Text>
+                <Text style={styles.anonymousBtnText}>{tr("Envoyer de façon anonyme")}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1045,6 +1036,7 @@ export default function RideScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    {step === 'active' && activeRideId && user?.id && <RideChat rideId={activeRideId} userId={user.id} role="PASSENGER" />}
     </>
   );
 }
@@ -1133,7 +1125,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
   },
-  primaryBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  primaryBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
   // Waiting step
   waitingSection: { paddingHorizontal: Spacing.md, alignItems: 'center', gap: Spacing.sm },
@@ -1154,7 +1146,7 @@ const styles = StyleSheet.create({
   chooseBtn: {
     backgroundColor: '#FF8C00', borderRadius: Radius.sm, paddingHorizontal: 14, paddingVertical: 8,
   },
-  chooseBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 12 },
+  chooseBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12 },
   cancelBtn: {
     width: '100%', borderRadius: Radius.md, borderWidth: 1,
     paddingVertical: 12, alignItems: 'center', marginTop: 8,
@@ -1687,7 +1679,7 @@ const styles = StyleSheet.create({
 //       });
 
 //       console.log('[Publish] Offre créée :', offer.id);
-//       await SecureStore.setItemAsync('currentOfferId', offer.id);
+//       await SecureStore.setItemAsync('currentOfferId', offer.id, KEYCHAIN);
 //       setCurrentOffer(offer);
 //       setStep('waiting');
 //       startPolling(offer.id);
@@ -1936,7 +1928,7 @@ const styles = StyleSheet.create({
 //                 activeOpacity={0.8}
 //               >
 //                 {loadingFare
-//                   ? <ActivityIndicator color="#0D0D0D" />
+//                   ? <ActivityIndicator color="#FFFFFF" />
 //                   : <Text style={styles.primaryBtnText}>Estimer le prix</Text>
 //                 }
 //               </TouchableOpacity>
@@ -1973,7 +1965,7 @@ const styles = StyleSheet.create({
 //                   onPress={() => setPriceNum(p => p + 50)}
 //                   activeOpacity={0.7}
 //                 >
-//                   <Text style={[styles.priceBtnText, { color: '#0D0D0D' }]}>+</Text>
+//                   <Text style={[styles.priceBtnText, { color: '#FFFFFF' }]}>+</Text>
 //                 </TouchableOpacity>
 //               </View>
 
@@ -2075,7 +2067,7 @@ const styles = StyleSheet.create({
 //                   activeOpacity={0.8}
 //                 >
 //                   {loading
-//                     ? <ActivityIndicator color="#0D0D0D" />
+//                     ? <ActivityIndicator color="#FFFFFF" />
 //                     : <Text style={styles.primaryBtnText}>LANCER LA RECHERCHE</Text>
 //                   }
 //                 </TouchableOpacity>
@@ -2296,7 +2288,7 @@ const styles = StyleSheet.create({
 //   primaryBtn: {
 //     borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
 //   },
-//   primaryBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+//   primaryBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
 //   // Waiting step
 //   waitingSection: { paddingHorizontal: Spacing.md, alignItems: 'center', gap: Spacing.sm },
@@ -2317,7 +2309,7 @@ const styles = StyleSheet.create({
 //   chooseBtn: {
 //     backgroundColor: '#FF8C00', borderRadius: Radius.sm, paddingHorizontal: 14, paddingVertical: 8,
 //   },
-//   chooseBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 12 },
+//   chooseBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12 },
 //   cancelBtn: {
 //     width: '100%', borderRadius: Radius.md, borderWidth: 1,
 //     paddingVertical: 12, alignItems: 'center', marginTop: 8,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert, Image
@@ -8,9 +8,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { authService } from '../../src/services/auth';
-import { Colors, Spacing, Radius } from '../../src/types/theme';
+import { DarkColors, Spacing, Radius } from '../../src/types/theme';
+import { useTheme } from '../../src/context/ThemeContext';
+import { tr } from '../../src/i18n';
 
 export default function RegisterScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { role } = useLocalSearchParams<{ role: string }>();
   const isDriver = role === 'driver';
 
@@ -26,17 +30,18 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [captcha, setCaptcha] = useState<{ captchaToken: string; prompt: string } | null>(null);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
 
   // Défi anti-robot Kernel, à usage unique : rechargé après chaque tentative
   const loadCaptcha = useCallback(async () => {
-    setCaptchaAnswer('');
-    try { setCaptcha(await authService.getCaptcha()); } catch { setCaptcha(null); }
+    setCaptchaAnswer(''); setCaptchaError(false);
+    try { setCaptcha(await authService.getCaptcha()); } catch { setCaptcha(null); setCaptchaError(true); }
   }, []);
   useEffect(() => { loadCaptcha(); }, [loadCaptcha]);
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true, aspect: [1, 1], quality: 0.7,
     });
     if (!result.canceled) setPhoto(result.assets[0]);
@@ -44,19 +49,31 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!username || !email || !password || !firstName || !lastName || !phone) {
-      Alert.alert('Champs requis', 'Veuillez remplir tous les champs obligatoires.');
+      Alert.alert(tr("Champs requis"), tr("Veuillez remplir tous les champs obligatoires."));
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert(tr("Email invalide"), tr("Saisissez une adresse email valide (ex. nom@exemple.com)."));
+      return;
+    }
+    if (!/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ''))) {
+      Alert.alert(tr("Téléphone invalide"), tr("Saisissez un numéro valide (ex. 6XXXXXXXX)."));
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+      Alert.alert(tr("Erreur"), tr("Les mots de passe ne correspondent pas."));
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Erreur', 'Le mot de passe doit faire au moins 8 caractères.');
+      Alert.alert(tr("Erreur"), tr("Le mot de passe doit faire au moins 8 caractères."));
       return;
     }
-    if (!captcha || !captchaAnswer.trim()) {
-      Alert.alert('Vérification', 'Répondez à la question anti-robot.');
+    if (!captcha) {
+      Alert.alert(tr("Vérification indisponible"), tr("La question anti-robot n'a pas pu être chargée (serveur Yowyob lent). Touchez ↻ pour réessayer."));
+      return;
+    }
+    if (!captchaAnswer.trim()) {
+      Alert.alert(tr("Vérification"), tr("Répondez à la question anti-robot."));
       return;
     }
     setLoading(true);
@@ -67,16 +84,16 @@ export default function RegisterScreen() {
         photo, captchaToken: captcha.captchaToken, captchaAnswer: captchaAnswer.trim(),
       });
       if (result.verifyEmail) {
-        Alert.alert('Compte créé', 'Confirmez votre adresse via le lien reçu par email, puis connectez-vous.');
+        Alert.alert(tr("Compte créé"), tr("Confirmez votre adresse via le lien reçu par email, puis connectez-vous."));
         router.replace('/(auth)/login');
       } else if (result.success) {
         if (isDriver) router.replace('/(driver)/onboarding');
         else router.replace('/(passenger)/ride');
       } else {
-        Alert.alert('Erreur inscription', result.message || "Erreur lors de l'inscription.");
+        Alert.alert(tr("Erreur inscription"), result.message || tr("Erreur lors de l'inscription."));
       }
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message || "Une erreur inattendue s'est produite.");
+      Alert.alert(tr("Erreur"), e?.message || tr("Une erreur inattendue s'est produite."));
     } finally {
       setLoading(false);
       loadCaptcha();
@@ -100,14 +117,14 @@ export default function RegisterScreen() {
 
           <View style={styles.header}>
             <View style={[styles.badge, isDriver && styles.badgeDriver]}>
-              <Ionicons name={isDriver ? 'car-sport' : 'person'} size={14} color={isDriver ? Colors.dark : Colors.white} />
-              <Text style={[styles.badgeText, isDriver && { color: Colors.dark }]}>
+              <Ionicons name={isDriver ? 'car-sport' : 'person'} size={14} color={Colors.white} />
+              <Text style={[styles.badgeText, isDriver && { color: '#FFFFFF' }]}>
                 {isDriver ? 'CHAUFFEUR' : 'PASSAGER'}
               </Text>
             </View>
-            <Text style={styles.title}>Créer un compte</Text>
+            <Text style={styles.title}>{tr("Créer un compte")}</Text>
             <Text style={styles.subtitle}>
-              {isDriver ? 'Rejoignez le réseau de chauffeurs RidnGo' : 'Réservez vos courses facilement'}
+              {isDriver ? tr("Rejoignez le réseau de chauffeurs RidnGo") : tr("Réservez vos courses facilement")}
             </Text>
           </View>
 
@@ -118,7 +135,7 @@ export default function RegisterScreen() {
             ) : (
               <View style={styles.photoPlaceholder}>
                 <Ionicons name="camera" size={28} color={Colors.textMuted} />
-                <Text style={styles.photoText}>Photo (optionnel)</Text>
+                <Text style={styles.photoText}>{tr("Photo (optionnel)")}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -127,10 +144,10 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             <View style={styles.row2}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Prénom *</Text>
+                <Text style={styles.label}>{tr("Prénom *")}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Jean"
+                  placeholder={tr("Jean")}
                   placeholderTextColor={Colors.textMuted}
                   value={firstName}
                   onChangeText={setFirstName}
@@ -140,10 +157,10 @@ export default function RegisterScreen() {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Nom *</Text>
+                <Text style={styles.label}>{tr("Nom *")}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Dupont"
+                  placeholder={tr("Dupont")}
                   placeholderTextColor={Colors.textMuted}
                   value={lastName}
                   onChangeText={setLastName}
@@ -155,7 +172,7 @@ export default function RegisterScreen() {
             </View>
 
             <View>
-              <Text style={styles.label}>Pseudo *</Text>
+              <Text style={styles.label}>{tr("Pseudo *")}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="jean.dupont"
@@ -170,7 +187,7 @@ export default function RegisterScreen() {
             </View>
 
             <View>
-              <Text style={styles.label}>Email *</Text>
+              <Text style={styles.label}>{tr("Email *")}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="jean@email.com"
@@ -186,10 +203,10 @@ export default function RegisterScreen() {
             </View>
 
             <View>
-              <Text style={styles.label}>Téléphone *</Text>
+              <Text style={styles.label}>{tr("Téléphone *")}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="+237 6XX XXX XXX"
+                placeholder={tr("+237 6XX XXX XXX")}
                 placeholderTextColor={Colors.textMuted}
                 value={phone}
                 onChangeText={setPhone}
@@ -200,11 +217,11 @@ export default function RegisterScreen() {
             </View>
 
             <View>
-              <Text style={styles.label}>Mot de passe *</Text>
+              <Text style={styles.label}>{tr("Mot de passe *")}</Text>
               <View style={styles.inputRow}>
                 <TextInput
                   style={[styles.input, { flex: 1, borderWidth: 0 }]}
-                  placeholder="Min. 8 caractères"
+                  placeholder={tr("Min. 8 caractères")}
                   placeholderTextColor={Colors.textMuted}
                   value={password}
                   onChangeText={setPassword}
@@ -220,10 +237,10 @@ export default function RegisterScreen() {
             </View>
 
             <View>
-              <Text style={styles.label}>Confirmer *</Text>
+              <Text style={styles.label}>{tr("Confirmer *")}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Répétez le mot de passe"
+                placeholder={tr("Répétez le mot de passe")}
                 placeholderTextColor={Colors.textMuted}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -235,21 +252,21 @@ export default function RegisterScreen() {
 
             <View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={styles.label}>Anti-robot : {captcha ? `${captcha.prompt} ?` : '…'}</Text>
-                <TouchableOpacity onPress={loadCaptcha} accessibilityLabel="Nouvelle question">
+                <Text style={styles.label}>{tr("Anti-robot : ")}{captcha ? `${captcha.prompt} ?` : captchaError ? tr("indisponible, touchez ↻") : tr("chargement…")}</Text>
+                <TouchableOpacity onPress={loadCaptcha} accessibilityLabel={tr("Nouvelle question")}>
                   <Ionicons name="refresh" size={16} color={Colors.textMuted} />
                 </TouchableOpacity>
               </View>
               <TextInput
                 style={styles.input}
-                placeholder="Réponse"
+                placeholder={tr("Réponse")}
                 placeholderTextColor={Colors.textMuted}
                 value={captchaAnswer}
                 onChangeText={setCaptchaAnswer}
                 keyboardType="number-pad"
                 returnKeyType="done"
                 onSubmitEditing={handleRegister}
-                accessibilityLabel="Réponse anti-robot"
+                accessibilityLabel={tr("Réponse anti-robot")}
               />
             </View>
           </View>
@@ -261,19 +278,19 @@ export default function RegisterScreen() {
             activeOpacity={0.85}
           >
             {loading ? (
-              <ActivityIndicator color={Colors.dark} />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <Text style={styles.btnText}>Créer mon compte</Text>
-                <Ionicons name="arrow-forward" size={20} color={Colors.dark} />
+                <Text style={styles.btnText}>{tr("Créer mon compte")}</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </>
             )}
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Déjà un compte ? </Text>
+            <Text style={styles.footerText}>{tr("Déjà un compte ? ")}</Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.footerLink}>Se connecter</Text>
+              <Text style={styles.footerLink}>{tr("Se connecter")}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -282,14 +299,14 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: typeof DarkColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.dark },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.xl },
   back: { marginBottom: Spacing.md },
   header: { marginBottom: Spacing.lg, gap: 8 },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: Colors.input, paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: Radius.full,
   },
   badgeDriver: { backgroundColor: Colors.orange },
@@ -325,7 +342,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.orange, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
     marginBottom: Spacing.lg,
   },
-  btnText: { color: Colors.dark, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  btnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   footerLink: { color: Colors.orange, fontWeight: '900', fontSize: 14 },

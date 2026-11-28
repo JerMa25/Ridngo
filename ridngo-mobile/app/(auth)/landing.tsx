@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/context/ThemeContext';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function LandingScreen() {
   const { Colors } = useTheme();
@@ -22,7 +23,7 @@ export default function LandingScreen() {
             <View style={styles.logoBox}>
               <Text style={styles.logoLetter}>R</Text>
             </View>
-            <Text style={[styles.logoText, { color: Colors.text }]}>RidnGo</Text>
+            <Text style={[styles.logoText, { color: Colors.text }]}>{tr("RidnGo")}</Text>
           </View>
           <ThemeToggle />
         </View>
@@ -32,19 +33,17 @@ export default function LandingScreen() {
           <View style={[styles.iconContainer, { backgroundColor: Colors.orangeBg }]}>
             <Ionicons name="car" size={64} color={Colors.orange} />
           </View>
-          <Text style={[styles.tag, { color: Colors.orange }]}>AFRICA'S FREEDOM MOVE</Text>
+          <Text style={[styles.tag, { color: Colors.orange }]}>{tr("AFRICA'S FREEDOM MOVE")}</Text>
           <Text style={[styles.headline, { color: Colors.text }]}>
-            Votre course,{'\n'}vos règles.
-          </Text>
+            {tr("Votre course,")}{'\n'}{tr("vos règles.")}</Text>
           <Text style={[styles.subhead, { color: Colors.textSecondary }]}>
-            Mise en relation directe avec des chauffeurs certifiés au Cameroun. Prix transparents, sécurité totale.
-          </Text>
+            {tr("Mise en relation directe avec des chauffeurs certifiés au Cameroun. Prix transparents, sécurité totale.")}</Text>
 
           <View style={styles.features}>
             {[
-              { icon: 'shield-checkmark', label: 'Chauffeurs certifiés' },
-              { icon: 'cash', label: 'Prix négociables' },
-              { icon: 'flash', label: 'Rapide & fiable' },
+              { icon: 'shield-checkmark', label: tr("Chauffeurs certifiés") },
+              { icon: 'cash', label: tr("Prix négociables") },
+              { icon: 'flash', label: tr("Rapide & fiable") },
             ].map((f, i) => (
               <View key={i} style={[styles.feature, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name={f.icon as any} size={16} color={Colors.orange} />
@@ -57,8 +56,8 @@ export default function LandingScreen() {
         {/* CTAs */}
         <View style={styles.ctas}>
           <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push('/(auth)/login')} activeOpacity={0.85}>
-            <Text style={styles.btnPrimaryText}>Se connecter</Text>
-            <Ionicons name="arrow-forward" size={20} color="#0D0D0D" />
+            <Text style={styles.btnPrimaryText}>{tr("Se connecter")}</Text>
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -66,7 +65,7 @@ export default function LandingScreen() {
             onPress={() => router.push({ pathname: '/(auth)/register', params: { role: 'passenger' } })}
             activeOpacity={0.85}
           >
-            <Text style={[styles.btnSecondaryText, { color: Colors.text }]}>Créer un compte passager</Text>
+            <Text style={[styles.btnSecondaryText, { color: Colors.text }]}>{tr("Créer un compte passager")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -75,11 +74,11 @@ export default function LandingScreen() {
             activeOpacity={0.85}
           >
             <Ionicons name="car-sport" size={16} color={Colors.orange} />
-            <Text style={[styles.btnGhostText, { color: Colors.orange }]}>Devenir chauffeur</Text>
+            <Text style={[styles.btnGhostText, { color: Colors.orange }]}>{tr("Devenir chauffeur")}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.footer, { color: Colors.textMuted }]}>© 2026 Yowyob Inc. Ltd. — Yaoundé, Cameroun</Text>
+        <Text style={[styles.footer, { color: Colors.textMuted }]}>{tr("© 2026 Yowyob Inc. Ltd. — Yaoundé, Cameroun")}</Text>
       </SafeAreaView>
     </View>
   );
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
   },
-  btnPrimaryText: { color: '#0D0D0D', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' },
+  btnPrimaryText: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' },
   btnSecondary: { borderRadius: Radius.lg, paddingVertical: 18, alignItems: 'center', borderWidth: 1 },
   btnSecondaryText: { fontWeight: '900', fontSize: 14 },
   btnGhost: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12 },

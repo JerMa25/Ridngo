@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Navigation, Car, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { tr } from '@/lib/i18n';
 
 export const ActivityBanner = ({ currentRide }: { currentRide: any }) => (
   <motion.div 
@@ -15,9 +16,9 @@ export const ActivityBanner = ({ currentRide }: { currentRide: any }) => (
          <Navigation size={28} />
       </div>
       <div>
-        <p className="font-black uppercase text-[10px] tracking-widest opacity-80">Course Active</p>
+        <p className="font-black uppercase text-[10px] tracking-widest opacity-80">{tr("Course Active")}</p>
         <p className="text-sm font-black italic">
-           {currentRide.state === 'CREATED' ? "Client en attente de prise en charge" : "Trajet en cours"}
+           {currentRide.state === 'CREATED' ? tr("Client en attente de prise en charge") : tr("Trajet en cours")}
         </p>
       </div>
     </div>
@@ -25,8 +26,7 @@ export const ActivityBanner = ({ currentRide }: { currentRide: any }) => (
       href={`/driver/ride/${currentRide.id}`}
       className="bg-white text-orange-btn px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all relative z-10 shadow-lg"
     >
-      Suivre le trajet →
-    </Link>
+      {tr("Suivre le trajet →")}</Link>
     <div className="absolute right-[-20px] top-[-20px] opacity-10 rotate-12"><Car size={150} /></div>
   </motion.div>
 );

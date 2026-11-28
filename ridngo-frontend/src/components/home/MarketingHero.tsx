@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Calculator, Car, UserPlus, Radar } from 'lucide-react';
 import Link from 'next/link';
 import { rideService } from '@/lib/rideService';
+import { tr } from '@/lib/i18n';
 
 export const MarketingHero = () => {
   const [activeOffersCount, setActiveOffersCount] = useState(0);
@@ -43,23 +44,21 @@ export const MarketingHero = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 bg-orange-btn/10 text-orange-btn px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest"
           >
-            <MapPin size={14} /> {userLocation.flag} {userLocation.country} · {userLocation.city} et environs
-          </motion.div>
+            <MapPin size={14} /> {userLocation.flag} {userLocation.country} · {userLocation.city} {tr(" et environs")}</motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="text-5xl lg:text-7xl font-black leading-tight tracking-tight text-foreground"
           >
-            Bougez en toute <span className="text-orange-btn italic">liberté.</span>
+            {tr("Bougez en toute ")}<span className="text-orange-btn italic">{tr("liberté.")}</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-lg opacity-60 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed text-foreground"
           >
-            Le service de ramassage par Taxi présent au {userLocation.country} <br /> et qui vous laisse négocier votre prix. Pas d&apos;algorithme caché. Juste vous et le chauffeur.
-            <br />
-            <span className="text-xs italic mt-2 block opacity-70">🌍 Présent dans d&apos;autres pays.</span>
+            {tr("Le service de ramassage par Taxi présent au ")}{userLocation.country} <br /> {tr(" et qui vous laisse négocier votre prix. Pas d'algorithme caché. Juste vous et le chauffeur.")}<br />
+            <span className="text-xs italic mt-2 block opacity-70">{tr("🌍 Présent dans d'autres pays.")}</span>
           </motion.p>
           
           {/* LES 3 BOUTONS DISTINCTS */}
@@ -73,12 +72,11 @@ export const MarketingHero = () => {
             >
               <div className="flex items-center gap-2 text-[11px]">
                 <Car size={18} />
-                <span>Commander une course</span>
+                <span>{tr("Commander une course")}</span>
               </div>
 
               <span className="text-[9px] font-medium tracking-normal opacity-80">
-                Estimer votre prix
-              </span>
+                {tr("Estimer votre prix")}</span>
             </Link>
             
             {/* <Link href="/ride" className="w-full sm:w-auto px-6 py-4 bg-foreground text-background rounded-2xl font-black text-[11px] uppercase tracking-widest hover:scale-105 transition-transform flex items-center justify-center gap-2">
@@ -86,8 +84,7 @@ export const MarketingHero = () => {
             </Link> */}
 
             <Link href="/register?role=driver" className="w-full sm:w-auto px-6 py-4 bg-foreground/5 text-foreground rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-foreground/10 transition-colors flex items-center justify-center gap-2">
-              <UserPlus size={18} /> Devenir Chauffeur
-            </Link>
+              <UserPlus size={18} /> {tr(" Devenir Chauffeur")}</Link>
           </motion.div>
         </div>
 
@@ -97,7 +94,7 @@ export const MarketingHero = () => {
           className="flex-1 relative"
         >
           <div className="relative z-10 glass p-4 border-none shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 bg-background/50">
-            <img src="hero-bg.jpeg" alt="Ride Preview" className="rounded-2xl w-full object-cover h-[400px] transition-all" />
+            <img src="hero-bg.jpeg" alt={tr("Ride Preview")} className="rounded-2xl w-full object-cover h-[400px] transition-all" />
             
             {/* Overlay "Live" connecté au Backend */}
             <div className="absolute -bottom-10 -left-10 glass p-6 border-none shadow-2xl flex items-center gap-5 bg-background">
@@ -111,8 +108,8 @@ export const MarketingHero = () => {
                 </span>
               </div>
               <div>
-                <p className="font-black text-xl text-foreground italic">{activeOffersCount} courses</p>
-                <p className="text-[10px] font-black opacity-40 uppercase tracking-[0.2em]">actuellement publiées</p>
+                <p className="font-black text-xl text-foreground italic">{activeOffersCount} {tr(" courses")}</p>
+                <p className="text-[10px] font-black opacity-40 uppercase tracking-[0.2em]">{tr("actuellement publiées")}</p>
               </div>
             </div>
 

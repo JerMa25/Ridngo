@@ -9,12 +9,15 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useI18n } from '../../src/i18n';
 import { driverService, userService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function DriverProfileScreen() {
   const { user, logout } = useAuth();
   const { Colors, isDark, toggleTheme } = useTheme();
+  const { t, lang, setLang } = useI18n();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
@@ -50,36 +53,36 @@ export default function DriverProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Déconnexion', 'Voulez-vous vous déconnecter ?', [
-      { text: 'Annuler' },
-      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); router.replace('/'); } }
+    Alert.alert(tr("Déconnexion"), tr("Voulez-vous vous déconnecter ?"), [
+      { text: tr("Annuler") },
+      { text: tr("Déconnexion"), style: 'destructive', onPress: async () => { await logout(); router.replace('/(auth)/landing'); } }
     ]);
   };
 
   const handleChangePassword = async () => {
     if (!passData.current || !passData.next || !passData.confirm) {
-      Alert.alert('Erreur', 'Remplissez tous les champs'); return;
+      Alert.alert(tr("Erreur"), tr("Remplissez tous les champs")); return;
     }
     if (passData.next !== passData.confirm) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas'); return;
+      Alert.alert(tr("Erreur"), tr("Les mots de passe ne correspondent pas")); return;
     }
     if (passData.next.length < 6) {
-      Alert.alert('Erreur', 'Minimum 6 caractères'); return;
+      Alert.alert(tr("Erreur"), tr("Minimum 6 caractères")); return;
     }
     setChangingPass(true);
     try {
       await userService.changePassword(passData.current, passData.next);
-      Alert.alert('✅', 'Mot de passe mis à jour avec succès');
+      Alert.alert('✅', tr("Mot de passe mis à jour avec succès"));
       setShowPassForm(false);
       setPassData({ current: '', next: '', confirm: '' });
     } catch (e: any) {
-      Alert.alert('Erreur', e.response?.data?.message || 'Impossible de changer le mot de passe.');
+      Alert.alert(tr("Erreur"), e.response?.data?.detail || e.response?.data?.message || tr("Impossible de changer le mot de passe."));
     } finally { setChangingPass(false); }
   };
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true, aspect: [1, 1], quality: 0.75,
     });
     if (!result.canceled) setNewPhoto(result.assets[0]);
@@ -92,9 +95,9 @@ export default function DriverProfileScreen() {
       await loadProfile();
       setNewPhoto(null);
       setShowInfoForm(false);
-      Alert.alert('✅', 'Informations mises à jour avec succès');
+      Alert.alert('✅', tr("Informations mises à jour avec succès"));
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.detail || e?.message || 'Impossible de mettre à jour le profil.');
+      Alert.alert(tr("Erreur"), e?.response?.data?.detail || e?.message || tr("Impossible de mettre à jour le profil."));
     } finally { setSavingInfo(false); }
   };
 
@@ -134,13 +137,13 @@ export default function DriverProfileScreen() {
           )}
           <View style={[styles.driverBadge, { backgroundColor: Colors.orangeBg }]}>
             <Ionicons name="car-sport" size={12} color={Colors.orange} />
-            <Text style={[styles.driverBadgeText, { color: Colors.orange }]}>CHAUFFEUR CERTIFIÉ</Text>
+            <Text style={[styles.driverBadgeText, { color: Colors.orange }]}>{tr("CHAUFFEUR CERTIFIÉ")}</Text>
           </View>
           {driver?.isOnline !== undefined && (
             <View style={[styles.onlineBadge, driver.isOnline ? styles.onlineBadgeGreen : { backgroundColor: Colors.input }]}>
               <View style={[styles.onlineDot, driver.isOnline && styles.onlineDotGreen, !driver.isOnline && { backgroundColor: Colors.textMuted }]} />
               <Text style={[styles.onlineText, driver.isOnline ? { color: '#10B981' } : { color: Colors.textMuted }]}>
-                {driver.isOnline ? 'EN LIGNE' : 'HORS LIGNE'}
+                {driver.isOnline ? tr("EN LIGNE") : tr("HORS LIGNE")}
               </Text>
             </View>
           )}
@@ -148,7 +151,7 @@ export default function DriverProfileScreen() {
 
         {/* Mes informations */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>MES INFORMATIONS</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("MES INFORMATIONS")}</Text>
           <View style={[styles.menuGroup, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <TouchableOpacity
               style={[styles.menuItem, { borderBottomColor: showInfoForm ? Colors.cardBorder : 'transparent' }]}
@@ -157,7 +160,7 @@ export default function DriverProfileScreen() {
               <View style={[styles.menuIcon, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name="create" size={18} color={Colors.orange} />
               </View>
-              <Text style={[styles.menuLabel, { color: Colors.text }]}>Modifier mes informations</Text>
+              <Text style={[styles.menuLabel, { color: Colors.text }]}>{tr("Modifier mes informations")}</Text>
               <Ionicons name={showInfoForm ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textMuted} />
             </TouchableOpacity>
 
@@ -170,15 +173,15 @@ export default function DriverProfileScreen() {
                     <Ionicons name="camera-outline" size={20} color={Colors.textMuted} />
                   )}
                   <Text style={[styles.photoPickerText, { color: Colors.orange }]}>
-                    {newPhoto ? 'Photo sélectionnée ✓' : 'Changer la photo de profil'}
+                    {newPhoto ? tr("Photo sélectionnée ✓") : tr("Changer la photo de profil")}
                   </Text>
                   <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
                 </TouchableOpacity>
 
                 {[
-                  { label: 'Prénom', val: editData.firstName, key: 'firstName', placeholder: 'Votre prénom' },
-                  { label: 'Nom', val: editData.lastName, key: 'lastName', placeholder: 'Votre nom' },
-                  { label: 'Téléphone', val: editData.phone, key: 'phone', placeholder: '+237 6XX XXX XXX', keyboard: 'phone-pad' as const },
+                  { label: tr("Prénom"), val: editData.firstName, key: 'firstName', placeholder: tr("Votre prénom") },
+                  { label: tr("Nom"), val: editData.lastName, key: 'lastName', placeholder: tr("Votre nom") },
+                  { label: tr("Téléphone"), val: editData.phone, key: 'phone', placeholder: tr("+237 6XX XXX XXX"), keyboard: 'phone-pad' as const },
                 ].map((f) => (
                   <View key={f.key}>
                     <Text style={[styles.inputLabel, { color: Colors.textMuted }]}>{f.label.toUpperCase()}</Text>
@@ -198,8 +201,8 @@ export default function DriverProfileScreen() {
                   onPress={handleSaveInfo}
                   disabled={savingInfo}
                 >
-                  {savingInfo ? <ActivityIndicator color="#0D0D0D" size="small" /> : (
-                    <Text style={styles.saveBtnText}>Sauvegarder</Text>
+                  {savingInfo ? <ActivityIndicator color="#FFFFFF" size="small" /> : (
+                    <Text style={styles.saveBtnText}>{tr("Sauvegarder")}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -210,7 +213,7 @@ export default function DriverProfileScreen() {
         {/* Vehicle info */}
         {vehicle && (
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>MON VÉHICULE & DOCUMENTS</Text>
+            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("MON VÉHICULE & DOCUMENTS")}</Text>
             <View style={[styles.vehicleCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
               <View style={[styles.vehicleIcon, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name="car" size={24} color={Colors.orange} />
@@ -220,17 +223,17 @@ export default function DriverProfileScreen() {
                   {vehicle.makeName || vehicle.vehicleMakeName} {vehicle.modelName || vehicle.vehicleModelName}
                 </Text>
                 <Text style={[styles.vehiclePlate, { color: Colors.textMuted }]}>
-                  {vehicle.registrationNumber || 'Plaque non définie'}
+                  {vehicle.registrationNumber || tr("Plaque non définie")}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => router.push('/(driver)/vehicle')}>
-                <Text style={{ color: Colors.orange, fontWeight: '700' }}>Voir</Text>
+                <Text style={{ color: Colors.orange, fontWeight: '700' }}>{tr("Voir")}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.vehicleDetails}>
               {[
-                { icon: 'people', label: 'Sièges', val: vehicle.totalSeatNumber },
-                { icon: 'card', label: 'Permis', val: profile?.drivingLicenseNumber || 'Validé' },
+                { icon: 'people', label: tr("Sièges"), val: vehicle.totalSeatNumber },
+                { icon: 'card', label: tr("Permis"), val: profile?.drivingLicenseNumber || 'Validé' },
               ].map((item, i) => item.val && (
                 <View key={i} style={[styles.detailChip, { backgroundColor: Colors.input }]}>
                   <Ionicons name={item.icon as any} size={14} color={Colors.orange} />
@@ -250,7 +253,7 @@ export default function DriverProfileScreen() {
                 <Ionicons name={isDark ? 'moon' : 'sunny'} size={18} color={Colors.orange} />
               </View>
               <Text style={[styles.menuLabel, { color: Colors.text }]}>
-                {isDark ? 'Mode sombre' : 'Mode clair'}
+                {isDark ? tr("Mode sombre") : tr("Mode clair")}
               </Text>
               <Switch
                 value={isDark}
@@ -264,7 +267,7 @@ export default function DriverProfileScreen() {
 
         {/* Menu Compte */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>COMPTE & SUPPORT</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("COMPTE & SUPPORT")}</Text>
           <View style={[styles.menuGroup, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             
             <TouchableOpacity
@@ -274,16 +277,16 @@ export default function DriverProfileScreen() {
               <View style={[styles.menuIcon, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name="key" size={18} color={Colors.orange} />
               </View>
-              <Text style={[styles.menuLabel, { color: Colors.text }]}>Changer le mot de passe</Text>
+              <Text style={[styles.menuLabel, { color: Colors.text }]}>{tr("Changer le mot de passe")}</Text>
               <Ionicons name={showPassForm ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textMuted} />
             </TouchableOpacity>
 
             {showPassForm && (
               <View style={[styles.passForm, { borderTopColor: Colors.cardBorder }]}>
                 {([
-                  { key: 'current', label: 'Mot de passe actuel' },
-                  { key: 'next', label: 'Nouveau mot de passe' },
-                  { key: 'confirm', label: 'Confirmer' },
+                  { key: 'current', label: tr("Mot de passe actuel") },
+                  { key: 'next', label: tr("Nouveau mot de passe") },
+                  { key: 'confirm', label: tr("Confirmer") },
                 ] as const).map(f => (
                   <TextInput
                     key={f.key}
@@ -301,8 +304,8 @@ export default function DriverProfileScreen() {
                   onPress={handleChangePassword}
                   disabled={changingPass}
                 >
-                  {changingPass ? <ActivityIndicator color="#0D0D0D" size="small" /> : (
-                    <Text style={styles.passBtnText}>Mettre à jour</Text>
+                  {changingPass ? <ActivityIndicator color="#FFFFFF" size="small" /> : (
+                    <Text style={styles.passBtnText}>{tr("Mettre à jour")}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -315,7 +318,7 @@ export default function DriverProfileScreen() {
               <View style={[styles.menuIcon, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name="notifications" size={18} color={Colors.orange} />
               </View>
-              <Text style={[styles.menuLabel, { color: Colors.text }]}>Notifications</Text>
+              <Text style={[styles.menuLabel, { color: Colors.text }]}>{tr("Notifications")}</Text>
               {notifCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{notifCount}</Text>
@@ -326,12 +329,36 @@ export default function DriverProfileScreen() {
 
             <TouchableOpacity
               style={[styles.menuItem, { borderBottomColor: Colors.cardBorder }]}
+              onPress={() => router.push('/(driver)/subscription' as any)}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: Colors.orangeBg }]}>
+                <Ionicons name="star" size={18} color={Colors.orange} />
+              </View>
+              <Text style={[styles.menuLabel, { color: Colors.text }]}>{t('Abonnement')}</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuItem, { borderBottomColor: Colors.cardBorder }]}
+              onPress={() => setLang(lang === 'fr' ? 'en' : 'fr')}
+              accessibilityLabel={lang === 'fr' ? tr("Switch to English") : tr("Passer en français")}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: Colors.orangeBg }]}>
+                <Ionicons name="language" size={18} color={Colors.orange} />
+              </View>
+              <Text style={[styles.menuLabel, { color: Colors.text }]}>{t('Langue')}</Text>
+              <Text style={{ color: Colors.orange, fontWeight: '900', fontSize: 12, marginRight: 6 }}>{lang === 'fr' ? tr("Français") : tr("English")}</Text>
+              <Ionicons name="swap-horizontal" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuItem, { borderBottomColor: Colors.cardBorder }]}
               onPress={() => router.push('/(driver)/support')}
             >
               <View style={[styles.menuIcon, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name="help-circle" size={18} color={Colors.orange} />
               </View>
-              <Text style={[styles.menuLabel, { color: Colors.text }]}>Aide & Support</Text>
+              <Text style={[styles.menuLabel, { color: Colors.text }]}>{tr("Aide & Support")}</Text>
               <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
             </TouchableOpacity>
 
@@ -339,13 +366,13 @@ export default function DriverProfileScreen() {
               <View style={[styles.menuIcon, { backgroundColor: Colors.redBg }]}>
                 <Ionicons name="log-out" size={18} color={Colors.red} />
               </View>
-              <Text style={[styles.menuLabel, { color: Colors.red }]}>Déconnexion</Text>
+              <Text style={[styles.menuLabel, { color: Colors.red }]}>{tr("Déconnexion")}</Text>
               <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <Text style={[styles.version, { color: Colors.textMuted }]}>RidnGo v1.0.0 — Yowyob Inc. Ltd.</Text>
+        <Text style={[styles.version, { color: Colors.textMuted }]}>{tr("RidnGo v1.0.0 — Yowyob Inc. Ltd.")}</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -368,7 +395,7 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, right: 0,
     width: 22, height: 22, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#0D0D0D',
+    borderWidth: 2, borderColor: '#1B263B',
   },
   name: { fontWeight: '900', fontSize: 22, letterSpacing: -0.3 },
   email: { fontSize: 13, fontWeight: '500' },
@@ -391,7 +418,7 @@ const styles = StyleSheet.create({
   inputLabel: { fontWeight: '900', fontSize: 9, letterSpacing: 2, marginBottom: 6 },
   infoInput: { borderRadius: Radius.md, padding: 14, fontWeight: '700', fontSize: 14, borderWidth: 1 },
   saveBtn: { backgroundColor: '#FF8C00', borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
-  saveBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  saveBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
   
   vehicleCard: { borderRadius: Radius.lg, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1 },
   vehicleIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
@@ -411,6 +438,6 @@ const styles = StyleSheet.create({
   passForm: { padding: Spacing.md, gap: Spacing.sm, borderTopWidth: 1 },
   passInput: { borderRadius: Radius.md, padding: 14, fontWeight: '700', fontSize: 14, borderWidth: 1 },
   passBtn: { backgroundColor: '#FF8C00', borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  passBtnText: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  passBtnText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
   version: { fontSize: 11, textAlign: 'center', fontStyle: 'italic' },
 });

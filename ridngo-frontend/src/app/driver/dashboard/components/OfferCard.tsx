@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MapPin, ChevronRight, User, Clock, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { tr } from '@/lib/i18n';
 
 export const OfferCard = ({ offer }: { offer: any }) => {
   const router = useRouter();
@@ -33,7 +34,7 @@ export const OfferCard = ({ offer }: { offer: any }) => {
             {offer.passengerPhoto ? (
               <img 
                 src={offer.passengerPhoto} 
-                alt={offer.passengerName || "Profil"} 
+                alt={offer.passengerName || tr("Profil")} 
                 className="w-full h-full object-cover" 
               />
             ) : (
@@ -41,15 +42,15 @@ export const OfferCard = ({ offer }: { offer: any }) => {
             )}
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Client</p>
+            <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">{tr("Client")}</p>
             <p className="text-xs font-bold truncate max-w-25 text-foreground">
-              {offer.passengerName || "Anonyme"}
+              {offer.passengerName || tr("Anonyme")}
             </p>
           </div>
         </div>
 
         <div className="text-right">
-           <p className="text-[9px] font-black uppercase opacity-30 tracking-widest">Offre</p>
+           <p className="text-[9px] font-black uppercase opacity-30 tracking-widest">{tr("Offre")}</p>
            <span className="text-2xl font-black text-orange-btn italic tracking-tighter">
              {offer.price} F
            </span>
@@ -63,8 +64,7 @@ export const OfferCard = ({ offer }: { offer: any }) => {
         <div className="flex items-center gap-2 bg-foreground/5 border border-foreground/5 rounded-xl px-3 py-1.5">
           <Clock size={14} className="text-orange-btn" />
           <p className="text-[10px] font-black uppercase tracking-tight text-foreground/70">
-            Départ :
-            <span className="text-foreground ml-1">
+            {tr("Départ :")}<span className="text-foreground ml-1">
               {(() => {
                 const t = offer.departureTime;
                 if (!t) return 'Dès que possible';
@@ -78,9 +78,8 @@ export const OfferCard = ({ offer }: { offer: any }) => {
         <div className="flex items-center gap-2 bg-foreground/5 border border-foreground/5 rounded-xl px-3 py-1.5">
           <Users size={14} className="text-orange-btn" />
           <p className="text-[10px] font-black uppercase tracking-tight text-foreground/70">
-            Nombre de places :
-            <span className="text-foreground ml-1">
-              {offer?.numberOfPlaces ?? "Non défini"}
+            {tr("Nombre de places :")}<span className="text-foreground ml-1">
+              {offer?.numberOfPlaces ?? tr("Non défini")}
             </span>
           </p>
         </div>
@@ -91,7 +90,7 @@ export const OfferCard = ({ offer }: { offer: any }) => {
       <div className="space-y-4 mb-8">
         <div className="relative pl-5 border-l border-dashed border-orange-btn/30">
           <div className="absolute -left-1 top-0 w-2 h-2 rounded-full bg-orange-btn" />
-          <p className="text-[8px] font-black uppercase opacity-30 tracking-widest mb-0.5">De</p>
+          <p className="text-[8px] font-black uppercase opacity-30 tracking-widest mb-0.5">{tr("De")}</p>
           <p className="text-xs font-bold truncate leading-tight text-foreground">{offer.startPoint}</p>
         </div>
         <div className="relative pl-5">
@@ -104,8 +103,7 @@ export const OfferCard = ({ offer }: { offer: any }) => {
 
     {/* BOUTON D'ACTION */}
     <div className="w-full py-4 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all shadow-lg active:scale-95">
-      Consulter l&apos;offre
-    </div>
+      {tr("Consulter l'offre")}</div>
   </motion.div>
   );
 }

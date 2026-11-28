@@ -134,6 +134,9 @@ application:
   syndicate:
     url: https://traefikdev.yowyob.com/ugate
 
+  admin:
+    emails: ${ADMIN_EMAILS:} # emails promus admin à la connexion, séparés par des virgules
+
   payment:
     url: https://kernel-core.yowyob.com/kernel-api
     commission-rate: 0.10

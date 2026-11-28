@@ -3,10 +3,12 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NavbarWrapper } from "@/components/layout/NavbarWrapper";
+import { RouteGuard } from "@/components/layout/RouteGuard";
 import { AppBackground } from "@/components/layout/AppBackground";
 import { Toaster } from 'react-hot-toast';
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
+import { I18nProvider } from "@/lib/i18n";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -42,13 +44,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <I18nProvider>
           <QueryProvider>
             <OfflineBanner />
             <AppBackground /> 
+            <RouteGuard />
             <NavbarWrapper />
-            {children}
+            {/* décalé par la sidebar / les barres de l'AppShell (voir globals.css) */}
+            <div className="app-content">{children}</div>
             <Toaster position="top-center" reverseOrder={false} />
           </QueryProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

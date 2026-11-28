@@ -29,6 +29,7 @@ import { driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../src/types/api';
 import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
+import { tr } from '../../src/i18n';
 
 function formatDateTime(iso?: string) {
   if (!iso) return '--';
@@ -154,7 +155,7 @@ export default function MyRidesScreen() {
   // Confirmer le pickup → crée le Trip
   const handleConfirm = async (offer: OfferResponse) => {
     const myId = driverId || user?.id;
-    if (!myId) { Alert.alert('Erreur', 'Identifiant chauffeur introuvable.'); return; }
+    if (!myId) { Alert.alert(tr("Erreur"), tr("Identifiant chauffeur introuvable.")); return; }
     // L'acceptation exige le code de commission (MFA Kernel) : saisie sur l'écran de l'offre
     router.push(`/(driver)/offers/${offer.id}` as any);
   };
@@ -165,9 +166,9 @@ export default function MyRidesScreen() {
 
   // ─── Header tabs ──────────────────────────────────────────────────────────
   const tabs = [
-    { key: 'offers',  label: 'Offres',   count: selectedOffers.length },
-    { key: 'trips',   label: 'Trips',    count: activeTrips.length },
-    { key: 'history', label: 'Historique', count: 0 },
+    { key: 'offers',  label: tr("Offres"),   count: selectedOffers.length },
+    { key: 'trips',   label: tr("Trips"),    count: activeTrips.length },
+    { key: 'history', label: tr("Historique"), count: 0 },
   ] as const;
 
   return (
@@ -177,7 +178,7 @@ export default function MyRidesScreen() {
         <View style={[s.logoBox, { backgroundColor: Colors.orange }]}>
           <Text style={s.logoLetter}>R</Text>
         </View>
-        <Text style={[s.headerTitle, { color: Colors.text }]}>Mes offres / Trips</Text>
+        <Text style={[s.headerTitle, { color: Colors.text }]}>{tr("Mes offres / Trips")}</Text>
         {totalBadge > 0 && (
           <View style={[s.countBadge, { backgroundColor: Colors.orangeBg }]}>
             <Text style={[s.countTxt, { color: Colors.orange }]}>{totalBadge}</Text>
@@ -228,10 +229,9 @@ export default function MyRidesScreen() {
             selectedOffers.length === 0 ? (
               <View style={s.emptyBlock}>
                 <Ionicons name="briefcase-outline" size={48} color={Colors.textMuted} />
-                <Text style={[s.emptyTitle, { color: Colors.text }]}>Aucune offre sélectionnée</Text>
+                <Text style={[s.emptyTitle, { color: Colors.text }]}>{tr("Aucune offre sélectionnée")}</Text>
                 <Text style={[s.hint, { color: Colors.textMuted }]}>
-                  Vous apparaîtrez ici quand un passager vous choisit.
-                </Text>
+                  {tr("Vous apparaîtrez ici quand un passager vous choisit.")}</Text>
               </View>
             ) : (
               selectedOffers.map(offer => (
@@ -241,7 +241,7 @@ export default function MyRidesScreen() {
                   <View style={s.cardTop}>
                     <View style={[s.badge, { backgroundColor: Colors.greenBg }]}>
                       <View style={[s.badgeDot, { backgroundColor: Colors.green }]} />
-                      <Text style={[s.badgeTxt, { color: Colors.green }]}>VOUS ÊTES SÉLECTIONNÉ</Text>
+                      <Text style={[s.badgeTxt, { color: Colors.green }]}>{tr("VOUS ÊTES SÉLECTIONNÉ")}</Text>
                     </View>
                     <Text style={[s.timeText, { color: Colors.textMuted }]}>
                       {formatDateTime(offer.departureTime)}
@@ -258,7 +258,7 @@ export default function MyRidesScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
                       <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
-                        {offer.numberOfPlaces} place{offer.numberOfPlaces > 1 ? 's' : ''}
+                        {offer.numberOfPlaces} {tr(" place")}{offer.numberOfPlaces > 1 ? 's' : ''}
                       </Text>
                     </View>
                   )}
@@ -294,7 +294,7 @@ export default function MyRidesScreen() {
                       ? <ActivityIndicator color="#fff" />
                       : <>
                           <Ionicons name="checkmark" size={18} color="#fff" />
-                          <Text style={s.confirmBtnTxt}>CONFIRMER LA COURSE</Text>
+                          <Text style={s.confirmBtnTxt}>{tr("CONFIRMER LA COURSE")}</Text>
                         </>}
                   </TouchableOpacity>
                 </View>
@@ -307,10 +307,9 @@ export default function MyRidesScreen() {
             activeTrips.length === 0 ? (
               <View style={s.emptyBlock}>
                 <Ionicons name="car-outline" size={48} color={Colors.textMuted} />
-                <Text style={[s.emptyTitle, { color: Colors.text }]}>Aucun trip actif</Text>
+                <Text style={[s.emptyTitle, { color: Colors.text }]}>{tr("Aucun trip actif")}</Text>
                 <Text style={[s.hint, { color: Colors.textMuted }]}>
-                  Les courses confirmées apparaîtront ici.
-                </Text>
+                  {tr("Les courses confirmées apparaîtront ici.")}</Text>
               </View>
             ) : (
               activeTrips.map(trip => {
@@ -328,7 +327,7 @@ export default function MyRidesScreen() {
                           backgroundColor: isOngoing ? Colors.green : Colors.orange }]} />
                         <Text style={[s.badgeTxt, {
                           color: isOngoing ? Colors.green : Colors.orange }]}>
-                          {isOngoing ? 'TRAJET EN COURS' : 'EN ROUTE VERS LE CLIENT'}
+                          {isOngoing ? tr("TRAJET EN COURS") : tr("EN ROUTE VERS LE CLIENT")}
                         </Text>
                       </View>
                     </View>
@@ -342,7 +341,7 @@ export default function MyRidesScreen() {
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
                         <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
-                          {trip.numberOfPlaces} place{trip.numberOfPlaces > 1 ? 's' : ''}
+                          {trip.numberOfPlaces} {tr(" place")}{trip.numberOfPlaces > 1 ? 's' : ''}
                         </Text>
                       </View>
                     )}
@@ -359,8 +358,8 @@ export default function MyRidesScreen() {
                       style={[s.confirmBtn, { backgroundColor: Colors.orange }]}
                       onPress={() => router.push(`/(driver)/ride/${trip.id}` as any)}
                       activeOpacity={0.85}>
-                      <Ionicons name="navigate" size={16} color="#0D0D0D" />
-                      <Text style={[s.confirmBtnTxt, { color: '#0D0D0D' }]}>REPRENDRE LA COURSE</Text>
+                      <Ionicons name="navigate" size={16} color="#FFFFFF" />
+                      <Text style={[s.confirmBtnTxt, { color: '#FFFFFF' }]}>{tr("REPRENDRE LA COURSE")}</Text>
                     </TouchableOpacity>
                   </View>
                 );
@@ -373,14 +372,13 @@ export default function MyRidesScreen() {
             history.length === 0 ? (
               <View style={s.emptyBlock}>
                 <Ionicons name="time-outline" size={48} color={Colors.textMuted} />
-                <Text style={[s.emptyTitle, { color: Colors.text }]}>Aucune course terminée</Text>
+                <Text style={[s.emptyTitle, { color: Colors.text }]}>{tr("Aucune course terminée")}</Text>
                 <Text style={[s.hint, { color: Colors.textMuted }]}>
-                  Votre historique apparaîtra ici après vos premières courses.
-                </Text>
+                  {tr("Votre historique apparaîtra ici après vos premières courses.")}</Text>
                 <TouchableOpacity
                   style={[s.refreshBtn, { backgroundColor: Colors.orangeBg }]}
                   onPress={loadHistory}>
-                  <Text style={[s.refreshTxt, { color: Colors.orange }]}>Actualiser</Text>
+                  <Text style={[s.refreshTxt, { color: Colors.orange }]}>{tr("Actualiser")}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -392,7 +390,7 @@ export default function MyRidesScreen() {
                     style={[s.histCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
                     <View style={s.histTop}>
                       <View style={[s.badge, { backgroundColor: Colors.greenBg }]}>
-                        <Text style={[s.badgeTxt, { color: Colors.green }]}>TERMINÉE</Text>
+                        <Text style={[s.badgeTxt, { color: Colors.green }]}>{tr("TERMINÉE")}</Text>
                       </View>
                       <Text style={[s.timeText, { color: Colors.textMuted }]}>
                         {formatDateTime(trip.createdAt)}
@@ -415,7 +413,7 @@ export default function MyRidesScreen() {
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Ionicons name="people-outline" size={13} color={Colors.textMuted} />
                         <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
-                          {trip.numberOfPlaces} place{trip.numberOfPlaces > 1 ? 's' : ''}
+                          {trip.numberOfPlaces} {tr(" place")}{trip.numberOfPlaces > 1 ? 's' : ''}
                         </Text>
                       </View>
                     )}
@@ -429,8 +427,7 @@ export default function MyRidesScreen() {
                           </Text>
                           {review.anonymous && (
                             <Text style={{ fontSize: 10, color: Colors.textMuted, marginLeft: 8 }}>
-                              (Avis anonyme)
-                            </Text>
+                              {tr("(Avis anonyme)")}</Text>
                           )}
                         </View>
                         {review.comment ? (

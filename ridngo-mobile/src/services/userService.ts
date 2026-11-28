@@ -1,6 +1,7 @@
+import { KEYCHAIN } from './api';
 import api from './api';
-import { BASE_URL } from './api';
 import * as SecureStore from 'expo-secure-store';
+import { tr } from '../i18n';
 
 export const driverService = {
   becomeDriver: async (data: any) => {
@@ -32,6 +33,12 @@ export const userService = {
 
   updateProfile: async (data: { firstName?: string; lastName?: string; phone?: string }) => {
     const res = await api.put('/api/v1/users/profile', data);
+    // la session locale garde l'ancien nom sinon (en-têtes, accueil)
+    try {
+      const stored = JSON.parse((await SecureStore.getItemAsync('user')) || '{}');
+      const name = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+      await SecureStore.setItemAsync('user', JSON.stringify({ ...stored, ...(name && { name }), ...(data.phone && { phone: data.phone }) }), KEYCHAIN);
+    } catch { /* session absente */ }
     return res.data;
   },
 
@@ -39,22 +46,18 @@ export const userService = {
     const profile = await userService.updateProfile(data);
     if (!photo) return profile;
     // Photo stockée dans le Kernel (file-core) via POST /api/v1/users/me/photo (multipart, champ "file")
-    const token = await SecureStore.getItemAsync('accessToken');
     const mimeType = photo.mimeType || photo.type || 'image/jpeg';
     const ext = mimeType.includes('png') ? 'png' : 'jpg';
     const fileName = photo.fileName || photo.name || `profile_${Date.now()}.${ext}`;
     const formData = new FormData();
     formData.append('file', { uri: photo.uri, name: fileName, type: mimeType } as any);
-    const headers: any = { 'Accept': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`${BASE_URL}/api/v1/users/me/photo`, { method: 'POST', headers, body: formData });
-    const text = await res.text();
-    if (!res.ok) {
-      let msg = "Impossible d'envoyer la photo.";
-      try { msg = JSON.parse(text).detail || msg; } catch {}
-      throw new Error(msg);
+    // axios (XHR natif) et non fetch : le fetch d'Expo SDK 58 refuse les parts { uri } ("Unsupported FormDataPart")
+    try {
+      const res = await api.post('/api/v1/users/me/photo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      return { ...profile, ...(res.data || {}) };
+    } catch (e: any) {
+      throw new Error(e?.response?.data?.detail || tr("Impossible d'envoyer la photo."));
     }
-    return { ...profile, ...(text ? JSON.parse(text) : {}) };
   },
 
   changePassword: async (currentPassword: string, newPassword: string) => {

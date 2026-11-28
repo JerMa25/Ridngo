@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { WifiOff, Wifi } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tr } from '@/lib/i18n';
 
 type BannerState = 'online' | 'offline' | 'back-online';
 
@@ -47,12 +48,12 @@ export function OfflineBanner() {
           {status === 'offline' ? (
             <>
               <WifiOff size={18} className="animate-pulse" />
-              <span>Mode hors-ligne</span>
+              <span>{tr("Mode hors-ligne")}</span>
             </>
           ) : (
             <>
               <Wifi size={18} />
-              <span>Connexion rétablie</span>
+              <span>{tr("Connexion rétablie")}</span>
             </>
           )}
         </motion.div>

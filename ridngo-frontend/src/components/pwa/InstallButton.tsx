@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tr } from '@/lib/i18n';
 
 export const InstallButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -40,8 +41,7 @@ export const InstallButton = () => {
           className="flex items-center gap-2 px-6 py-3 bg-foreground text-background dark:bg-white dark:text-bleu-nuit rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-orange-btn hover:text-white transition-all"
         >
           <Smartphone size={16} />
-          Installer l&apos;App
-        </motion.button>
+          {tr("Installer l'App")}</motion.button>
       )}
     </AnimatePresence>
   );

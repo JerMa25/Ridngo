@@ -8,6 +8,7 @@ import { useNetwork } from '../../src/context/NetworkContext';
 import api from '../../src/services/api';
 import { withOfflineFallback, cacheClear, CacheKeys } from '../../src/services/offlineCache';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function VehicleScreen() {
   const { Colors } = useTheme();
@@ -69,24 +70,26 @@ export default function VehicleScreen() {
 
   const handleSave = async () => {
     if (!vehicle?.id) return;
+    const seats = Number(editForm.totalSeatNumber);
+    if (!editForm.registrationNumber?.trim()) { Alert.alert(tr("Champ requis"), tr("Indiquez la plaque d'immatriculation.")); return; }
+    if (!Number.isInteger(seats) || seats < 1 || seats > 60) { Alert.alert(tr("Places invalides"), tr("Indiquez un nombre de places entre 1 et 60.")); return; }
     try {
       setLoading(true);
       const payload = {
         registrationNumber: editForm.registrationNumber,
         color: editForm.color,
-        totalSeatNumber: parseInt(editForm.totalSeatNumber) || 4,
+        totalSeatNumber: seats,
         airConditioned: editForm.airConditioned,
         wifi: editForm.wifi,
         screen: editForm.screen,
         petsAllow: editForm.petsAllow,
       };
-      console.log('[Vehicle] Patching vehicle:', payload);
       await api.patch(`/api/v1/vehicles/${vehicle.id}`, payload);
       setIsEditing(false);
       await fetchVehicle();
-      Alert.alert("Succès", "Informations du véhicule mises à jour.");
-    } catch (err) {
-      Alert.alert("Erreur", "Impossible de mettre à jour le véhicule.");
+      Alert.alert(tr("Succès"), tr("Informations du véhicule mises à jour."));
+    } catch (err: any) {
+      Alert.alert(tr("Erreur"), err.response?.data?.detail || err.response?.data?.message || tr("Impossible de mettre à jour le véhicule."));
     } finally {
       setLoading(false);
     }
@@ -103,14 +106,14 @@ export default function VehicleScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: Colors.text }]}>Mon Véhicule</Text>
+        <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Mon Véhicule")}</Text>
         {vehicle && (
           <TouchableOpacity
             onPress={() => isEditing ? handleSave() : setIsEditing(true)}
             disabled={!isOnline}
           >
             <Text style={[styles.headerAction, { color: !isOnline ? Colors.textSecondary : Colors.orange }]}>
-              {!isOnline ? 'Hors ligne' : (isEditing ? "Enregistrer" : "Modifier")}
+              {!isOnline ? tr("Hors ligne") : (isEditing ? tr("Enregistrer") : tr("Modifier"))}
             </Text>
           </TouchableOpacity>
         )}
@@ -121,8 +124,7 @@ export default function VehicleScreen() {
           <View style={[styles.offlineNoticeBox, { backgroundColor: Colors.input, borderColor: Colors.cardBorder }]}>
             <Ionicons name="cloud-offline-outline" size={16} color={Colors.textSecondary} />
             <Text style={[styles.offlineNoticeTxt, { color: Colors.textSecondary }]}>
-              Hors ligne — dernières infos connues affichées
-            </Text>
+              {tr("Hors ligne — dernières infos connues affichées")}</Text>
           </View>
         )}
 
@@ -130,15 +132,14 @@ export default function VehicleScreen() {
           <View style={styles.empty}>
             <Ionicons name="cloud-offline-outline" size={64} color={Colors.textSecondary} />
             <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>
-              Impossible de vérifier votre véhicule hors ligne.
-            </Text>
+              {tr("Impossible de vérifier votre véhicule hors ligne.")}</Text>
             <TouchableOpacity
               style={[styles.registerBtn, { backgroundColor: Colors.orange }]}
               onPress={fetchVehicle}
               activeOpacity={0.85}
             >
-              <Ionicons name="refresh" size={18} color="#0D0D0D" />
-              <Text style={styles.registerBtnTxt}>Réessayer</Text>
+              <Ionicons name="refresh" size={18} color="#FFFFFF" />
+              <Text style={styles.registerBtnTxt}>{tr("Réessayer")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.backLinkBtn, { borderColor: Colors.cardBorder }]}
@@ -146,22 +147,21 @@ export default function VehicleScreen() {
               activeOpacity={0.85}
             >
               <Ionicons name="arrow-back" size={16} color={Colors.text} />
-              <Text style={[styles.backLinkTxt, { color: Colors.text }]}>Retour</Text>
+              <Text style={[styles.backLinkTxt, { color: Colors.text }]}>{tr("Retour")}</Text>
             </TouchableOpacity>
           </View>
         ) : !vehicle ? (
           <View style={styles.empty}>
             <Ionicons name="car-sport-outline" size={64} color={Colors.textSecondary} />
             <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>
-              Aucun véhicule enregistré.
-            </Text>
+              {tr("Aucun véhicule enregistré.")}</Text>
             <TouchableOpacity
               style={[styles.registerBtn, { backgroundColor: Colors.orange }]}
               onPress={() => router.push('/(driver)/onboarding?mode=addVehicle' as any)}
               activeOpacity={0.85}
             >
-              <Ionicons name="add-circle-outline" size={18} color="#0D0D0D" />
-              <Text style={styles.registerBtnTxt}>Enregistrer mon véhicule</Text>
+              <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.registerBtnTxt}>{tr("Enregistrer mon véhicule")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.backLinkBtn, { borderColor: Colors.cardBorder }]}
@@ -169,16 +169,16 @@ export default function VehicleScreen() {
               activeOpacity={0.85}
             >
               <Ionicons name="arrow-back" size={16} color={Colors.text} />
-              <Text style={[styles.backLinkTxt, { color: Colors.text }]}>Retour</Text>
+              <Text style={[styles.backLinkTxt, { color: Colors.text }]}>{tr("Retour")}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: Colors.text }]}>Informations générales</Text>
+              <Text style={[styles.sectionTitle, { color: Colors.text }]}>{tr("Informations générales")}</Text>
               
               <View style={styles.field}>
-                <Text style={[styles.label, { color: Colors.textSecondary }]}>Plaque d'immatriculation</Text>
+                <Text style={[styles.label, { color: Colors.textSecondary }]}>{tr("Plaque d'immatriculation")}</Text>
                 {isEditing ? (
                   <TextInput
                     style={[styles.input, { color: Colors.text, borderColor: Colors.cardBorder }]}
@@ -191,7 +191,7 @@ export default function VehicleScreen() {
               </View>
 
               <View style={styles.field}>
-                <Text style={[styles.label, { color: Colors.textSecondary }]}>Couleur</Text>
+                <Text style={[styles.label, { color: Colors.textSecondary }]}>{tr("Couleur")}</Text>
                 {isEditing ? (
                   <TextInput
                     style={[styles.input, { color: Colors.text, borderColor: Colors.cardBorder }]}
@@ -204,7 +204,7 @@ export default function VehicleScreen() {
               </View>
 
               <View style={styles.field}>
-                <Text style={[styles.label, { color: Colors.textSecondary }]}>Nombre de places</Text>
+                <Text style={[styles.label, { color: Colors.textSecondary }]}>{tr("Nombre de places")}</Text>
                 {isEditing ? (
                   <TextInput
                     style={[styles.input, { color: Colors.text, borderColor: Colors.cardBorder }]}
@@ -221,7 +221,7 @@ export default function VehicleScreen() {
             <View style={styles.divider} />
 
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: Colors.text }]}>Options de confort</Text>
+              <Text style={[styles.sectionTitle, { color: Colors.text }]}>{tr("Options de confort")}</Text>
               
               <TouchableOpacity
                 style={styles.optionRow}
@@ -230,7 +230,7 @@ export default function VehicleScreen() {
               >
                 <View style={styles.optionLeft}>
                   <Ionicons name="snow-outline" size={20} color={Colors.text} />
-                  <Text style={[styles.optionText, { color: Colors.text }]}>Climatisation</Text>
+                  <Text style={[styles.optionText, { color: Colors.text }]}>{tr("Climatisation")}</Text>
                 </View>
                 <Ionicons
                   name={editForm.airConditioned ? "checkmark-circle" : "ellipse-outline"}
@@ -246,7 +246,7 @@ export default function VehicleScreen() {
               >
                 <View style={styles.optionLeft}>
                   <Ionicons name="wifi-outline" size={20} color={Colors.text} />
-                  <Text style={[styles.optionText, { color: Colors.text }]}>Wi-Fi à bord</Text>
+                  <Text style={[styles.optionText, { color: Colors.text }]}>{tr("Wi-Fi à bord")}</Text>
                 </View>
                 <Ionicons
                   name={editForm.wifi ? "checkmark-circle" : "ellipse-outline"}
@@ -262,7 +262,7 @@ export default function VehicleScreen() {
               >
                 <View style={styles.optionLeft}>
                   <Ionicons name="tv-outline" size={20} color={Colors.text} />
-                  <Text style={[styles.optionText, { color: Colors.text }]}>Écran</Text>
+                  <Text style={[styles.optionText, { color: Colors.text }]}>{tr("Écran")}</Text>
                 </View>
                 <Ionicons
                   name={editForm.screen ? "checkmark-circle" : "ellipse-outline"}
@@ -278,7 +278,7 @@ export default function VehicleScreen() {
               >
                 <View style={styles.optionLeft}>
                   <Ionicons name="paw-outline" size={20} color={Colors.text} />
-                  <Text style={[styles.optionText, { color: Colors.text }]}>Animaux acceptés</Text>
+                  <Text style={[styles.optionText, { color: Colors.text }]}>{tr("Animaux acceptés")}</Text>
                 </View>
                 <Ionicons
                   name={editForm.petsAllow ? "checkmark-circle" : "ellipse-outline"}
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderRadius: Radius.lg, paddingHorizontal: 24, paddingVertical: 14, marginTop: Spacing.sm,
   },
-  registerBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 14 },
+  registerBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 14 },
   backLinkBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderRadius: Radius.lg, paddingHorizontal: 24, paddingVertical: 12, borderWidth: 1,

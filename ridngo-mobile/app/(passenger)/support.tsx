@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -60,8 +61,8 @@ export default function PassengerSupportScreen() {
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: Colors.text }]}>Aide & Support</Text>
-          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>CENTRE D'ASSISTANCE</Text>
+          <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Aide & Support")}</Text>
+          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>{tr("CENTRE D'ASSISTANCE")}</Text>
         </View>
       </View>
 
@@ -72,15 +73,14 @@ export default function PassengerSupportScreen() {
           <View style={[styles.heroIcon, { backgroundColor: Colors.orangeBg }]}>
             <Ionicons name="help-buoy" size={32} color={Colors.orange} />
           </View>
-          <Text style={[styles.heroTitle, { color: Colors.text }]}>Comment pouvons-nous vous aider ?</Text>
+          <Text style={[styles.heroTitle, { color: Colors.text }]}>{tr("Comment pouvons-nous vous aider ?")}</Text>
           <Text style={[styles.heroSub, { color: Colors.textMuted }]}>
-            Consultez notre FAQ ou contactez directement notre équipe support.
-          </Text>
+            {tr("Consultez notre FAQ ou contactez directement notre équipe support.")}</Text>
         </View>
 
         {/* FAQ */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>QUESTIONS FRÉQUENTES</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("QUESTIONS FRÉQUENTES")}</Text>
           <View style={[styles.faqGroup, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             {FAQ_ITEMS.map((item, idx) => (
               <View key={idx}>
@@ -112,7 +112,7 @@ export default function PassengerSupportScreen() {
 
         {/* Contact */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>NOUS CONTACTER</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("NOUS CONTACTER")}</Text>
           <View style={styles.contactGroup}>
             <TouchableOpacity
               style={[styles.contactBtn, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}
@@ -123,8 +123,8 @@ export default function PassengerSupportScreen() {
                 <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: Colors.text }]}>WhatsApp Support</Text>
-                <Text style={[styles.contactSub, { color: Colors.textMuted }]}>Réponse sous 2 heures</Text>
+                <Text style={[styles.contactLabel, { color: Colors.text }]}>{tr("WhatsApp Support")}</Text>
+                <Text style={[styles.contactSub, { color: Colors.textMuted }]}>{tr("Réponse sous 2 heures")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
             </TouchableOpacity>
@@ -138,7 +138,7 @@ export default function PassengerSupportScreen() {
                 <Ionicons name="mail-outline" size={22} color={Colors.orange} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: Colors.text }]}>Email</Text>
+                <Text style={[styles.contactLabel, { color: Colors.text }]}>{tr("Email")}</Text>
                 <Text style={[styles.contactSub, { color: Colors.textMuted }]}>support@ridngo.com</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
@@ -146,7 +146,7 @@ export default function PassengerSupportScreen() {
           </View>
         </View>
 
-        <Text style={[styles.version, { color: Colors.textMuted }]}>RidnGo v1.0.0 — Yowyob Inc. Ltd.</Text>
+        <Text style={[styles.version, { color: Colors.textMuted }]}>{tr("RidnGo v1.0.0 — Yowyob Inc. Ltd.")}</Text>
       </ScrollView>
     </SafeAreaView>
   );

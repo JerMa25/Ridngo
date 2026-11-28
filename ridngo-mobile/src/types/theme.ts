@@ -1,19 +1,20 @@
+// Palette alignée sur le web (ridngo-frontend/src/app/globals.css)
 export const LightColors = {
   orange: '#FF8C00',
   orangeLight: '#FFA333',
   orangeDark: '#CC7000',
   orangeBg: 'rgba(255, 140, 0, 0.12)',
 
-  dark: '#FFFFFF',
-  darkCard: '#F5F5F5',
-  darkBorder: '#E0E0E0',
+  dark: '#FAF3DD',
+  darkCard: '#FFFFFF',
+  darkBorder: 'rgba(27,38,59,0.12)',
 
-  white: '#0D0D0D',
-  offWhite: '#1A1A1A',
+  white: '#1B263B',
+  offWhite: '#1B263B',
 
-  text: '#0D0D0D',
-  textSecondary: 'rgba(0,0,0,0.55)',
-  textMuted: 'rgba(0,0,0,0.35)',
+  text: '#1B263B',
+  textSecondary: 'rgba(27,38,59,0.6)',
+  textMuted: 'rgba(27,38,59,0.4)',
 
   green: '#16A34A',
   greenBg: 'rgba(22, 163, 74, 0.1)',
@@ -22,13 +23,13 @@ export const LightColors = {
   blue: '#2563EB',
 
   card: '#FFFFFF',
-  cardBorder: 'rgba(0,0,0,0.08)',
+  cardBorder: 'rgba(27,38,59,0.1)',
 
-  input: 'rgba(0,0,0,0.05)',
-  inputBorder: 'rgba(0,0,0,0.12)',
+  input: 'rgba(27,38,59,0.05)',
+  inputBorder: 'rgba(27,38,59,0.12)',
   inputFocus: '#FF8C00',
 
-  background: '#F2F2F7',
+  background: '#FAF3DD',
   statusBar: 'dark' as 'dark' | 'light',
 };
 
@@ -38,16 +39,16 @@ export const DarkColors = {
   orangeDark: '#CC7000',
   orangeBg: 'rgba(255, 140, 0, 0.1)',
 
-  dark: '#0D0D0D',
-  darkCard: '#1A1A1A',
-  darkBorder: '#2A2A2A',
+  dark: '#1B263B',
+  darkCard: '#22304A',
+  darkBorder: '#2E3D58',
 
   white: '#FFFFFF',
   offWhite: '#FAF3DD',
 
-  text: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.5)',
-  textMuted: 'rgba(255,255,255,0.3)',
+  text: '#FAF3DD',
+  textSecondary: 'rgba(250,243,221,0.6)',
+  textMuted: 'rgba(250,243,221,0.35)',
 
   green: '#22C55E',
   greenBg: 'rgba(34, 197, 94, 0.1)',
@@ -55,14 +56,14 @@ export const DarkColors = {
   redBg: 'rgba(239, 68, 68, 0.1)',
   blue: '#3B82F6',
 
-  card: '#1C1C1C',
-  cardBorder: 'rgba(255,255,255,0.07)',
+  card: '#22304A',
+  cardBorder: 'rgba(255,255,255,0.1)',
 
-  input: 'rgba(255,255,255,0.07)',
+  input: 'rgba(255,255,255,0.05)',
   inputBorder: 'rgba(255,255,255,0.1)',
   inputFocus: '#FF8C00',
 
-  background: '#0D0D0D',
+  background: '#1B263B',
   statusBar: 'light' as 'dark' | 'light',
 };
 

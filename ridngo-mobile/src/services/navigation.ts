@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { tr } from '../i18n';
 
 export type LatLon = { lat: number; lon: number };
 
@@ -23,10 +24,10 @@ const MODIFIERS: Record<string, string> = {
 
 const describe = (step: any): string => {
   const m = step?.maneuver || {};
-  const road = step?.name ? ` sur ${step.name}` : '';
-  if (m.type === 'arrive') return 'vous êtes arrivé à destination';
-  if (m.type === 'roundabout' || m.type === 'rotary') return `au rond-point, prenez la ${m.exit || 1}ᵉ sortie${road}`;
-  return `${MODIFIERS[m.modifier] || 'continuez'}${road}`;
+  const road = step?.name ? tr(' sur {road}', { road: step.name }) : '';
+  if (m.type === 'arrive') return tr("vous êtes arrivé à destination");
+  if (m.type === 'roundabout' || m.type === 'rotary') return tr('au rond-point, prenez la {n}ᵉ sortie', { n: m.exit || 1 }) + road;
+  return tr(MODIFIERS[m.modifier] || 'continuez') + road;
 };
 
 /** Guidage vers `target` à partir de la position GPS fournie : itinéraire OSRM, instruction, distances. */
@@ -61,7 +62,7 @@ export function useRouteGuidance(position: LatLon | null, target: LatLon | null)
   const toTarget = position && target ? metersBetween(position, target) : null;
   const next = route?.steps?.[1];
   const toNext = position && next?.maneuver?.location ? metersBetween(position, { lat: next.maneuver.location[1], lon: next.maneuver.location[0] }) : null;
-  const instruction = next ? `Dans ${formatDistance(toNext ?? next.distance)}, ${describe(next)}`
+  const instruction = next ? tr('Dans {distance}, {instruction}', { distance: formatDistance(toNext ?? next.distance), instruction: describe(next) })
     : toTarget !== null && toTarget < 50 ? 'Vous êtes arrivé' : position ? 'Suivez l’itinéraire' : 'Recherche de votre position GPS…';
 
   return {

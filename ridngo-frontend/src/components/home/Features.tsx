@@ -1,19 +1,20 @@
 "use client"
 import React from 'react';
 import { Banknote, ShieldCheck, Clock } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 export const Features = () => {
   const data = [
-    { title: "Prix Négociable", desc: "Vous proposez un tarif. Le chauffeur accepte ou contre-propose.", icon: <Banknote size={32}/> },
-    { title: "Sécurité Totale", desc: "Suivi GPS en temps réel et chauffeurs vérifiés par CNI.", icon: <ShieldCheck size={32}/> },
-    { title: "Rapidité", desc: "Un chauffeur devant votre porte en moins de 5 minutes.", icon: <Clock size={32}/> },
+    { title: tr("Prix Négociable"), desc: tr("Vous proposez un tarif. Le chauffeur accepte ou contre-propose."), icon: <Banknote size={32}/> },
+    { title: tr("Sécurité Totale"), desc: tr("Suivi GPS en temps réel et chauffeurs vérifiés par CNI."), icon: <ShieldCheck size={32}/> },
+    { title: tr("Rapidité"), desc: tr("Un chauffeur devant votre porte en moins de 5 minutes."), icon: <Clock size={32}/> },
   ];
 
   return (
     <section className="py-24 px-6 max-w-7xl mx-auto">
       <div className="text-center mb-16">
-        <h2 className="text-orange-btn font-black tracking-[0.3em] text-xs uppercase mb-4 text-orange-btn">Pourquoi nous choisir ?</h2>
-        <p className="text-4xl font-black text-foreground">La révolution du transport urbain</p>
+        <h2 className="text-orange-btn font-black tracking-[0.3em] text-xs uppercase mb-4 text-orange-btn">{tr("Pourquoi nous choisir ?")}</h2>
+        <p className="text-4xl font-black text-foreground">{tr("La révolution du transport urbain")}</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-foreground">

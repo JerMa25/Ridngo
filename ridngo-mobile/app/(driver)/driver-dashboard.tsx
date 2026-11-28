@@ -12,6 +12,10 @@ import { rideService } from '../../src/services/rideService';
 import { userService, driverService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
 import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
+import { WalletCard } from '../../src/components/WalletCard';
+import { subscriptionService } from '../../src/services/subscriptionService';
+import { useI18n } from '../../src/i18n';
+import { tr } from '../../src/i18n';
 
 export default function DriverDashboardScreen() {
   const { user } = useAuth();
@@ -23,9 +27,12 @@ export default function DriverDashboardScreen() {
   const [history, setHistory] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [profileData, setProfileData] = useState<any>(null);
+  const [subscription, setSubscription] = useState<{ active: boolean; endsAt: string | null } | null>(null);
+  const { t, lang } = useI18n();
 
   const loadData = async () => {
     try {
+      subscriptionService.mine().then(setSubscription).catch(() => {});
       const [walletRes, historyRes, reviewsRes, profileRes] = await Promise.allSettled([
         rideService.getMyWallet(),
         withOfflineFallback(CacheKeys.driverHistory, () =>
@@ -48,7 +55,6 @@ export default function DriverDashboardScreen() {
   
   // Stats rapides
   const completed = history.filter((r: any) => r.state === 'COMPLETED');
-  const revenueStr = wallet?.balance?.toLocaleString() || '0';
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '5.0';
@@ -86,8 +92,8 @@ export default function DriverDashboardScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: Colors.cardBorder }]}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>TABLEAU DE BORD</Text>
-          <Text style={[styles.headerTitle, { color: Colors.text }]}>Bonjour, <Text style={{ color: Colors.orange }}>{firstName}</Text></Text>
+          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>{tr("TABLEAU DE BORD")}</Text>
+          <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Bonjour, ")}<Text style={{ color: Colors.orange }}>{firstName}</Text></Text>
         </View>
         <TouchableOpacity style={[styles.iconBtn, { backgroundColor: Colors.input }]} onPress={() => router.push('/(driver)/notifications')}>
           <Ionicons name="notifications-outline" size={20} color={Colors.text} />
@@ -100,22 +106,36 @@ export default function DriverDashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange} />}
       >
 
-        {/* Portefeuille */}
-        <View style={[styles.walletCard, { backgroundColor: Colors.orange }]}>
-          <View style={styles.walletHeader}>
-            <View>
-              <Text style={styles.walletLabel}>SOLDE DISPONIBLE</Text>
-              <Text style={styles.walletValue}>{revenueStr} <Text style={styles.walletCurrency}>FCFA</Text></Text>
-            </View>
-            <View style={styles.walletIcon}>
-              <Ionicons name="wallet" size={24} color={Colors.orange} />
-            </View>
+        {/* Portefeuille : dépôt, retrait et historique des opérations */}
+        <WalletCard balance={wallet?.balance ?? 0} onChanged={loadData} />
+
+        {/* Abonnement : plus de commission par course */}
+        <TouchableOpacity
+          style={[styles.subCard, { backgroundColor: Colors.card, borderColor: subscription?.active ? Colors.green : Colors.orange }]}
+          onPress={() => router.push('/(driver)/subscription' as any)}
+          accessibilityRole="button"
+        >
+          <View style={[styles.statIconBox, { backgroundColor: subscription?.active ? Colors.green : Colors.orange, marginBottom: 0 }]}>
+            <Ionicons name={subscription?.active ? 'shield-checkmark' : 'star'} size={16} color="#fff" />
           </View>
-          <TouchableOpacity style={styles.walletBtn} onPress={() => router.push('/(driver)/history')}>
-            <Text style={styles.walletBtnText}>Voir l'historique complet</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" />
-          </TouchableOpacity>
-        </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: Colors.text, fontWeight: '900', fontSize: 14 }}>
+              {subscription?.active ? t('Abonnement actif') : t('Passez à l’abonnement')}
+            </Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+              {subscription?.active && subscription.endsAt
+                ? t("Aucune commission jusqu'au {date}.", { date: new Date(subscription.endsAt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR') })
+                : t('0 % de commission sur toutes vos courses')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.historyLink, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]} onPress={() => router.push('/(driver)/history')}>
+          <Ionicons name="time" size={18} color={Colors.orange} />
+          <Text style={{ flex: 1, color: Colors.text, fontWeight: '800' }}>{t("Voir l'historique complet")}</Text>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+        </TouchableOpacity>
 
         {/* Stats 3 blocs */}
         <View style={styles.statsGrid}>
@@ -131,14 +151,14 @@ export default function DriverDashboardScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={[styles.statBox, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]} onPress={() => router.push('/(driver)/heatmap')}>
              <View style={[styles.statIconBox, { backgroundColor: '#EF4444' }]}><Ionicons name="flame" size={16} color="#fff" /></View>
-             <Text style={[styles.statVal, { color: Colors.text }]}>Zone</Text>
+             <Text style={[styles.statVal, { color: Colors.text }]}>{tr("Zone")}</Text>
              <Text style={[styles.statLbl, { color: Colors.textMuted }]}>INFLUENCE</Text>
           </TouchableOpacity>
         </View>
 
         {/* Graphique Revenus */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>REVENUS DES 7 DERNIERS JOURS</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("REVENUS DES 7 DERNIERS JOURS")}</Text>
           <View style={[styles.chartCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <View style={styles.chartBars}>
               {weeklyData.map((d, i) => (
@@ -156,9 +176,9 @@ export default function DriverDashboardScreen() {
         {/* Dernières courses */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>DERNIÈRES COURSES</Text>
+            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("DERNIÈRES COURSES")}</Text>
             <TouchableOpacity onPress={() => router.push('/(driver)/history')}>
-              <Text style={[styles.linkText, { color: Colors.orange }]}>VOIR TOUT</Text>
+              <Text style={[styles.linkText, { color: Colors.orange }]}>{tr("VOIR TOUT")}</Text>
             </TouchableOpacity>
           </View>
           {completed.slice(0, 3).map((ride: any, index: number) => (
@@ -182,7 +202,7 @@ export default function DriverDashboardScreen() {
                 <Text style={[styles.vehicleModel, { color: Colors.orange }]}>{ride.price?.toLocaleString()} F</Text>
                 {!!ride.numberOfPlaces && (
                   <Text style={[styles.vehiclePlate, { color: Colors.textMuted, fontSize: 10 }]}>
-                    {ride.numberOfPlaces} place{ride.numberOfPlaces > 1 ? 's' : ''}
+                    {ride.numberOfPlaces} {tr(" place")}{ride.numberOfPlaces > 1 ? 's' : ''}
                   </Text>
                 )}
                 <Text style={[styles.vehiclePlate, { color: Colors.textMuted, fontSize: 10 }]}>
@@ -193,17 +213,16 @@ export default function DriverDashboardScreen() {
           ))}
           {completed.length === 0 && (
             <Text style={{ textAlign: 'center', color: Colors.textMuted, fontStyle: 'italic', paddingVertical: 12 }}>
-              Aucune course terminée.
-            </Text>
+              {tr("Aucune course terminée.")}</Text>
           )}
         </View>
 
         {/* Véhicule */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>MON VÉHICULE</Text>
+            <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("MON VÉHICULE")}</Text>
             <TouchableOpacity onPress={() => router.push('/(driver)/vehicle')}>
-              <Text style={[styles.linkText, { color: Colors.orange }]}>Modifier</Text>
+              <Text style={[styles.linkText, { color: Colors.orange }]}>{tr("Modifier")}</Text>
             </TouchableOpacity>
           </View>
           {profileData?.vehicle ? (
@@ -213,14 +232,14 @@ export default function DriverDashboardScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.vehicleModel, { color: Colors.text }]}>
-                  {profileData.vehicle.brand || profileData.vehicle.makeName || 'Marque'} {profileData.vehicle.model || profileData.vehicle.modelName || 'Modèle'}
+                  {profileData.vehicle.brand || profileData.vehicle.makeName || tr("Marque")} {profileData.vehicle.model || profileData.vehicle.modelName || tr("Modèle")}
                 </Text>
                 <Text style={[styles.vehiclePlate, { color: Colors.textMuted }]}>
-                  {profileData.vehicle.registrationNumber || 'Non renseignée'}
+                  {profileData.vehicle.registrationNumber || tr("Non renseignée")}
                 </Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: 'rgba(34,197,94,0.1)' }]}>
-                 <Text style={[styles.statusBadgeText, { color: '#22C55E' }]}>Validé</Text>
+                 <Text style={[styles.statusBadgeText, { color: '#22C55E' }]}>{tr("Validé")}</Text>
               </View>
             </View>
           ) : (
@@ -233,13 +252,12 @@ export default function DriverDashboardScreen() {
                 <Ionicons name="alert-circle" size={24} color="#F59E0B" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.vehicleModel, { color: Colors.text }]}>Aucun véhicule enregistré</Text>
+                <Text style={[styles.vehicleModel, { color: Colors.text }]}>{tr("Aucun véhicule enregistré")}</Text>
                 <Text style={[styles.vehiclePlate, { color: Colors.textMuted }]}>
-                  Enregistrez votre véhicule pour recevoir des offres
-                </Text>
+                  {tr("Enregistrez votre véhicule pour recevoir des offres")}</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
-                 <Text style={[styles.statusBadgeText, { color: '#F59E0B' }]}>À faire</Text>
+                 <Text style={[styles.statusBadgeText, { color: '#F59E0B' }]}>{tr("À faire")}</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -251,6 +269,8 @@ export default function DriverDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  subCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: Radius.lg, borderWidth: 1.5 },
+  historyLink: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: Radius.lg, borderWidth: 1 },
   safe: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {

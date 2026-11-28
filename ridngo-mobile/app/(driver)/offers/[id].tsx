@@ -14,6 +14,7 @@
  *   → redirect /(driver)/ride/{rideId}
  */
 
+import { KEYCHAIN } from '../../../src/services/api';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
@@ -31,6 +32,7 @@ import { rideService } from '../../../src/services/rideService';
 import { driverService } from '../../../src/services/userService';
 import { Spacing, Radius } from '../../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../../src/types/api';
+import { tr } from '../../../src/i18n';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const MAP_HEIGHT = SCREEN_H * 0.38;
@@ -110,7 +112,7 @@ export default function OfferDetailScreen() {
   const [viewState, setViewState] = useState<ViewState>('idle');
   const [applying, setApplying]   = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [challenge, setChallenge] = useState<{ challengeToken: string; commission: number } | null>(null);
+  const [challenge, setChallenge] = useState<{ challengeToken?: string; commission: number; subscribed?: boolean } | null>(null);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [cancelling, setCancelling] = useState(false);
@@ -147,7 +149,7 @@ export default function OfferDetailScreen() {
       setMapKey(k => k + 1);
     } catch (e: any) {
       console.error('[OfferDetail] load error:', e?.message);
-      Alert.alert('Erreur', "Impossible de charger l'offre.");
+      Alert.alert(tr("Erreur"), tr("Impossible de charger l'offre."));
     } finally {
       setLoading(false);
     }
@@ -165,7 +167,7 @@ export default function OfferDetailScreen() {
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Erreur lors de la postulation.';
       console.error('[OfferDetail] apply error:', msg);
-      Alert.alert('Erreur', msg);
+      Alert.alert(tr("Erreur"), msg);
     } finally {
       setApplying(false);
     }
@@ -182,7 +184,7 @@ export default function OfferDetailScreen() {
       await loadOffer();
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || "Erreur lors de l'annulation.";
-      Alert.alert('Erreur', msg);
+      Alert.alert(tr("Erreur"), msg);
     } finally {
       setCancelling(false);
     }
@@ -201,7 +203,7 @@ export default function OfferDetailScreen() {
         if (state === 'CANCELLED') {
           clearInterval(pollRef.current!);
           setViewState('error');
-          Alert.alert('Offre annulée', 'Le passager a annulé sa demande.');
+          Alert.alert(tr("Offre annulée"), tr("Le passager a annulé sa demande."));
           return;
         }
 
@@ -224,24 +226,26 @@ export default function OfferDetailScreen() {
   // ── Confirmation de la course ─────────────────────────────────────────────
   const handleConfirm = async () => {
     if (!id || !driverId) {
-      Alert.alert('Erreur', 'Identifiant chauffeur introuvable.');
+      Alert.alert(tr("Erreur"), tr("Identifiant chauffeur introuvable."));
       return;
     }
     setCodeError('');
-    if (challenge && !/^\d{4,8}$/.test(code.trim())) { setCodeError('Saisissez le code reçu (4 à 8 chiffres).'); return; }
+    if (challenge && !/^\d{4,8}$/.test(code.trim())) { setCodeError(tr("Saisissez le code reçu (4 à 8 chiffres).")); return; }
     setConfirming(true);
     try {
       if (!challenge) {
-        // étape 1 : le Kernel envoie le code de confirmation de la commission
-        setChallenge(await rideService.requestAcceptCode(id));
-        return;
+        // étape 1 : le Kernel envoie le code de confirmation de la commission (sauf chauffeur abonné)
+        const next = await rideService.requestAcceptCode(id);
+        if (!next.subscribed) { setChallenge(next); return; }
       }
-      const ride: RideResponse = await rideService.driverAccepts(id, challenge.challengeToken, code.trim());
-      await SecureStore.setItemAsync('activeRideId', ride.id);
+      const ride: RideResponse = challenge
+        ? await rideService.driverAccepts(id, challenge.challengeToken ?? '', code.trim())
+        : await rideService.driverAccepts(id, '', '');
+      await SecureStore.setItemAsync('activeRideId', ride.id, KEYCHAIN);
       router.replace(`/(driver)/ride/${ride.id}` as any);
     } catch (e: any) {
       const msg = e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur lors de la confirmation.';
-      if (challenge && /code|mfa|challenge|expir/i.test(msg)) setCodeError(msg); else Alert.alert('Erreur', msg);
+      if (challenge && /code|mfa|challenge|expir/i.test(msg)) setCodeError(msg); else Alert.alert(tr("Erreur"), msg);
     } finally {
       setConfirming(false);
     }
@@ -257,11 +261,11 @@ export default function OfferDetailScreen() {
 
   const stateLabel = (state?: string): { label: string; color: string } => {
     switch (state) {
-      case 'PENDING':         return { label: 'OFFRE PENDING',   color: Colors.orange };
-      case 'BID_RECEIVED':    return { label: 'BID REÇU',        color: Colors.blue };
-      case 'DRIVER_SELECTED': return { label: 'CHAUFFEUR CHOISI', color: Colors.green };
-      case 'VALIDATED':       return { label: 'VALIDÉE',          color: Colors.green };
-      case 'CANCELLED':       return { label: 'ANNULÉE',          color: Colors.red };
+      case 'PENDING':         return { label: tr("OFFRE PENDING"),   color: Colors.orange };
+      case 'BID_RECEIVED':    return { label: tr("BID REÇU"),        color: Colors.blue };
+      case 'DRIVER_SELECTED': return { label: tr("CHAUFFEUR CHOISI"), color: Colors.green };
+      case 'VALIDATED':       return { label: tr("VALIDÉE"),          color: Colors.green };
+      case 'CANCELLED':       return { label: tr("ANNULÉE"),          color: Colors.red };
       default:                return { label: state || 'INCONNU', color: Colors.textMuted };
     }
   };
@@ -272,7 +276,7 @@ export default function OfferDetailScreen() {
       <SafeAreaView style={[s.safe, { backgroundColor: Colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
         <View style={s.centered}>
           <ActivityIndicator color={Colors.orange} size="large" />
-          <Text style={[s.loadingTxt, { color: Colors.textMuted }]}>Chargement de l'offre...</Text>
+          <Text style={[s.loadingTxt, { color: Colors.textMuted }]}>{tr("Chargement de l'offre...")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -283,9 +287,9 @@ export default function OfferDetailScreen() {
       <SafeAreaView style={[s.safe, { backgroundColor: Colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
         <View style={s.centered}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.red} />
-          <Text style={[s.loadingTxt, { color: Colors.textMuted }]}>Offre introuvable</Text>
+          <Text style={[s.loadingTxt, { color: Colors.textMuted }]}>{tr("Offre introuvable")}</Text>
           <TouchableOpacity onPress={() => router.back()} style={[s.backFallback, { backgroundColor: Colors.card }]}>
-            <Text style={{ color: Colors.text, fontWeight: '700' }}>Retour</Text>
+            <Text style={{ color: Colors.text, fontWeight: '700' }}>{tr("Retour")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -347,7 +351,7 @@ export default function OfferDetailScreen() {
             <View style={s.placesInfoRow}>
               <Ionicons name="people-outline" size={16} color={Colors.textMuted} />
               <Text style={[s.placesInfoTxt, { color: Colors.textMuted }]}>
-                {offer.numberOfPlaces} place{offer.numberOfPlaces > 1 ? 's' : ''} demandée{offer.numberOfPlaces > 1 ? 's' : ''}
+                {offer.numberOfPlaces} {tr(" place")}{offer.numberOfPlaces > 1 ? 's' : ''} {tr(" demandée")}{offer.numberOfPlaces > 1 ? 's' : ''}
               </Text>
             </View>
           )}
@@ -362,7 +366,7 @@ export default function OfferDetailScreen() {
               <View style={[s.routeVLine, { backgroundColor: Colors.cardBorder }]} />
             </View>
             <View style={s.routeTextCol}>
-              <Text style={[s.routeLabel, { color: Colors.textMuted }]}>DÉPART</Text>
+              <Text style={[s.routeLabel, { color: Colors.textMuted }]}>{tr("DÉPART")}</Text>
               <Text style={[s.routePlace, { color: Colors.text }]}>{offer.startPoint}</Text>
             </View>
           </View>
@@ -390,10 +394,10 @@ export default function OfferDetailScreen() {
               activeOpacity={0.85}
             >
               {applying
-                ? <ActivityIndicator color="#0D0D0D" />
+                ? <ActivityIndicator color="#FFFFFF" />
                 : <>
                     <Text style={s.acceptBtnTxt}>ACCEPTER</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#0D0D0D" />
+                    <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
                   </>
               }
             </TouchableOpacity>
@@ -405,10 +409,9 @@ export default function OfferDetailScreen() {
               <View style={[s.waitingBlock, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
                 <ActivityIndicator color={Colors.orange} size="small" />
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.waitingTitle, { color: Colors.text }]}>Candidature envoyée</Text>
+                  <Text style={[s.waitingTitle, { color: Colors.text }]}>{tr("Candidature envoyée")}</Text>
                   <Text style={[s.waitingSub, { color: Colors.textMuted }]}>
-                    En attente du choix du passager...
-                  </Text>
+                    {tr("En attente du choix du passager...")}</Text>
                 </View>
               </View>
               <TouchableOpacity
@@ -421,7 +424,7 @@ export default function OfferDetailScreen() {
                   ? <ActivityIndicator color={Colors.red} />
                   : <>
                       <Ionicons name="close-circle-outline" size={18} color={Colors.red} />
-                      <Text style={[s.cancelBtnTxt, { color: Colors.red }]}>ANNULER MA CANDIDATURE</Text>
+                      <Text style={[s.cancelBtnTxt, { color: Colors.red }]}>{tr("ANNULER MA CANDIDATURE")}</Text>
                     </>
                 }
               </TouchableOpacity>
@@ -434,21 +437,19 @@ export default function OfferDetailScreen() {
               <View style={[s.selectedBanner, { backgroundColor: Colors.greenBg }]}>
                 <Ionicons name="checkmark-circle" size={22} color={Colors.green} />
                 <Text style={[s.selectedTitle, { color: Colors.green }]}>
-                  Vous avez été choisi !
-                </Text>
+                  {tr("Vous avez été choisi !")}</Text>
               </View>
               {challenge && (
                 <View style={{ gap: 6, marginBottom: 10 }}>
                   <Text style={{ color: Colors.textSecondary, fontSize: 13, fontWeight: '700' }}>
-                    Commission de {challenge.commission} FCFA : saisissez le code reçu.
-                  </Text>
+                    {tr("Commission de ")}{challenge.commission} {tr(" FCFA : saisissez le code reçu.")}</Text>
                   <TextInput
                     value={code}
                     onChangeText={setCode}
                     keyboardType="number-pad"
                     textContentType="oneTimeCode"
                     autoFocus
-                    accessibilityLabel="Code de confirmation"
+                    accessibilityLabel={tr("Code de confirmation")}
                     style={{ borderWidth: 1, borderColor: codeError ? '#ef4444' : Colors.inputBorder, backgroundColor: Colors.input,
                       color: Colors.white, borderRadius: 12, paddingVertical: 12, textAlign: 'center', fontSize: 18, fontWeight: '900', letterSpacing: 6 }}
                   />
@@ -464,7 +465,7 @@ export default function OfferDetailScreen() {
                 {confirming
                   ? <ActivityIndicator color="#fff" />
                   : <>
-                      <Text style={[s.acceptBtnTxt, { color: '#fff' }]}>{challenge ? 'CONFIRMER ET DÉMARRER' : 'ACCEPTER LA COURSE'}</Text>
+                      <Text style={[s.acceptBtnTxt, { color: '#fff' }]}>{challenge ? tr("CONFIRMER ET DÉMARRER") : tr("ACCEPTER LA COURSE")}</Text>
                       <Ionicons name="checkmark" size={18} color="#fff" />
                     </>
                 }
@@ -476,7 +477,7 @@ export default function OfferDetailScreen() {
           {viewState === 'error' && (
             <View style={[s.waitingBlock, { backgroundColor: Colors.redBg, borderColor: Colors.red }]}>
               <Ionicons name="close-circle" size={22} color={Colors.red} />
-              <Text style={[s.waitingTitle, { color: Colors.red }]}>Offre annulée par le passager</Text>
+              <Text style={[s.waitingTitle, { color: Colors.red }]}>{tr("Offre annulée par le passager")}</Text>
             </View>
           )}
 
@@ -553,7 +554,7 @@ const s = StyleSheet.create({
     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, elevation: 6,
   },
-  acceptBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 15, letterSpacing: 2 },
+  acceptBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 15, letterSpacing: 2 },
   waitingBlock: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: Radius.lg, borderWidth: 1, padding: Spacing.md,
@@ -754,9 +755,9 @@ const s = StyleSheet.create({
 //             disabled={accepting}
 //           >
 //             {accepting
-//               ? <ActivityIndicator color={Colors.dark} />
+//               ? <ActivityIndicator color={Colors.white} />
 //               : <>
-//                 <Ionicons name="checkmark-circle" size={20} color={Colors.dark} />
+//                 <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
 //                 <Text style={styles.btnText}>Accepter la course</Text>
 //               </>
 //             }
@@ -773,9 +774,9 @@ const s = StyleSheet.create({
 //             disabled={applying}
 //           >
 //             {applying
-//               ? <ActivityIndicator color={Colors.dark} />
+//               ? <ActivityIndicator color={Colors.white} />
 //               : <>
-//                 <Ionicons name="hand-right" size={20} color={Colors.dark} />
+//                 <Ionicons name="hand-right" size={20} color={Colors.white} />
 //                 <Text style={styles.btnText}>Postuler à cette course</Text>
 //               </>
 //             }
@@ -847,7 +848,7 @@ const s = StyleSheet.create({
 //     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
 //     shadowColor: Colors.green, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, elevation: 6,
 //   },
-//   btnText: { color: Colors.dark, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
+//   btnText: { color: Colors.white, fontWeight: '900', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1 },
 //   appliedBanner: {
 //     flexDirection: 'row', alignItems: 'center', gap: 10,
 //     backgroundColor: Colors.orangeBg, borderRadius: Radius.lg, padding: Spacing.md, justifyContent: 'center',

@@ -21,6 +21,8 @@ import { rideService } from '../../../src/services/rideService';
 import { Spacing, Radius } from '../../../src/types/theme';
 import { RideResponse } from '../../../src/types/api';
 import api from '../../../src/services/api';
+import { RideChat } from '../../../src/components/RideChat';
+import { tr } from '../../../src/i18n';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 type RideState = 'CREATED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
@@ -50,7 +52,7 @@ function buildMapHTML(
 var map=L.map('map',{zoomControl:false,attributionControl:false}).setView([${lat},${lon}],14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 var orangeIcon=L.divIcon({html:'<div style="width:14px;height:14px;border-radius:50%;background:#FF8C00;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
-var carIcon=L.divIcon({html:'<div style="width:32px;height:32px;border-radius:8px;background:#1C1C1C;border:2px solid #FF8C00;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:32px;text-align:center">&#128663;</div>',iconSize:[32,32],iconAnchor:[16,16],className:''});
+var carIcon=L.divIcon({html:'<div style="width:32px;height:32px;border-radius:8px;background:#22304A;border:2px solid #FF8C00;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:32px;text-align:center">&#128663;</div>',iconSize:[32,32],iconAnchor:[16,16],className:''});
 var destIcon=L.divIcon({html:'<div style="width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #FF8C00;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
 ${pMarker}${dMarker}${eMarker}${fit}
 </script></body></html>`;
@@ -86,7 +88,7 @@ export default function DriverRideScreen() {
       setRide(enriched);
       setRideState((enriched.state as RideState) || 'CREATED');
       if (enriched.passengerId) loadPassenger(enriched.passengerId);
-    } catch { Alert.alert('Erreur', 'Impossible de charger la course.'); }
+    } catch { Alert.alert(tr("Erreur"), tr("Impossible de charger la course.")); }
     finally { setLoading(false); }
   };
 
@@ -156,7 +158,7 @@ export default function DriverRideScreen() {
       setRideState('ONGOING');
       startPoll();
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message || e?.message || 'Impossible de démarrer.');
+      Alert.alert(tr("Erreur"), e?.response?.data?.message || e?.message || tr("Impossible de démarrer."));
     } finally { setAction(false); }
   };
 
@@ -169,14 +171,14 @@ export default function DriverRideScreen() {
   // ONGOING → COMPLETED : chauffeur termine (seulement une fois arrivé, le backend vérifie aussi)
   const handleComplete = () => {
     if (!nav.arrived) {
-      Alert.alert('Pas encore arrivé', nav.toTarget != null
+      Alert.alert(tr("Pas encore arrivé"), nav.toTarget != null
         ? `Vous pourrez terminer à moins de ${ARRIVAL_RADIUS_M} m de la destination (encore ${formatDistance(nav.toTarget)}).`
-        : 'Activez la localisation pour terminer la course.');
+        : tr("Activez la localisation pour terminer la course."));
       return;
     }
-    Alert.alert('Terminer la course', 'Confirmez-vous la fin de la course ?', [
-      { text: 'Non' },
-      { text: 'Oui, terminer', onPress: async () => {
+    Alert.alert(tr("Terminer la course"), tr("Confirmez-vous la fin de la course ?"), [
+      { text: tr("Non") },
+      { text: tr("Oui, terminer"), onPress: async () => {
         setAction(true);
         try {
           await rideService.completeRide(id!);
@@ -184,7 +186,7 @@ export default function DriverRideScreen() {
           if (pollRef.current) clearInterval(pollRef.current);
           setRideState('COMPLETED');
         } catch (e: any) {
-          Alert.alert('Erreur', e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur.');
+          Alert.alert(tr("Erreur"), e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur.');
         } finally { setAction(false); }
       }},
     ]);
@@ -192,7 +194,7 @@ export default function DriverRideScreen() {
 
   const handleCall = (phone: string) => {
     Linking.openURL(`tel:${phone}`).catch(() =>
-      Alert.alert('Erreur', "Impossible d'ouvrir le téléphone."));
+      Alert.alert(tr("Erreur"), tr("Impossible d'ouvrir le téléphone.")));
   };
 
   const passengerName  = passenger
@@ -202,10 +204,10 @@ export default function DriverRideScreen() {
   const passengerInit  = passengerName[0]?.toUpperCase() || 'P';
 
   const STATE_CFG: Record<RideState, { label: string; color: string; bg: string }> = {
-    CREATED:   { label: 'EN ROUTE VERS LE PASSAGER', color: Colors.orange, bg: Colors.orangeBg },
-    ONGOING:   { label: 'TRAJET EN COURS',            color: Colors.green,  bg: Colors.greenBg  },
-    COMPLETED: { label: 'COURSE TERMINÉE',             color: Colors.green,  bg: Colors.greenBg  },
-    CANCELLED: { label: 'COURSE ANNULÉE',              color: Colors.red,    bg: Colors.redBg    },
+    CREATED:   { label: tr("EN ROUTE VERS LE PASSAGER"), color: Colors.orange, bg: Colors.orangeBg },
+    ONGOING:   { label: tr("TRAJET EN COURS"),            color: Colors.green,  bg: Colors.greenBg  },
+    COMPLETED: { label: tr("COURSE TERMINÉE"),             color: Colors.green,  bg: Colors.greenBg  },
+    CANCELLED: { label: tr("COURSE ANNULÉE"),              color: Colors.red,    bg: Colors.redBg    },
   };
   const cfg = STATE_CFG[rideState] ?? STATE_CFG.CREATED;
   const mapHTML = buildMapHTML(
@@ -235,22 +237,22 @@ export default function DriverRideScreen() {
           />
         </View>
         <Text style={[s.doneTitle, { color: Colors.text }]}>
-          {rideState === 'COMPLETED' ? 'Course terminée' : 'Course annulée'}
+          {rideState === 'COMPLETED' ? tr("Course terminée") : tr("Course annulée")}
         </Text>
         {rideState === 'COMPLETED' && (
           <>
             <Text style={[s.doneSub, { color: Colors.textMuted, marginBottom: 20 }]}>
-              Montant à encaisser : {ride?.price?.toLocaleString() ?? '--'} FCFA
+              {tr("Montant à encaisser : ")}{ride?.price?.toLocaleString() ?? '--'} FCFA
             </Text>
             <TouchableOpacity
               style={[s.doneBtn, { backgroundColor: Colors.green, marginBottom: 12, width: '80%', alignItems: 'center' }]}
               onPress={() => {
                 // TODO: Intégration API de paiement
-                Alert.alert('Paiement Validé', 'Le montant a été ajouté à votre wallet.');
+                Alert.alert(tr("Paiement Validé"), tr("Le montant a été ajouté à votre wallet."));
                 router.replace('/(driver)/dashboard');
               }}
             >
-              <Text style={[s.doneBtnTxt, { color: '#fff' }]}>ENCAISSER LE PAIEMENT</Text>
+              <Text style={[s.doneBtnTxt, { color: '#fff' }]}>{tr("ENCAISSER LE PAIEMENT")}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -258,7 +260,7 @@ export default function DriverRideScreen() {
           style={[s.doneBtn, { backgroundColor: Colors.input, width: '80%', alignItems: 'center' }]}
           onPress={() => router.replace('/(driver)/dashboard')}
         >
-          <Text style={[s.doneBtnTxt, { color: Colors.text }]}>RETOUR AU RADAR</Text>
+          <Text style={[s.doneBtnTxt, { color: Colors.text }]}>{tr("RETOUR AU RADAR")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -311,7 +313,7 @@ export default function DriverRideScreen() {
           <View style={s.routeRow}>
             <View style={[s.dot, { backgroundColor: Colors.orange }]} />
             <View style={{ flex: 1 }}>
-              <Text style={[s.label, { color: Colors.textMuted }]}>DÉPART</Text>
+              <Text style={[s.label, { color: Colors.textMuted }]}>{tr("DÉPART")}</Text>
               <Text style={[s.place, { color: Colors.text }]} numberOfLines={2}>{ride?.startPoint}</Text>
             </View>
           </View>
@@ -327,7 +329,7 @@ export default function DriverRideScreen() {
             <View style={[s.placesRow, { borderTopColor: Colors.cardBorder }]}>
               <Ionicons name="people-outline" size={16} color={Colors.orange} />
               <Text style={[s.placesTxt, { color: Colors.text }]}>
-                {ride.numberOfPlaces} place{ride.numberOfPlaces > 1 ? 's' : ''}
+                {ride.numberOfPlaces} {tr(" place")}{ride.numberOfPlaces > 1 ? 's' : ''}
               </Text>
             </View>
           )}
@@ -340,31 +342,31 @@ export default function DriverRideScreen() {
               style={[s.actionBtn, { backgroundColor: Colors.orange }]}
               onPress={handlePickedUp} disabled={actionLoading} activeOpacity={0.85}>
               {actionLoading
-                ? <ActivityIndicator color="#0D0D0D" />
+                ? <ActivityIndicator color="#FFFFFF" />
                 : <>
-                    <Ionicons name="person-add" size={18} color="#0D0D0D" />
-                    <Text style={s.actionBtnTxt}>J'AI RÉCUPÉRÉ LE CLIENT</Text>
+                    <Ionicons name="person-add" size={18} color="#FFFFFF" />
+                    <Text style={s.actionBtnTxt}>{tr("J'AI RÉCUPÉRÉ LE CLIENT")}</Text>
                   </>}
             </TouchableOpacity>
             
             <TouchableOpacity
               style={[s.actionBtn, { backgroundColor: Colors.input, borderColor: Colors.red, borderWidth: 1 }]}
               onPress={() => {
-                Alert.alert('Annuler la course', 'Voulez-vous vraiment annuler cette course ?', [
-                  { text: 'Non' },
-                  { text: 'Oui, annuler', style: 'destructive', onPress: async () => {
+                Alert.alert(tr("Annuler la course"), tr("Voulez-vous vraiment annuler cette course ?"), [
+                  { text: tr("Non") },
+                  { text: tr("Oui, annuler"), style: 'destructive', onPress: async () => {
                     setAction(true);
                     try {
                       await rideService.updateRideStatus(id!, 'CANCELLED');
                       setRideState('CANCELLED');
                     } catch (e: any) {
-                      Alert.alert('Erreur', e?.response?.data?.message || 'Impossible d\'annuler');
+                      Alert.alert(tr("Erreur"), e?.response?.data?.message || tr("Impossible d'annuler"));
                     } finally { setAction(false); }
                   }}
                 ]);
               }} 
               disabled={actionLoading} activeOpacity={0.85}>
-              <Text style={[s.actionBtnTxt, { color: Colors.red }]}>ANNULER LA COURSE</Text>
+              <Text style={[s.actionBtnTxt, { color: Colors.red }]}>{tr("ANNULER LA COURSE")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -373,7 +375,7 @@ export default function DriverRideScreen() {
         {(rideState === 'CREATED' || rideState === 'ONGOING') && (
           <View style={{ backgroundColor: Colors.orange, borderRadius: 20, padding: 16, marginBottom: 12 }} accessibilityLiveRegion="polite">
             <Text style={{ color: '#fff', opacity: 0.8, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }}>
-              {rideState === 'CREATED' ? 'VERS LE PASSAGER' : 'VERS LA DESTINATION'}
+              {rideState === 'CREATED' ? tr("VERS LE PASSAGER") : tr("VERS LA DESTINATION")}
             </Text>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900', marginTop: 4 }}>{nav.instruction}</Text>
             <View style={{ flexDirection: 'row', marginTop: 12 }}>
@@ -392,7 +394,7 @@ export default function DriverRideScreen() {
         {/* Bouton ONGOING : Terminer */}
         {rideState === 'ONGOING' && !nav.arrived && (
           <Text style={{ color: Colors.textSecondary, textAlign: 'center', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
-            Terminer à moins de {ARRIVAL_RADIUS_M} m de la destination{nav.toTarget != null ? ` (encore ${formatDistance(nav.toTarget)})` : ''}.
+            {tr("Terminer à moins de ")}{ARRIVAL_RADIUS_M} {tr(" m de la destination")}{nav.toTarget != null ? ` (encore ${formatDistance(nav.toTarget)})` : ''}.
           </Text>
         )}
         {rideState === 'ONGOING' && (
@@ -403,7 +405,7 @@ export default function DriverRideScreen() {
               ? <ActivityIndicator color="#fff" />
               : <>
                   <Ionicons name="checkmark" size={18} color="#fff" />
-                  <Text style={[s.actionBtnTxt, { color: '#fff' }]}>TERMINER LA COURSE</Text>
+                  <Text style={[s.actionBtnTxt, { color: '#fff' }]}>{tr("TERMINER LA COURSE")}</Text>
                 </>}
           </TouchableOpacity>
         )}
@@ -413,10 +415,12 @@ export default function DriverRideScreen() {
           <View style={[s.gpsDot, { backgroundColor: driverPos ? Colors.green : Colors.textMuted }]} />
           <Text style={[s.gpsTxt, { color: Colors.textMuted }]}>
             {driverPos ? `GPS actif · ${driverPos.lat.toFixed(4)}, ${driverPos.lon.toFixed(4)}`
-              : 'Localisation en cours...'}
+              : tr("Localisation en cours...")}
           </Text>
         </View>
       </ScrollView>
+      {/* cet écran n'est rendu que pour une course CREATED / ONGOING */}
+      {ride?.driverId && <RideChat rideId={ride.id} userId={ride.driverId} role="DRIVER" />}
     </SafeAreaView>
   );
 }
@@ -459,7 +463,7 @@ const s = StyleSheet.create({
     gap: 10, borderRadius: Radius.xl, paddingVertical: 18,
     elevation: 5,
   },
-  actionBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, letterSpacing: 2 },
+  actionBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, letterSpacing: 2 },
   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center' },
   gpsDot: { width: 6, height: 6, borderRadius: 3 },
   gpsTxt: { fontSize: 10, fontWeight: '600' },
@@ -468,7 +472,7 @@ const s = StyleSheet.create({
   doneTitle:  { fontSize: 26, fontWeight: '900' },
   doneSub:    { fontSize: 15, fontWeight: '700' },
   doneBtn:    { borderRadius: Radius.xl, paddingHorizontal: 32, paddingVertical: 16 },
-  doneBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, letterSpacing: 2 },
+  doneBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, letterSpacing: 2 },
 });
 
 // /**
@@ -539,7 +543,7 @@ const s = StyleSheet.create({
 //   iconSize:[14,14],iconAnchor:[7,7],className:''
 // });
 // var carIcon = L.divIcon({
-//   html:'<div style="width:36px;height:36px;border-radius:10px;background:#1C1C1C;border:2px solid #FF8C00;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:36px;text-align:center">&#x1F697;</div>',
+//   html:'<div style="width:36px;height:36px;border-radius:10px;background:#22304A;border:2px solid #FF8C00;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:36px;text-align:center">&#x1F697;</div>',
 //   iconSize:[36,36],iconAnchor:[18,18],className:''
 // });
 // var destIcon = L.divIcon({
@@ -877,9 +881,9 @@ const s = StyleSheet.create({
 //             activeOpacity={0.85}
 //           >
 //             {actionLoading
-//               ? <ActivityIndicator color="#0D0D0D" />
+//               ? <ActivityIndicator color="#FFFFFF" />
 //               : <>
-//                   <Ionicons name="play" size={18} color="#0D0D0D" />
+//                   <Ionicons name="play" size={18} color="#FFFFFF" />
 //                   <Text style={s.actionBtnTxt}>DÉMARRER LA COURSE</Text>
 //                 </>
 //             }
@@ -976,7 +980,7 @@ const s = StyleSheet.create({
 //     shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 4 },
 //     shadowOpacity: 0.25, elevation: 5,
 //   },
-//   actionBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 14, letterSpacing: 2 },
+//   actionBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, letterSpacing: 2 },
 
 //   // GPS
 //   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center' },
@@ -989,7 +993,7 @@ const s = StyleSheet.create({
 //   doneTitle:  { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
 //   doneSub:    { fontSize: 15, fontWeight: '700', textAlign: 'center' },
 //   doneBtn:    { borderRadius: Radius.xl, paddingHorizontal: 32, paddingVertical: 16, marginTop: 8 },
-//   doneBtnTxt: { color: '#0D0D0D', fontWeight: '900', fontSize: 13, letterSpacing: 2 },
+//   doneBtnTxt: { color: '#FFFFFF', fontWeight: '900', fontSize: 13, letterSpacing: 2 },
 // });
 
 

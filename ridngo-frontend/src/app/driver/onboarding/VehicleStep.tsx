@@ -8,6 +8,7 @@ import {
   Plus, Trash2, Image as ImageIcon, Sparkles, 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 const FALLBACK_OPTIONS = {
   makes: [{ vehicleMakeId: '1', makeName: 'Toyota' }, { vehicleMakeId: '2', makeName: 'Mercedes' }],
@@ -142,7 +143,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registrationFile || !serialFile) return alert("Photos justificatives manquantes.");
+    if (!registrationFile || !serialFile) return alert(tr("Photos justificatives manquantes."));
     
     setLoading(true);
     try {
@@ -191,7 +192,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
       console.log("status :", err.response?.status);
       console.log("data :", err.response?.data);
 
-      toast.error(err.response?.data?.detail || err.response?.data?.message || "Inscription du véhicule impossible.");
+      toast.error(err.response?.data?.detail || err.response?.data?.message || tr("Inscription du véhicule impossible."));
 
       setErrorStatus(err.response?.status || 500);
       setLoading(false);
@@ -204,27 +205,27 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
      <div className="space-y-6">
       <form onSubmit={onSubmit} className="glass p-8 md:p-12 border-none shadow-2xl bg-background space-y-12">
         <div>
-            <h1 className="text-4xl font-black italic tracking-tighter">Étape 1 : Le Véhicule</h1>
-            <p className="opacity-50 font-medium italic">Enregistrez vos documents et personnalisez vos services.</p>
+            <h1 className="text-4xl font-black italic tracking-tighter">{tr("Étape 1 : Le Véhicule")}</h1>
+            <p className="opacity-50 font-medium italic">{tr("Enregistrez vos documents et personnalisez vos services.")}</p>
         </div>
 
         {/* SECTION 1: IDENTITÉ */}
         <section className="space-y-6">
             <div className="flex items-center gap-2 text-orange-btn border-b border-orange-btn/10 pb-2">
-              <ClipboardList size={18}/><h2 className="font-black uppercase text-xs tracking-widest">Identité du véhicule</h2>
+              <ClipboardList size={18}/><h2 className="font-black uppercase text-xs tracking-widest">{tr("Identité du véhicule")}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <label className="label-v">Numéro de Permis</label>
-                <input required name="licenseNumber" className="input-v no-autofill" placeholder="N° Permis" onChange={handleInputChange} />
+                <label className="label-v">{tr("Numéro de Permis")}</label>
+                <input required name="licenseNumber" className="input-v no-autofill" placeholder={tr("N° Permis")} onChange={handleInputChange} />
               </div>
               <div className="space-y-1">
-                <label className="label-v">Immatriculation</label>
-                <input required name="registrationNumber" className="input-v no-autofill" placeholder="Ex: LT-000-AA" onChange={handleInputChange} />
+                <label className="label-v">{tr("Immatriculation")}</label>
+                <input required name="registrationNumber" className="input-v no-autofill" placeholder={tr("Ex: LT-000-AA")} onChange={handleInputChange} />
               </div>
               <div className="space-y-1">
-                <label className="label-v">Numéro de Série (VIN)</label>
-                <input required name="vehicleSerialNumber" className="input-v no-autofill" placeholder="N° Série (VIN)" onChange={handleInputChange} />
+                <label className="label-v">{tr("Numéro de Série (VIN)")}</label>
+                <input required name="vehicleSerialNumber" className="input-v no-autofill" placeholder={tr("N° Série (VIN)")} onChange={handleInputChange} />
               </div>
             </div>
         </section>
@@ -232,11 +233,11 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
         {/* SECTION 2: RÉFÉRENTIEL */}
         <section className="space-y-6">
             <div className="flex items-center gap-2 text-orange-btn border-b border-orange-btn/10 pb-2">
-              <Cog size={18}/><h2 className="font-black uppercase text-xs tracking-widest">Spécifications techniques</h2>
+              <Cog size={18}/><h2 className="font-black uppercase text-xs tracking-widest">{tr("Spécifications techniques")}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-1 relative">
-                <label className="label-v">Marque</label>
+                <label className="label-v">{tr("Marque")}</label>
 
                 <input
                   value={makeQuery}
@@ -248,7 +249,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                   onFocus={() => setShowMakeDropdown(true)}
                   onBlur={() => setTimeout(() => setShowMakeDropdown(false), 150)}
                   className="input-v no-autofill"
-                  placeholder="Entrez une marque..."
+                  placeholder={tr("Entrez une marque...")}
                 />
 
                 {showMakeDropdown && makeQuery && (
@@ -273,7 +274,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                 )}
               </div>
               <div className="space-y-1 relative">
-                <label className="label-v">Modèle</label>
+                <label className="label-v">{tr("Modèle")}</label>
 
                 <input
                   value={modelQuery}
@@ -285,7 +286,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                   onFocus={() => setShowModelDropdown(true)}
                   onBlur={() => setTimeout(() => setShowModelDropdown(false), 150)}
                   className="input-v no-autofill"
-                  placeholder="Entrez un modèle..."
+                  placeholder={tr("Entrez un modèle...")}
                 />
 
                 {showModelDropdown && modelQuery && (
@@ -310,7 +311,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                 )}
               </div>
               <div className="space-y-1 relative">
-                <label className="label-v">Constructeur</label>
+                <label className="label-v">{tr("Constructeur")}</label>
 
                 <input
                   value={manufacturerQuery}
@@ -322,7 +323,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                   onFocus={() => setShowManufacturerDropdown(true)}
                   onBlur={() => setTimeout(() => setShowManufacturerDropdown(false), 150)}
                   className="input-v no-autofill"
-                  placeholder="Entrez un constructeur..."
+                  placeholder={tr("Entrez un constructeur...")}
                 />
 
                 {showManufacturerDropdown && manufacturerQuery && (
@@ -347,30 +348,30 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
                 )}
               </div>
               <div className="space-y-1">
-                <label className="label-v">Transmission</label>
+                <label className="label-v">{tr("Transmission")}</label>
                 <select required name="transmissionType" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>{tr("Sélectionner")}</option>
                     {options.transmissions.map((o: any) => <option key={o.transmissionTypeId || o.id} value={o.typeName} className="opt-v">{o.typeName}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="label-v">Carburant</label>
+                <label className="label-v">{tr("Carburant")}</label>
                 <select required name="fuelTypeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>{tr("Sélectionner")}</option>
                     {options.fuels.map((o: any) => <option key={o.fuelTypeId || o.id} value={o.fuelTypeName} className="opt-v">{o.fuelTypeName}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="label-v">Type véhicule</label>
+                <label className="label-v">{tr("Type véhicule")}</label>
                 <select required name="typeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>{tr("Sélectionner")}</option>
                     {options.types.map((o: any) => <option key={o.vehicleTypeId || o.id} value={o.typeName} className="opt-v">{o.typeName}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="label-v">Gabarit</label>
+                <label className="label-v">{tr("Gabarit")}</label>
                 <select required name="sizeName" className="input-v" onChange={handleInputChange}>
-                    <option value="" className="opt-v" disabled hidden>Sélectionner</option>
+                    <option value="" className="opt-v" disabled hidden>{tr("Sélectionner")}</option>
                     {options.sizes.map((o: any) => <option key={o.vehicleSizeId || o.id} value={o.sizeName} className="opt-v">{o.sizeName}</option>)}
                 </select>
               </div>
@@ -380,23 +381,23 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
         {/* NOUVELLE SECTION: CONFORT & SERVICES */}
         <section className="space-y-6">
             <div className="flex items-center gap-2 text-orange-btn border-b border-orange-btn/10 pb-2">
-              <Sparkles size={18}/><h2 className="font-black uppercase text-xs tracking-widest">Options de confort & Services</h2>
+              <Sparkles size={18}/><h2 className="font-black uppercase text-xs tracking-widest">{tr("Options de confort & Services")}</h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { id: 'airConditioned', label: 'Climatisation' },
-                    { id: 'wifi', label: 'Wi-Fi gratuit' },
-                    { id: 'screen', label: 'Écran Vidéo' },
-                    { id: 'soft', label: 'Sièges souples' },
-                    { id: 'comfortable', label: 'Confort Premium' },
-                    { id: 'internet', label: 'Internet' },
-                    { id: 'petsAllow', label: 'Animaux admis' },
-                    { id: 'pickupAndDrop', label: 'Porte à porte' },
-                    { id: 'tollCharge', label: 'Péages inclus' },
-                    { id: 'carParking', label: 'Parking inclus' },
-                    { id: 'alarm', label: 'Système Alarme' },
-                    { id: 'stateTax', label: 'Taxes incluses' },
-                    { id: 'driverAllowance', label: 'Frais chauffeur' },
+                    { id: 'airConditioned', label: tr("Climatisation") },
+                    { id: 'wifi', label: tr("Wi-Fi gratuit") },
+                    { id: 'screen', label: tr("Écran Vidéo") },
+                    { id: 'soft', label: tr("Sièges souples") },
+                    { id: 'comfortable', label: tr("Confort Premium") },
+                    { id: 'internet', label: tr("Internet") },
+                    { id: 'petsAllow', label: tr("Animaux admis") },
+                    { id: 'pickupAndDrop', label: tr("Porte à porte") },
+                    { id: 'tollCharge', label: tr("Péages inclus") },
+                    { id: 'carParking', label: tr("Parking inclus") },
+                    { id: 'alarm', label: tr("Système Alarme") },
+                    { id: 'stateTax', label: tr("Taxes incluses") },
+                    { id: 'driverAllowance', label: tr("Frais chauffeur") },
                 ].map((opt) => (
                     <label key={opt.id} className="flex items-center gap-3 p-4 bg-foreground/5 rounded-2xl cursor-pointer hover:bg-orange-btn/5 transition-colors border border-transparent hover:border-orange-btn/20">
                         <input 
@@ -415,24 +416,24 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
         {/* SECTION 3: TECH */}
         <section className="space-y-6">
             <div className="flex items-center gap-2 text-orange-btn border-b border-orange-btn/10 pb-2">
-              <Gauge size={18}/><h2 className="font-black uppercase text-xs tracking-widest">Performances</h2>
+              <Gauge size={18}/><h2 className="font-black uppercase text-xs tracking-widest">{tr("Performances")}</h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1">
-                <label className="label-v">Capacité Réservoir (L)</label>
-                <input type="number" name="tankCapacity" placeholder="Ex: 50" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.tankCapacity} />
+                <label className="label-v">{tr("Capacité Réservoir (L)")}</label>
+                <input type="number" name="tankCapacity" placeholder={tr("Ex: 50")} className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.tankCapacity} />
               </div>
               <div className="space-y-1">
-                <label className="label-v">Kilométrage Actuel</label>
-                <input type="number" name="mileageSinceCommissioning" placeholder="Ex: 12000" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.mileageSinceCommissioning} />
+                <label className="label-v">{tr("Kilométrage Actuel")}</label>
+                <input type="number" name="mileageSinceCommissioning" placeholder={tr("Ex: 12000")} className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.mileageSinceCommissioning} />
               </div>
               <div className="space-y-1">
-                <label className="label-v">Nombre de Places</label>
-                <input type="number" name="totalSeatNumber" placeholder="Ex: 4" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.totalSeatNumber} />
+                <label className="label-v">{tr("Nombre de Places")}</label>
+                <input type="number" name="totalSeatNumber" placeholder={tr("Ex: 4")} className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.totalSeatNumber} />
               </div>
               <div className="space-y-1">
-                <label className="label-v">Consommation (L/km)</label>
-                <input type="number" step="0.01" name="averageFuelConsumptionPerKm" placeholder="Ex: 0.08" className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.averageFuelConsumptionPerKm} />
+                <label className="label-v">{tr("Consommation (L/km)")}</label>
+                <input type="number" step="0.01" name="averageFuelConsumptionPerKm" placeholder={tr("Ex: 0.08")} className="input-v no-autofill" onChange={handleInputChange} value={form.vehicle.averageFuelConsumptionPerKm} />
               </div>
             </div>
         </section>
@@ -441,12 +442,12 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-4xl p-8 cursor-pointer transition-all ${registrationFile ? 'border-green-500 bg-green-500/5' : 'border-foreground/10 hover:border-orange-btn'}`}>
               <FileText className={registrationFile ? 'text-green-500' : 'opacity-20'} />
-              <span className="text-[10px] font-black mt-2 uppercase text-center">{registrationFile ? registrationFile.name : "Scanner Carte Grise"}</span>
+              <span className="text-[10px] font-black mt-2 uppercase text-center">{registrationFile ? registrationFile.name : tr("Scanner Carte Grise")}</span>
               <input type="file" hidden accept="image/*" onChange={e => setRegistrationFile(e.target.files?.[0] || null)} />
             </label>
             <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-4xl p-8 cursor-pointer transition-all ${serialFile ? 'border-green-500 bg-green-500/5' : 'border-foreground/10 hover:border-orange-btn'}`}>
               <ShieldCheck className={serialFile ? 'text-green-500' : 'opacity-20'} />
-              <span className="text-[10px] font-black mt-2 uppercase text-center">{serialFile ? serialFile.name : "Photo N° Série (VIN)"}</span>
+              <span className="text-[10px] font-black mt-2 uppercase text-center">{serialFile ? serialFile.name : tr("Photo N° Série (VIN)")}</span>
               <input type="file" hidden accept="image/*" onChange={e => setSerialFile(e.target.files?.[0] || null)} />
             </label>
         </section>
@@ -454,7 +455,7 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
         {/* SECTION 5: GALERIE PHOTOS */}
         <section className="space-y-6">
             <div className="flex items-center gap-2 text-orange-btn border-b border-orange-btn/10 pb-2">
-              <ImageIcon size={18}/><h2 className="font-black uppercase text-xs tracking-widest">Galerie d&apos;illustrations</h2>
+              <ImageIcon size={18}/><h2 className="font-black uppercase text-xs tracking-widest">{tr("Galerie d'illustrations")}</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {galleryFiles.map((file, index) => (
@@ -467,14 +468,14 @@ export default function VehicleStep({ onComplete }: { onComplete: () => void }) 
               ))}
               <label className="aspect-square border-2 border-dashed border-foreground/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-orange-btn/5 transition-colors group">
                 <Plus className="text-foreground/20 group-hover:text-orange-btn transition-colors" />
-                <span className="text-[8px] font-black uppercase mt-1 opacity-20 group-hover:opacity-100">Ajouter</span>
+                <span className="text-[8px] font-black uppercase mt-1 opacity-20 group-hover:opacity-100">{tr("Ajouter")}</span>
                 <input type="file" hidden multiple accept="image/*" onChange={handleGalleryChange} />
               </label>
             </div>
         </section>
 
         <button disabled={loading} type="submit" className="w-full bg-orange-btn text-white py-6 rounded-3xl font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-[1.01] active:scale-95 transition-all">
-            {loading ? <Loader2 className="animate-spin" /> : <>Confirmer l&apos;inscription véhicule <ChevronRight /></>}
+            {loading ? <Loader2 className="animate-spin" /> : <>{tr("Confirmer l'inscription véhicule ")}<ChevronRight /></>}
         </button>
 
         <style jsx>{`

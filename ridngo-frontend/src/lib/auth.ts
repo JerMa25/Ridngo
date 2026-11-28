@@ -2,6 +2,9 @@
 import api from './api-client';
 import { AuthResponse, UserRole } from '@/types/api';
 import { handleApiError } from '@/utils/error-handler';
+import { clearOfflineCache } from '@/components/providers/QueryProvider';
+import { homeFor } from '@/components/layout/RouteGuard';
+import { tr } from '@/lib/i18n';
 
 export type AuthResult =
   | { success: true; redirectUrl: string }
@@ -66,7 +69,7 @@ export const register = async (data: any, requestedRole: UserRole = 'RIDE_AND_GO
 };
 
 const finalizeSession = async (authData: AuthResponse): Promise<AuthResult> => {
-  if (!authData?.accessToken) throw new Error("Token manquant");
+  if (!authData?.accessToken) throw new Error(tr("Token manquant"));
 
   localStorage.setItem('accessToken', authData.accessToken);
   if (authData.refreshToken) localStorage.setItem('refreshToken', authData.refreshToken);
@@ -86,6 +89,7 @@ const finalizeSession = async (authData: AuthResponse): Promise<AuthResult> => {
     name: userProfile.name || `${userProfile.firstName} ${userProfile.lastName}`,
     username: userProfile.username || userProfile.name?.split(' ')[0] || userProfile.firstName,
     email: userProfile.email,
+    photoUri: userProfile.photoUri,
     phone: userProfile.telephone, // CRUCIAL : On ajoute le téléphone ici
     // Priorité ADMIN > DRIVER > PASSENGER (l'ordre des rôles renvoyés n'est pas garanti)
     role: ['ADMIN', 'DRIVER', 'PASSENGER'].find(r =>
@@ -93,9 +97,8 @@ const finalizeSession = async (authData: AuthResponse): Promise<AuthResult> => {
   };
 
   localStorage.setItem('user', JSON.stringify(userObj));
+  // le cache hors ligne peut contenir les données du compte précédent
+  await clearOfflineCache();
 
-  return {
-    success: true,
-    redirectUrl: userObj.role === 'ADMIN' ? "/admin/dashboard" : isDriver ? "/driver/dashboard" : "/ride"
-  };
+  return { success: true, redirectUrl: homeFor(userObj.role as 'ADMIN' | 'DRIVER' | 'PASSENGER') };
 };

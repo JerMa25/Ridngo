@@ -8,10 +8,11 @@ import toast from 'react-hot-toast';
 
 import VehicleStep from './VehicleStep';
 import SyndicateStep from './SyndicateStep';
+import { tr } from '@/lib/i18n';
 
 export default function DriverOnboardingPage() {
   return (
-    <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-orange-btn" /></div>}>
+    <Suspense fallback={<div className="h-app flex items-center justify-center"><Loader2 className="animate-spin text-orange-btn" /></div>}>
       <OnboardingContent />
     </Suspense>
   );
@@ -49,13 +50,13 @@ function OnboardingContent() {
       setStep(3);
       setTimeout(() => router.push('/driver/dashboard'), 3000);
     } catch (e) {
-      toast.error("La vérification UGate n'a pas pu être confirmée. Contactez le support.");
+      toast.error(tr("La vérification UGate n'a pas pu être confirmée. Contactez le support."));
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-10 flex flex-col items-center justify-center">
+    <div className="min-h-app p-4 md:p-10 flex flex-col items-center justify-center">
       <div className="max-w-4xl w-full">
         
         {/* PROGRESS */}
@@ -83,8 +84,8 @@ function OnboardingContent() {
               <div className="w-24 h-24 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl">
                 <CheckCircle2 size={48} />
               </div>
-              <h2 className="text-4xl font-black italic tracking-tighter mb-4">Félicitations !</h2>
-              <p className="opacity-60 font-medium mb-10">Votre profil est désormais complet et certifié. Redirection vers le radar...</p>
+              <h2 className="text-4xl font-black italic tracking-tighter mb-4">{tr("Félicitations !")}</h2>
+              <p className="opacity-60 font-medium mb-10">{tr("Votre profil est désormais complet et certifié. Redirection vers le radar...")}</p>
               <Loader2 className="animate-spin text-orange-btn mx-auto" />
             </motion.div>
           )}

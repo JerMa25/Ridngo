@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Search, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tr } from '@/lib/i18n';
 
 export const LocationFilterModal = ({ isOpen, onClose, locations, onSelect, title }: any) => {
   const [query, setQuery] = useState("");
@@ -27,7 +28,7 @@ export const LocationFilterModal = ({ isOpen, onClose, locations, onSelect, titl
           <input 
             autoFocus
             className="w-full bg-foreground/5 p-4 pl-12 rounded-2xl outline-none focus:ring-2 focus:ring-orange-btn font-bold text-sm"
-            placeholder="Rechercher un lieu..."
+            placeholder={tr("Rechercher un lieu...")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -35,8 +36,7 @@ export const LocationFilterModal = ({ isOpen, onClose, locations, onSelect, titl
 
         <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
           <button onClick={() => { onSelect(null); onClose(); }} className="w-full text-left p-4 rounded-xl hover:bg-orange-btn hover:text-white transition-all text-xs font-black uppercase opacity-60">
-            Tous les lieux
-          </button>
+            {tr("Tous les lieux")}</button>
           {filtered.map((loc: string, i: number) => (
             <button key={i} onClick={() => { onSelect(loc); onClose(); }} className="w-full text-left p-4 rounded-xl hover:bg-foreground/5 transition-all flex items-center gap-3">
               <MapPin size={14} className="text-orange-btn" />

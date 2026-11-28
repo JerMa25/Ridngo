@@ -1,6 +1,10 @@
 import { ERROR_MESSAGES } from './error-messages';
+import { tr } from '@/lib/i18n';
 
-export const handleApiError = (
+// Message traduit dans la langue de l'interface (messages du backend compris)
+export const handleApiError = (error: any, context?: 'auth' | 'ride' | 'payment'): string => tr(rawApiError(error, context));
+
+const rawApiError = (
   error: any,
   context?: 'auth' | 'ride' | 'payment'
 ): string => {

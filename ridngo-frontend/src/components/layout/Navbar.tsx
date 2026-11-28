@@ -7,9 +7,15 @@ import { Sun, Moon, ArrowLeft, Bell, Car, ShieldAlert, LogOut, AlertTriangle, Ma
 import { UserLocation } from '@/utils/geolocation';
 import { userService } from '@/lib/userService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clearOfflineCache } from '@/components/providers/QueryProvider';
+import { clearSession } from '@/lib/session';
+import { useI18n, LangSwitch } from '@/lib/i18n';
+import { tr } from '@/lib/i18n';
 
 // --- Modale de confirmation déconnexion ---
-const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => (
+export const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => {
+  const { t } = useI18n();
+  return (
   <AnimatePresence>
     <motion.div
       initial={{ opacity: 0 }}
@@ -36,9 +42,9 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; on
 
         {/* Texte */}
         <div>
-          <h2 className="text-xl font-black tracking-tight text-foreground">Déconnexion</h2>
+          <h2 className="text-xl font-black tracking-tight text-foreground">{t('Déconnexion')}</h2>
           <p className="text-sm text-foreground/50 font-medium mt-2 leading-relaxed">
-            Êtes-vous sûr de vouloir vous déconnecter ?
+            {t('Êtes-vous sûr de vouloir vous déconnecter ?')}
           </p>
         </div>
 
@@ -48,20 +54,21 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void; on
             onClick={onCancel}
             className="flex-1 py-3 px-4 rounded-2xl bg-foreground/5 hover:bg-foreground/10 transition-all font-black text-[11px] uppercase tracking-widest text-foreground/60"
           >
-            Annuler
+            {t('Annuler')}
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 py-3 px-4 rounded-2xl bg-red-500 hover:bg-red-600 transition-all font-black text-[11px] uppercase tracking-widest text-white shadow-lg shadow-red-500/20 flex items-center justify-center gap-2"
           >
             <LogOut size={14} />
-            Déconnecter
+            {t('Déconnecter')}
           </button>
         </div>
       </motion.div>
     </motion.div>
   </AnimatePresence>
-);
+  );
+};
 
 export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLocation }: any & {
   location?: UserLocation | null;
@@ -69,6 +76,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
 }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
   const isHome = pathname === '/';
   const [hasUnread, setHasUnread] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -84,10 +92,11 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
   }, [user, pathname]);
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearSession();
     setUser(null);
     setShowLogoutModal(false);
-    router.push('/');
+    // rechargement complet : vide aussi le cache React Query en mémoire
+    clearOfflineCache().finally(() => { window.location.href = '/'; });
   };
 
   return (
@@ -100,7 +109,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
             <button 
               onClick={() => router.back()}
               className="p-2 hover:bg-foreground/5 rounded-full text-orange-btn transition-colors"
-              title="Retour"
+              title={t('Retour')}
             >
               <ArrowLeft size={24} />
             </button>
@@ -108,7 +117,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
           
           <Link href="/" className="flex items-center gap-2 text-2xl font-black tracking-tighter">
             <span className="bg-orange-btn text-white px-2 rounded-lg italic">R</span>
-            <span className="text-foreground hidden sm:inline">RidnGo</span>
+            <span className="text-foreground hidden sm:inline">{tr("RidnGo")}</span>
           </Link>
 
           {user && location && (
@@ -126,7 +135,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
           {user && isLoadingLocation && !location && (
             <div className="flex items-center gap-1.5 pl-3 ml-1 border-l border-foreground/10">
               <Loader2 size={14} className="text-orange-btn animate-spin shrink-0" />
-              <span className="text-[10px] font-bold text-foreground/40 hidden sm:inline">Localisation…</span>
+              <span className="text-[10px] font-bold text-foreground/40 hidden sm:inline">{tr("Localisation…")}</span>
             </div>
           )}
         </div>
@@ -141,7 +150,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
               }`}
             >
               <LayoutDashboard size={16} />
-              Dashboard
+              {t('Tableau de bord')}
             </Link>
           )}
           {user?.role === 'PASSENGER' && (
@@ -149,7 +158,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
               href="/ride"
               className="hover:text-orange-btn transition-colors flex items-center gap-2"
             >
-              <Car size={16} /> Commander
+              <Car size={16} /> {t('Commander')}
             </Link>
           )}
           {user?.role === 'PASSENGER' && (
@@ -160,19 +169,20 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
               }`}
             >
               <BadgePercent size={16} />
-              Mes offres
+              {t('Mes offres')}
             </Link>
           )}
           {user?.role === 'DRIVER' && (
-            <Link href="/driver/dashboard" className="hover:text-orange-btn transition-colors">Radar</Link>
+            <Link href="/driver/dashboard" className="hover:text-orange-btn transition-colors">{t('Radar')}</Link>
           )}
           {user?.role === 'ADMIN' && (
-            <Link href="/admin/dashboard" className="text-orange-btn flex items-center gap-1"><ShieldAlert size={14}/> Admin</Link>
+            <Link href="/admin/dashboard" className="text-orange-btn flex items-center gap-1"><ShieldAlert size={14}/> {t('Admin')}</Link>
           )}
         </div>
 
         {/* DROITE : Actions */}
         <div className="flex items-center gap-2">
+          <LangSwitch />
           <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 hover:bg-foreground/5 rounded-full text-foreground/40">
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -180,10 +190,10 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
           {!user ? (
             <div className="flex gap-2 ml-2">
               <Link href="/login" className="px-4 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-foreground/5 transition text-foreground">
-                Connexion
+                {t('Connexion')}
               </Link>
               <Link href="/register" className="hidden sm:block px-5 py-2 bg-orange-btn rounded-xl font-black uppercase text-[10px] tracking-widest text-white shadow-lg shadow-orange-btn/20 hover:scale-105 transition-all">
-                S&apos;inscrire
+                {t("S'inscrire")}
               </Link>
             </div>
           ) : (
@@ -196,7 +206,9 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
               </Link>
 
               <Link href="/profile" className="flex items-center gap-3 bg-foreground/5 pl-2 pr-2 sm:pr-4 py-1.5 rounded-full border border-foreground/5 hover:bg-foreground/10 transition-all group">
-                <div className="w-8 h-8 rounded-full bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">{user.name[0]}</div>
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-btn flex items-center justify-center text-white font-black text-xs group-hover:scale-110 transition-transform">
+                  {user.photoUri ? <img src={user.photoUri} alt="" className="w-full h-full object-cover" /> : user.name?.[0]}
+                </div>
                 <div className="hidden sm:flex flex-col -space-y-1 text-left">
                   <span className="text-[11px] font-black text-foreground">{user.name.split(' ')[0]}</span>
                   <span className="text-[9px] font-bold text-orange-btn uppercase">{user.role}</span>
@@ -206,7 +218,7 @@ export const Navbar = ({ theme, setTheme, user, setUser, location, isLoadingLoca
               {/* BOUTON DÉCONNEXION */}
               <button
                 onClick={() => setShowLogoutModal(true)}
-                title="Se déconnecter"
+                title={t('Se déconnecter')}
                 className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/40 hover:bg-red-500/10 hover:text-red-500 transition-all"
               >
                 <LogOut size={17} />

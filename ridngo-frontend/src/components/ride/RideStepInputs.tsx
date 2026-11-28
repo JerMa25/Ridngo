@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation } from 'lucide-react';
 import { LocationInput } from '@/components/home/LocationInput';
+import { tr } from '@/lib/i18n';
 
 interface Props {
   pickup: { name: string; lat: string; lon: string };
@@ -24,20 +25,20 @@ export const RideStepInputs = ({ pickup, setPickup, destination, setDestination,
       className="flex flex-col h-full"
     >
       <div className="mb-8">
-        <h1 className="text-3xl font-black mb-2 text-foreground">Où allez-vous ?</h1>
-        <p className="text-sm opacity-50 font-medium">Saisissez vos adresses pour obtenir une estimation.</p>
+        <h1 className="text-3xl font-black mb-2 text-foreground">{tr("Où allez-vous ?")}</h1>
+        <p className="text-sm opacity-50 font-medium">{tr("Saisissez vos adresses pour obtenir une estimation.")}</p>
       </div>
 
       <div className="space-y-4 mb-8">
         <LocationInput 
-          placeholder="Lieu de prise en charge"
+          placeholder={tr("Lieu de prise en charge")}
           icon={<MapPin size={20} />}
           value={pickup.name}
           onSelect={setPickup}
           onFocus={() => setActiveField('pickup')}
         />
         <LocationInput 
-          placeholder="Destination finale"
+          placeholder={tr("Destination finale")}
           icon={<Navigation size={20} />}
           value={destination.name}
           onSelect={setDestination}
@@ -51,8 +52,7 @@ export const RideStepInputs = ({ pickup, setPickup, destination, setDestination,
           disabled={!pickup.name || !destination.name} 
           className="w-full bg-orange-btn text-white py-5 rounded-2xl font-black text-sm shadow-xl shadow-orange-btn/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 disabled:grayscale transition-all uppercase tracking-widest"
         >
-          Voir les prix
-        </button>
+          {tr("Voir les prix")}</button>
       </div>
     </motion.div>
   );

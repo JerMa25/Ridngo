@@ -1,15 +1,24 @@
 import axios, { AxiosInstance } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { reportConnectivity } from './connectivityBus';
+import { tr } from '../i18n';
+
+// Trousseau iOS lisible dès le premier déverrouillage : sinon les lectures échouent téléphone verrouillé
+// ("User interaction is not allowed") pendant le suivi de course en arrière-plan.
+export const KEYCHAIN: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK };
 
 // Défini au build via EXPO_PUBLIC_API_URL (voir eas.json) ; sinon IP locale pour le dev sur réseau local
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.62.212.154:8080';
 export const VEHICLE_URL = process.env.EXPO_PUBLIC_VEHICLE_API_URL || 'https://traefikdev.yowyob.com/vehicule';
 
+// Connexion / inscription passent par le Kernel (jusqu'à 60 s côté backend) : 15 s coupait des requêtes
+// qui auraient abouti. On attend un peu plus que le backend pour recevoir son vrai message d'erreur.
+export const REQUEST_TIMEOUT_MS = 65000;
+
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 export const vehicleApi: AxiosInstance = axios.create({
@@ -45,6 +54,10 @@ api.interceptors.response.use(
     return r;
   },
   async error => {
+    // messages du backend (français) affichés dans la langue de l'interface
+    const data = error.response?.data;
+    if (data && typeof data.detail === 'string') data.detail = tr(data.detail);
+    if (data && typeof data.message === 'string') data.message = tr(data.message);
     // Pas de `error.response` = la requête n'a pas atteint le serveur (pas de réseau,
     // DNS, timeout...). On le marque explicitement pour que les écrans puissent
     // distinguer "hors ligne" d'une vraie erreur serveur et basculer sur le cache.
@@ -76,8 +89,8 @@ api.interceptors.response.use(
     try {
       const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, { refreshToken });
       const { accessToken, refreshToken: newRefresh } = res.data;
-      await SecureStore.setItemAsync('accessToken', accessToken);
-      await SecureStore.setItemAsync('refreshToken', newRefresh);
+      await SecureStore.setItemAsync('accessToken', accessToken, KEYCHAIN);
+      await SecureStore.setItemAsync('refreshToken', newRefresh, KEYCHAIN);
       api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
       processQueue(null, accessToken);
       return api(originalRequest);
@@ -86,11 +99,16 @@ api.interceptors.response.use(
       await SecureStore.deleteItemAsync('accessToken');
       await SecureStore.deleteItemAsync('refreshToken');
       await SecureStore.deleteItemAsync('user');
+      sessionExpiredListener?.();
       return Promise.reject(e);
     } finally {
       isRefreshing = false;
     }
   }
 );
+
+// AuthContext s'y abonne pour renvoyer vers l'accueil quand le refresh échoue
+let sessionExpiredListener: (() => void) | null = null;
+export const onSessionExpired = (listener: (() => void) | null) => { sessionExpiredListener = listener; };
 
 export default api;

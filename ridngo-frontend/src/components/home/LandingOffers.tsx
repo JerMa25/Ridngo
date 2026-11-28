@@ -5,6 +5,7 @@ import { rideService } from '@/lib/rideService';
 import { motion } from 'framer-motion';
 import { MapPin, Banknote, User, LayoutDashboard, UserPlus, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import { tr } from '@/lib/i18n';
 
 export const LandingOffers = () => {
   const [offers, setOffers] = useState<any[]>([]);
@@ -26,21 +27,18 @@ export const LandingOffers = () => {
     if (!user) {
       return (
         <Link href="/login" className="flex items-center gap-2 px-6 py-3 bg-orange-btn text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">
-          <LogIn size={16} /> Se connecter en tant que chauffeur
-        </Link>
+          <LogIn size={16} /> {tr(" Se connecter en tant que chauffeur")}</Link>
       );
     }
     if (user.role === 'PASSENGER') {
       return (
         <Link href="/register?role=driver" className="flex items-center gap-2 px-6 py-3 bg-orange-btn text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">
-          <UserPlus size={16} /> Devenir chauffeur
-        </Link>
+          <UserPlus size={16} /> {tr(" Devenir chauffeur")}</Link>
       );
     }
     return (
       <Link href="/driver/dashboard" className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">
-        <LayoutDashboard size={16} /> Accéder à mon radar
-      </Link>
+        <LayoutDashboard size={16} /> {tr(" Accéder à mon radar")}</Link>
     );
   };
 
@@ -49,8 +47,8 @@ export const LandingOffers = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-4">
-            <h2 className="text-orange-btn font-black tracking-[0.3em] text-xs uppercase">Courses disponibles</h2>
-            <p className="text-4xl font-black text-foreground">Dernières offres publiées</p>
+            <h2 className="text-orange-btn font-black tracking-[0.3em] text-xs uppercase">{tr("Courses disponibles")}</h2>
+            <p className="text-4xl font-black text-foreground">{tr("Dernières offres publiées")}</p>
           </div>
           {renderCTA()}
         </div>
@@ -87,13 +85,13 @@ export const LandingOffers = () => {
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-foreground" /></div>
-                    <p className="text-xs font-bold line-clamp-1">{offer.numberOfPlaces} places</p>
+                    <p className="text-xs font-bold line-clamp-1">{offer.numberOfPlaces} {tr(" places")}</p>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-foreground/5 flex items-center justify-between text-[10px] font-black uppercase opacity-40 tracking-tighter">
-                   <span>Distance: 5.2 km</span>
-                   <span>Publié à {new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span>
+                   <span>{tr("Distance: 5.2 km")}</span>
+                   <span>{tr("Publié à ")}{new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span>
                 </div>
               </motion.div>
             ))}

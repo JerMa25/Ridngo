@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Loader2, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 interface Props {
   placeholder: string;
@@ -81,7 +82,7 @@ export const LocationInput = ({
   // --- LOGIQUE AUTO-FILL GPS ---
   const handleGPSClick = () => {
     if (!navigator.geolocation) {
-      toast.error("La géolocalisation n'est pas supportée.");
+      toast.error(tr("La géolocalisation n'est pas supportée."));
       return;
     }
 
@@ -114,7 +115,7 @@ export const LocationInput = ({
     }, (error) => {
       setIsLocating(false);
       console.error(error);
-      toast.error("Erreur de localisation. Vérifiez que votre GPS est activé.");
+      toast.error(tr("Erreur de localisation. Vérifiez que votre GPS est activé."));
     }, { enableHighAccuracy: true });
   };
 
@@ -152,7 +153,7 @@ export const LocationInput = ({
           onClick={handleGPSClick}
           disabled={isLocating}
           className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isLocating ? 'text-orange-btn' : 'text-foreground/20 hover:text-orange-btn hover:bg-orange-btn/10'}`}
-          title="Utiliser ma position actuelle"
+          title={tr("Utiliser ma position actuelle")}
         >
           <Navigation size={18} className={isLocating ? 'fill-orange-btn' : ''} />
         </button>
