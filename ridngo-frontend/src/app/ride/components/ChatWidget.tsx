@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Send, X, Loader2 } from 'lucide-react';
 import api from '@/lib/api-client';
+import { tr } from '@/lib/i18n';
 
 interface ChatMessage {
   id: string;
@@ -144,10 +145,9 @@ export const ChatWidget = ({ rideId, userId, userRole }: ChatWidgetProps) => {
                   <MessageSquare size={20} />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm">Chat en direct</h3>
+                  <h3 className="font-black text-sm">{tr("Chat en direct")}</h3>
                   <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center gap-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> En ligne
-                  </p>
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> {tr(" En ligne")}</p>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-foreground/10 text-foreground/50 transition-colors">
@@ -164,8 +164,8 @@ export const ChatWidget = ({ rideId, userId, userRole }: ChatWidgetProps) => {
               ) : messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">
                   <MessageSquare size={48} className="mb-4" />
-                  <p className="text-xs font-bold uppercase tracking-widest">Aucun message</p>
-                  <p className="text-[10px]">Envoyez le premier message</p>
+                  <p className="text-xs font-bold uppercase tracking-widest">{tr("Aucun message")}</p>
+                  <p className="text-[10px]">{tr("Envoyez le premier message")}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -198,7 +198,7 @@ export const ChatWidget = ({ rideId, userId, userRole }: ChatWidgetProps) => {
                   type="text" 
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Écrivez un message..."
+                  placeholder={tr("Écrivez un message...")}
                   className="flex-1 bg-foreground/5 rounded-2xl py-3 pl-4 pr-12 text-sm font-medium outline-none focus:bg-foreground/10 transition-colors"
                 />
                 <button 

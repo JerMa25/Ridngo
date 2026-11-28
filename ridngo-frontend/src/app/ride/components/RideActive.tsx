@@ -9,6 +9,7 @@ import {
 import { rideService } from '@/lib/rideService';
 import api from '@/lib/api-client';
 import toast from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 interface Props {
   ride: any;
@@ -73,7 +74,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
         comment: comment,
         anonymous: anonymous
       });
-      toast('Merci pour votre évaluation !', {
+      toast(tr("Merci pour votre évaluation !"), {
         icon: '👏',
       });
       const reviewed = JSON.parse(localStorage.getItem('reviewedRides') || '{}');
@@ -96,7 +97,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
     return (
       <div className="flex flex-col items-center justify-center py-20 opacity-40">
         <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-[10px] font-black uppercase tracking-widest text-foreground">Synchronisation du trajet...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-foreground">{tr("Synchronisation du trajet...")}</p>
       </div>
     );
   }
@@ -115,11 +116,10 @@ export const RideActive = ({ ride, tracking }: Props) => {
         </div>
         <div>
            <p className={`font-black uppercase text-xs tracking-tight ${isCreated ? 'text-orange-btn' : 'text-green-600'}`}>
-             {isCreated ? "Le chauffeur arrive" : "Trajet en cours"}
+             {isCreated ? tr("Le chauffeur arrive") : tr("Trajet en cours")}
            </p>
            <p className="text-[10px] font-bold opacity-60 italic leading-tight">
-             {isCreated ? "Récupération à votre position" : "En route vers la destination"} • ~{tracking?.etaMinutes || '--'} min
-           </p>
+             {isCreated ? tr("Récupération à votre position") : tr("En route vers la destination")} • ~{tracking?.etaMinutes || '--'} {tr(" min")}</p>
         </div>
       </div>
 
@@ -127,11 +127,11 @@ export const RideActive = ({ ride, tracking }: Props) => {
       <div className="glass p-8 border-none bg-background shadow-xl text-center rounded-[40px] relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-foreground"><Car size={100} /></div>
 
-        <p className="text-[9px] font-black uppercase opacity-30 tracking-widest mb-6">Votre chauffeur certifié</p>
+        <p className="text-[9px] font-black uppercase opacity-30 tracking-widest mb-6">{tr("Votre chauffeur certifié")}</p>
         
         <div className="w-24 h-24 bg-orange-btn rounded-[35px] flex items-center justify-center mx-auto mb-4 border-4 border-background shadow-2xl overflow-hidden italic text-3xl text-white font-black">
            {userData?.photoUri ? (
-             <img src={userData.photoUri} className="w-full h-full object-cover" alt="Driver" />
+             <img src={userData.photoUri} className="w-full h-full object-cover" alt={tr("Driver")} />
            ) : (
              userData?.name?.charAt(0) || userData?.firstName?.charAt(0) || "D"
            )}
@@ -144,23 +144,23 @@ export const RideActive = ({ ride, tracking }: Props) => {
               <Star size={12} className="fill-orange-btn text-orange-btn" />
               <span className="text-[11px] font-black text-orange-btn">{driverDetails?.rating?.toFixed(1) || '4.9'}</span>
            </div>
-           <span className="text-[10px] font-bold opacity-20 uppercase tracking-tighter">Véhicule vérifié</span>
+           <span className="text-[10px] font-bold opacity-20 uppercase tracking-tighter">{tr("Véhicule vérifié")}</span>
         </div>
 
         <div className="mt-6 p-4 bg-orange-btn/10 text-orange-btn rounded-2xl flex flex-col items-center justify-center text-center">
-           <p className="text-xs font-black uppercase tracking-widest">🤝 Le prix est un contrat</p>
-           <p className="text-[10px] font-bold opacity-80 mt-1">Préparez-vous à payer le chauffeur à l'arrivée (cash ou mobile money).</p>
+           <p className="text-xs font-black uppercase tracking-widest">{tr("🤝 Le prix est un contrat")}</p>
+           <p className="text-[10px] font-bold opacity-80 mt-1">{tr("Préparez-vous à payer le chauffeur à l'arrivée (cash ou mobile money).")}</p>
         </div>
 
         {vehicleData && (
           <div className="mt-6 p-4 bg-foreground/5 rounded-2xl flex items-center justify-center gap-4">
              <div className="text-left">
-                <p className="text-[8px] font-black uppercase opacity-30 leading-none mb-1">Véhicule</p>
+                <p className="text-[8px] font-black uppercase opacity-30 leading-none mb-1">{tr("Véhicule")}</p>
                 <p className="text-xs font-bold">{vehicleData.brand} {vehicleData.modelName}</p>
              </div>
              <div className="w-[1px] h-8 bg-foreground/10" />
              <div className="text-right">
-                <p className="text-[8px] font-black uppercase opacity-30 leading-none mb-1">Plaque</p>
+                <p className="text-[8px] font-black uppercase opacity-30 leading-none mb-1">{tr("Plaque")}</p>
                 <p className="text-xs font-black tracking-tight">{vehicleData.registrationNumber}</p>
              </div>
           </div>
@@ -174,7 +174,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
              }`}
            >
               {copied ? <Check size={18} /> : <Phone size={18} />}
-              {copied ? "Numéro copié !" : "Appeler le chauffeur"}
+              {copied ? tr("Numéro copié !") : tr("Appeler le chauffeur")}
            </button>
         </div>
       </div>
@@ -183,8 +183,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
       <div className="p-8 border-2 border-dashed border-foreground/5 rounded-[40px] text-center">
          <Loader2 className="animate-spin mx-auto mb-4 opacity-20" size={24} />
          <p className="text-[10px] font-black uppercase opacity-30 tracking-[0.2em] leading-relaxed">
-           Le chauffeur terminera la course sur son application une fois arrivé à destination.
-         </p>
+           {tr("Le chauffeur terminera la course sur son application une fois arrivé à destination.")}</p>
       </div>
 
       {/* MODALE D'ÉVALUATION (Déclenchée quand le chauffeur passe le trip à COMPLETED) */}
@@ -204,13 +203,12 @@ export const RideActive = ({ ride, tracking }: Props) => {
                <div className="w-20 h-20 bg-green-500 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl shadow-green-500/20">
                   <CheckCircle2 size={40} />
                </div>
-               <h2 className="text-3xl font-black italic tracking-tighter mb-2">Trajet terminé !</h2>
+               <h2 className="text-3xl font-black italic tracking-tighter mb-2">{tr("Trajet terminé !")}</h2>
                
                <div className="bg-orange-btn/10 text-orange-btn p-4 rounded-2xl mb-6 text-xs font-black border border-orange-btn/20 shadow-inner">
-                 🤝 N'oubliez pas que le prix négocié est un contrat. Merci de payer directement le chauffeur.
-               </div>
+                 {tr("🤝 N'oubliez pas que le prix négocié est un contrat. Merci de payer directement le chauffeur.")}</div>
 
-               <p className="text-sm opacity-50 mb-8 font-medium">Comment s&apos;est passée votre course avec <span className="text-foreground font-bold">{userData?.firstName || userData?.name?.split(' ')[0]}</span> ?</p>
+               <p className="text-sm opacity-50 mb-8 font-medium">{tr("Comment s'est passée votre course avec ")}<span className="text-foreground font-bold">{userData?.firstName || userData?.name?.split(' ')[0]}</span> ?</p>
       
                {/* SÉLECTION DES ÉTOILES */}
                <div className="flex justify-center gap-2 mb-8">
@@ -224,7 +222,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
                <div className="relative mb-8">
                   <MessageSquare className="absolute left-4 top-5 opacity-20" size={18} />
                   <textarea 
-                    placeholder="Un commentaire sur la conduite ou la propreté ?"
+                    placeholder={tr("Un commentaire sur la conduite ou la propreté ?")}
                     className="w-full bg-foreground/5 p-5 pl-12 rounded-3xl outline-none focus:ring-2 focus:ring-orange-btn font-medium text-sm text-foreground"
                     rows={3}
                     value={comment}
@@ -242,8 +240,8 @@ export const RideActive = ({ ride, tracking }: Props) => {
                         {anonymous ? <EyeOff size={16} /> : <Eye size={16} />}
                      </div>
                      <div>
-                        <p className="text-xs font-bold leading-none mb-1">Évaluation anonyme</p>
-                        <p className="text-[10px] opacity-40 leading-none">Masquer votre identité au chauffeur</p>
+                        <p className="text-xs font-bold leading-none mb-1">{tr("Évaluation anonyme")}</p>
+                        <p className="text-[10px] opacity-40 leading-none">{tr("Masquer votre identité au chauffeur")}</p>
                      </div>
                   </div>
                   <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${anonymous ? 'border-orange-btn bg-orange-btn text-white' : 'border-foreground/20'}`}>
@@ -256,7 +254,7 @@ export const RideActive = ({ ride, tracking }: Props) => {
                 onClick={submitReview} 
                 className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-btn/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                >
-                  {submittingReview ? <Loader2 className="animate-spin" size={20} /> : "Envoyer l'évaluation"}
+                  {submittingReview ? <Loader2 className="animate-spin" size={20} /> : tr("Envoyer l'évaluation")}
                </button>
             </motion.div>
           </div>

@@ -1,6 +1,7 @@
 "use client"
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 export const Pagination = ({ currentPage, totalPages, onPageChange }: any) => {
   if (totalPages <= 1) return null;
@@ -16,7 +17,7 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }: any) => {
       </button>
       
       <span className="text-[10px] font-black uppercase tracking-widest opacity-40">
-        Page {currentPage + 1} sur {totalPages}
+        {tr("Page ")}{currentPage + 1} {tr(" sur ")}{totalPages}
       </span>
 
       <button 

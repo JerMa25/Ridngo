@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { reportConnectivity } from './connectivityBus';
+import { tr } from '../i18n';
 
 // Trousseau iOS lisible dès le premier déverrouillage : sinon les lectures échouent téléphone verrouillé
 // ("User interaction is not allowed") pendant le suivi de course en arrière-plan.
@@ -53,6 +54,10 @@ api.interceptors.response.use(
     return r;
   },
   async error => {
+    // messages du backend (français) affichés dans la langue de l'interface
+    const data = error.response?.data;
+    if (data && typeof data.detail === 'string') data.detail = tr(data.detail);
+    if (data && typeof data.message === 'string') data.message = tr(data.message);
     // Pas de `error.response` = la requête n'a pas atteint le serveur (pas de réseau,
     // DNS, timeout...). On le marque explicitement pour que les écrans puissent
     // distinguer "hors ligne" d'une vraie erreur serveur et basculer sur le cache.

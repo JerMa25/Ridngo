@@ -1,6 +1,7 @@
 "use client"
 import Link from 'next/link';
 import { Mail, Phone, Globe, ShieldCheck } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 export const Footer = () => {
   return (
@@ -11,10 +12,10 @@ export const Footer = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-2 text-foreground">
             <ShieldCheck size={20} className="text-orange-btn" />
-            <h3 className="font-black uppercase text-xs tracking-widest text-foreground">Data Protection</h3>
+            <h3 className="font-black uppercase text-xs tracking-widest text-foreground">{tr("Data Protection")}</h3>
           </div>
           <div className="space-y-4 text-sm">
-            <p className="font-bold text-foreground">Yowyob Inc. Ltd – Data Protection Officer</p>
+            <p className="font-bold text-foreground">{tr("Yowyob Inc. Ltd – Data Protection Officer")}</p>
             <div className="space-y-2">
               <a href="mailto:info@yowyob.com" className="flex items-center gap-3 hover:text-orange-btn transition-colors">
                 <Mail size={16} /> info@yowyob.com
@@ -35,32 +36,27 @@ export const Footer = () => {
 
         {/* COLONNE 2 : LIENS UTILES */}
         <div className="space-y-6">
-          <h3 className="font-black uppercase text-xs tracking-widest text-foreground">À propos</h3>
+          <h3 className="font-black uppercase text-xs tracking-widest text-foreground">{tr("À propos")}</h3>
           <ul className="space-y-3 text-sm">
             <li>
               <a href="https://yowyob.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-orange-btn transition-colors">
-                <Globe size={14} /> About Yowyob
-              </a>
+                <Globe size={14} /> {tr(" About Yowyob")}</a>
             </li>
             <li>
               <a href="/policy/RidnGo_Privacy_Notice_bilingual_A4.pdf" download className="hover:text-orange-btn transition-colors">
-                Politique de Confidentialité
-              </a>
+                {tr("Politique de Confidentialité")}</a>
             </li>
             <li>
               <a href="/policy/RidnGo_General_Terms_of_Service_bilingual_A4.pdf" download className="hover:text-orange-btn transition-colors">
-                Conditions Générales d&apos;Utilisation
-              </a>
+                {tr("Conditions Générales d'Utilisation")}</a>
             </li>
             <li>
               <a href="/policy/RidnGo_Cookies_Ads_Notice_bilingual_A4.pdf" download className="hover:text-orange-btn transition-colors">
-                Notice Cookies & Publicités
-              </a>
+                {tr("Notice Cookies & Publicités")}</a>
             </li>
             <li>
               <a href="/policy/Yowyob_Legal Notice.pdf" download className="hover:text-orange-btn transition-colors">
-                Mentions Légales
-              </a>
+                {tr("Mentions Légales")}</a>
             </li>
           </ul>
         </div>
@@ -69,15 +65,14 @@ export const Footer = () => {
         <div className="flex flex-col items-center md:items-end justify-between space-y-8">
           <div className="flex items-center gap-2 text-3xl font-black tracking-tighter text-foreground">
             <span className="bg-orange-btn text-white px-2 rounded-lg italic">R</span>
-            <span>RidnGo</span>
+            <span>{tr("RidnGo")}</span>
           </div>
           
           <div className="text-center md:text-right">
-            <p className="text-xs font-black text-foreground uppercase tracking-widest mb-1">Africa&apos;s Freedom Move</p>
+            <p className="text-xs font-black text-foreground uppercase tracking-widest mb-1">{tr("Africa's Freedom Move")}</p>
             <p className="text-[10px] leading-relaxed opacity-40 uppercase font-bold tracking-tighter">
-              © 2026 Yowyob Inc. Ltd.<br />
-              All rights reserved.
-            </p>
+              {tr("© 2026 Yowyob Inc. Ltd.")}<br />
+              {tr("All rights reserved.")}</p>
           </div>
         </div>
 

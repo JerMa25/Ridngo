@@ -25,6 +25,7 @@ import { Spacing, Radius } from '../../src/types/theme';
 import { OfferResponse, RideResponse } from '../../src/types/api';
 import api from '../../src/services/api';
 import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
+import { tr } from '../../src/i18n';
 
 type PageState =
   | 'loading' | 'no_offer' | 'waiting_bids' | 'has_bids'
@@ -38,11 +39,11 @@ function formatTime(iso?: string) {
 
 function stateLabel(state?: string): { label: string; color: string } {
   switch (state) {
-    case 'PENDING':         return { label: 'EN ATTENTE',            color: '#FF8C00' };
-    case 'BID_RECEIVED':    return { label: 'CANDIDATURES REÇUES',   color: '#3B82F6' };
-    case 'DRIVER_SELECTED': return { label: 'CHAUFFEUR SÉLECTIONNÉ', color: '#22C55E' };
-    case 'VALIDATED':       return { label: 'CONFIRMÉE',             color: '#22C55E' };
-    case 'CANCELLED':       return { label: 'ANNULÉE',               color: '#EF4444' };
+    case 'PENDING':         return { label: tr("EN ATTENTE"),            color: '#FF8C00' };
+    case 'BID_RECEIVED':    return { label: tr("CANDIDATURES REÇUES"),   color: '#3B82F6' };
+    case 'DRIVER_SELECTED': return { label: tr("CHAUFFEUR SÉLECTIONNÉ"), color: '#22C55E' };
+    case 'VALIDATED':       return { label: tr("CONFIRMÉE"),             color: '#22C55E' };
+    case 'CANCELLED':       return { label: tr("ANNULÉE"),               color: '#EF4444' };
     default:                return { label: state || 'INCONNU',      color: '#9CA3AF' };
   }
 }
@@ -191,14 +192,14 @@ export default function MyOfferScreen() {
       const p = await loadDriverProfile(driverId);
       if (p) setDriver(p);
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message || e?.message || 'Impossible de sélectionner.');
+      Alert.alert(tr("Erreur"), e?.response?.data?.message || e?.message || tr("Impossible de sélectionner."));
     } finally { setSelectingId(null); }
   };
 
   const handleCancel = () => {
-    Alert.alert('Annuler', 'Voulez-vous vraiment annuler votre demande ?', [
-      { text: 'Non' },
-      { text: 'Oui, annuler', style: 'destructive', onPress: async () => {
+    Alert.alert(tr("Annuler"), tr("Voulez-vous vraiment annuler votre demande ?"), [
+      { text: tr("Non") },
+      { text: tr("Oui, annuler"), style: 'destructive', onPress: async () => {
         if (!offerId.current) return;
         setCancelling(true);
         try {
@@ -206,7 +207,7 @@ export default function MyOfferScreen() {
           if (pollRef.current) clearInterval(pollRef.current);
           setPageState('cancelled');
         } catch (e: any) {
-          Alert.alert('Erreur', e?.message || "Impossible d'annuler.");
+          Alert.alert(tr("Erreur"), e?.message || tr("Impossible d'annuler."));
         } finally { setCancelling(false); }
       }},
     ]);
@@ -247,16 +248,15 @@ export default function MyOfferScreen() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: Colors.text }]}>Mon offre en cours</Text>
+        <Text style={[s.headerTitle, { color: Colors.text }]}>{tr("Mon offre en cours")}</Text>
       </View>
       <View style={s.centered}>
         <Ionicons name="document-outline" size={48} color={Colors.textMuted} />
-        <Text style={[s.emptyTitle, { color: Colors.text }]}>Aucune offre en cours</Text>
+        <Text style={[s.emptyTitle, { color: Colors.text }]}>{tr("Aucune offre en cours")}</Text>
         <Text style={[s.hint, { color: Colors.textMuted }]}>
-          Publiez une offre depuis l'onglet Commander.
-        </Text>
+          {tr("Publiez une offre depuis l'onglet Commander.")}</Text>
         <TouchableOpacity style={[s.goBtn, { backgroundColor: Colors.orange }]} onPress={() => router.back()}>
-          <Text style={s.goBtnTxt}>Créer une offre</Text>
+          <Text style={s.goBtnTxt}>{tr("Créer une offre")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -266,9 +266,9 @@ export default function MyOfferScreen() {
     <SafeAreaView style={[s.safe, { backgroundColor: Colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <View style={s.centered}>
         <Ionicons name="close-circle-outline" size={56} color={Colors.red} />
-        <Text style={[s.emptyTitle, { color: Colors.text }]}>Offre annulée</Text>
+        <Text style={[s.emptyTitle, { color: Colors.text }]}>{tr("Offre annulée")}</Text>
         <TouchableOpacity style={[s.goBtn, { backgroundColor: Colors.orange }]} onPress={() => router.back()}>
-          <Text style={s.goBtnTxt}>Nouvelle recherche</Text>
+          <Text style={s.goBtnTxt}>{tr("Nouvelle recherche")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -285,7 +285,7 @@ export default function MyOfferScreen() {
         <View style={[s.logoBox, { backgroundColor: Colors.orange }]}>
           <Text style={s.logoLetter}>R</Text>
         </View>
-        <Text style={[s.headerTitle, { color: Colors.text }]}>Mon offre en cours</Text>
+        <Text style={[s.headerTitle, { color: Colors.text }]}>{tr("Mon offre en cours")}</Text>
       </View>
 
       <ScrollView style={{ flex: 1 }}
@@ -324,7 +324,7 @@ export default function MyOfferScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <Ionicons name="people-outline" size={14} color={Colors.textMuted} />
                 <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textMuted }}>
-                  {offer.numberOfPlaces} place{offer.numberOfPlaces > 1 ? 's' : ''} demandée{offer.numberOfPlaces > 1 ? 's' : ''}
+                  {offer.numberOfPlaces} {tr(" place")}{offer.numberOfPlaces > 1 ? 's' : ''} {tr(" demandée")}{offer.numberOfPlaces > 1 ? 's' : ''}
                 </Text>
               </View>
             )}
@@ -332,7 +332,7 @@ export default function MyOfferScreen() {
               <View style={s.routeRow}>
                 <View style={[s.dot, { backgroundColor: Colors.orange }]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.routeLbl, { color: Colors.textMuted }]}>DÉPART</Text>
+                  <Text style={[s.routeLbl, { color: Colors.textMuted }]}>{tr("DÉPART")}</Text>
                   <Text style={[s.routePlace, { color: Colors.text }]} numberOfLines={2}>
                     {offer.startPoint}
                   </Text>
@@ -357,10 +357,9 @@ export default function MyOfferScreen() {
           <View style={[s.stateBlock, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <ActivityIndicator color={Colors.orange} size="small" />
             <View style={{ flex: 1 }}>
-              <Text style={[s.stateTitle, { color: Colors.text }]}>Radar actif</Text>
+              <Text style={[s.stateTitle, { color: Colors.text }]}>{tr("Radar actif")}</Text>
               <Text style={[s.stateSub, { color: Colors.textMuted }]}>
-                Les chauffeurs disponibles vont répondre...
-              </Text>
+                {tr("Les chauffeurs disponibles vont répondre...")}</Text>
             </View>
           </View>
         )}
@@ -369,7 +368,7 @@ export default function MyOfferScreen() {
         {pageState === 'has_bids' && (
           <>
             <Text style={[s.sectionTitle, { color: Colors.text }]}>
-              {(offer?.bids || []).length} chauffeur{(offer?.bids || []).length > 1 ? 's' : ''} disponible{(offer?.bids || []).length > 1 ? 's' : ''}
+              {(offer?.bids || []).length} {tr(" chauffeur")}{(offer?.bids || []).length > 1 ? 's' : ''} {tr(" disponible")}{(offer?.bids || []).length > 1 ? 's' : ''}
             </Text>
             {(offer?.bids || []).map(bid => {
               const p = driverProfiles[bid.driverId];
@@ -395,13 +394,12 @@ export default function MyOfferScreen() {
                         )}
                         {p?.totalTrips > 0 && (
                           <Text style={[s.metaTxt, { color: Colors.textMuted }]}>
-                            {p.totalTrips} courses
-                          </Text>
+                            {p.totalTrips} {tr(" courses")}</Text>
                         )}
                         {p?.isValidated && (
                           <View style={[s.verifiedChip, { backgroundColor: Colors.greenBg }]}>
                             <Ionicons name="shield-checkmark-outline" size={10} color={Colors.green} />
-                            <Text style={[s.verifiedTxt, { color: Colors.green }]}>VÉRIFIÉ</Text>
+                            <Text style={[s.verifiedTxt, { color: Colors.green }]}>{tr("VÉRIFIÉ")}</Text>
                           </View>
                         )}
                       </View>
@@ -424,8 +422,7 @@ export default function MyOfferScreen() {
                     {selectingId === bid.driverId
                       ? <ActivityIndicator color={Colors.background} size="small" />
                       : <Text style={[s.chooseBtnTxt, { color: Colors.background }]}>
-                          CHOISIR CE CHAUFFEUR
-                        </Text>}
+                          {tr("CHOISIR CE CHAUFFEUR")}</Text>}
                   </TouchableOpacity>
                 </View>
               );
@@ -449,8 +446,8 @@ export default function MyOfferScreen() {
               <Text style={[s.selectedBannerTxt, {
                 color: pageState === 'ride_active' ? Colors.green : Colors.orange }]}>
                 {pageState === 'ride_active'
-                  ? ride?.state === 'ONGOING' ? 'Chauffeur en route vers vous' : 'Course en cours'
-                  : 'Chauffeur sélectionné — en attente de confirmation'}
+                  ? ride?.state === 'ONGOING' ? tr("Chauffeur en route vers vous") : tr("Course en cours")
+                  : tr("Chauffeur sélectionné — en attente de confirmation")}
               </Text>
             </View>
             {/* Profil chauffeur */}
@@ -474,7 +471,7 @@ export default function MyOfferScreen() {
                   {driver.isValidated && (
                     <View style={[s.verifiedChip, { backgroundColor: Colors.greenBg }]}>
                       <Ionicons name="shield-checkmark-outline" size={10} color={Colors.green} />
-                      <Text style={[s.verifiedTxt, { color: Colors.green }]}>VÉRIFIÉ</Text>
+                      <Text style={[s.verifiedTxt, { color: Colors.green }]}>{tr("VÉRIFIÉ")}</Text>
                     </View>
                   )}
                 </View>
@@ -505,8 +502,7 @@ export default function MyOfferScreen() {
               <View style={[s.waitRow, { backgroundColor: Colors.orangeBg }]}>
                 <ActivityIndicator size="small" color={Colors.orange} />
                 <Text style={[s.waitTxt, { color: Colors.orange }]}>
-                  Le chauffeur vient vous récupérer...
-                </Text>
+                  {tr("Le chauffeur vient vous récupérer...")}</Text>
               </View>
             )}
           </View>
@@ -517,10 +513,9 @@ export default function MyOfferScreen() {
           <View style={[s.stateBlock, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <ActivityIndicator color={Colors.green} size="small" />
             <View style={{ flex: 1 }}>
-              <Text style={[s.stateTitle, { color: Colors.text }]}>Chauffeur sélectionné</Text>
+              <Text style={[s.stateTitle, { color: Colors.text }]}>{tr("Chauffeur sélectionné")}</Text>
               <Text style={[s.stateSub, { color: Colors.textMuted }]}>
-                En attente de sa confirmation...
-              </Text>
+                {tr("En attente de sa confirmation...")}</Text>
             </View>
           </View>
         )}
@@ -532,7 +527,7 @@ export default function MyOfferScreen() {
             onPress={handleCancel} disabled={cancelling}>
             {cancelling
               ? <ActivityIndicator size="small" color={Colors.red} />
-              : <Text style={[s.cancelTxt, { color: Colors.red }]}>Annuler ma demande</Text>}
+              : <Text style={[s.cancelTxt, { color: Colors.red }]}>{tr("Annuler ma demande")}</Text>}
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -541,10 +536,9 @@ export default function MyOfferScreen() {
       <Modal visible={showReview} transparent animationType="slide">
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, { backgroundColor: Colors.card }]}>
-            <Text style={[s.modalTitle, { color: Colors.text }]}>Course terminée</Text>
+            <Text style={[s.modalTitle, { color: Colors.text }]}>{tr("Course terminée")}</Text>
             <Text style={[s.modalSub, { color: Colors.textMuted }]}>
-              Comment s'est passé votre trajet ?
-            </Text>
+              {tr("Comment s'est passé votre trajet ?")}</Text>
             {/* Étoiles */}
             <View style={s.starsRow}>
               {[1, 2, 3, 4, 5].map(n => (
@@ -564,7 +558,7 @@ export default function MyOfferScreen() {
               }]}
               value={comment}
               onChangeText={setComment}
-              placeholder="Un commentaire... (optionnel)"
+              placeholder={tr("Un commentaire... (optionnel)")}
               placeholderTextColor={Colors.textMuted}
               multiline numberOfLines={3}
             />
@@ -573,10 +567,10 @@ export default function MyOfferScreen() {
               onPress={handleSubmitReview} disabled={submittingReview}>
               {submittingReview
                 ? <ActivityIndicator color="#FFFFFF" />
-                : <Text style={s.reviewBtnTxt}>ENVOYER MON AVIS</Text>}
+                : <Text style={s.reviewBtnTxt}>{tr("ENVOYER MON AVIS")}</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setShowReview(false); router.back(); }}>
-              <Text style={[s.skipTxt, { color: Colors.textMuted }]}>Passer</Text>
+              <Text style={[s.skipTxt, { color: Colors.textMuted }]}>{tr("Passer")}</Text>
             </TouchableOpacity>
           </View>
         </View>

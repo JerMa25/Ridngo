@@ -9,6 +9,7 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { TrendingUp, Award, Loader2, AlertCircle } from 'lucide-react';
 import api from '@/lib/api-client';
+import { tr } from '@/lib/i18n';
 
 // Interfaces basées sur ton OpenAPI
 interface EnrichedRide {
@@ -85,7 +86,7 @@ export const DriverAnalytics = () => {
 
       } catch (err) {
         console.error(err);
-        setError("Impossible de charger les statistiques.");
+        setError(tr("Impossible de charger les statistiques."));
       } finally {
         setLoading(false);
       }
@@ -98,7 +99,7 @@ export const DriverAnalytics = () => {
     return (
       <div className="w-full h-64 flex flex-col items-center justify-center text-orange-btn/50 gap-4">
         <Loader2 className="animate-spin" size={40} />
-        <p className="text-xs font-black uppercase tracking-widest animate-pulse">Chargement des données live...</p>
+        <p className="text-xs font-black uppercase tracking-widest animate-pulse">{tr("Chargement des données live...")}</p>
       </div>
     );
   }
@@ -116,7 +117,7 @@ export const DriverAnalytics = () => {
   if (earningsData.length === 0 && reviewsData.every((d: any) => d.count === 0)) {
     return (
       <div className="w-full p-8 rounded-4xl glass text-center border-none bg-background/40">
-        <p className="text-foreground/40 font-black uppercase tracking-widest">Aucune donnée d&apos;activité disponible</p>
+        <p className="text-foreground/40 font-black uppercase tracking-widest">{tr("Aucune donnée d'activité disponible")}</p>
       </div>
     );
   }
@@ -130,13 +131,11 @@ export const DriverAnalytics = () => {
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
               <TrendingUp size={20} className="text-orange-btn" />
-              Revenus
-            </h3>
-            <p className="text-[10px] font-bold opacity-40 uppercase">Basé sur vos courses terminées</p>
+              {tr("Revenus")}</h3>
+            <p className="text-[10px] font-bold opacity-40 uppercase">{tr("Basé sur vos courses terminées")}</p>
           </div>
           <div className="px-3 py-1 rounded-full bg-orange-btn/10 text-orange-btn text-[10px] font-black uppercase">
-            7 derniers jours
-          </div>
+            {tr("7 derniers jours")}</div>
         </div>
 
         <div className="h-62.5 w-full">
@@ -187,16 +186,15 @@ export const DriverAnalytics = () => {
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
               <Award size={20} className="text-blue-500" />
-              Qualité
-            </h3>
-            <p className="text-[10px] font-bold opacity-40 uppercase">Distribution des avis</p>
+              {tr("Qualité")}</h3>
+            <p className="text-[10px] font-bold opacity-40 uppercase">{tr("Distribution des avis")}</p>
           </div>
         </div>
 
         <div className="h-62.5 w-full flex items-center justify-center">
           {reviewsData.every((d: any) => d.count === 0) ? (
             <div className="text-center opacity-40">
-                <p className="text-xs font-bold">Pas encore d&apos;avis</p>
+                <p className="text-xs font-bold">{tr("Pas encore d'avis")}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">

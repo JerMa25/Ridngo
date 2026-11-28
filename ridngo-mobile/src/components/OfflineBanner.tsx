@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetwork } from '../context/NetworkContext';
 import { useTheme } from '../context/ThemeContext';
+import { tr } from '../i18n';
 
 /**
  * Bandeau discret affiché en haut de l'écran quand l'appareil n'a plus de connexion,
@@ -39,7 +40,7 @@ export function OfflineBanner() {
     >
       <Ionicons name={isOnline ? 'checkmark-circle' : 'cloud-offline'} size={14} color="#FFF" />
       <Text style={styles.text}>
-        {isOnline ? 'Connexion rétablie' : 'Hors ligne — données enregistrées localement'}
+        {isOnline ? tr("Connexion rétablie") : tr("Hors ligne — données enregistrées localement")}
       </Text>
     </Animated.View>
   );

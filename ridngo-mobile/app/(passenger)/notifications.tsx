@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
 import { userService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 type FilterType = 'ALL' | 'UNREAD';
 
@@ -91,7 +92,7 @@ export default function PassengerNotificationsScreen() {
         whatsapp: settings.whatsappEnabled,
       });
       setShowSettings(false);
-    } catch { Alert.alert('Erreur', 'Impossible de sauvegarder les paramètres.'); }
+    } catch { Alert.alert(tr("Erreur"), tr("Impossible de sauvegarder les paramètres.")); }
     setSavingSettings(false);
   };
 
@@ -127,7 +128,7 @@ export default function PassengerNotificationsScreen() {
               ]}
               numberOfLines={isExpanded ? undefined : 1}
             >
-              {item.title || 'Notification'}
+              {item.title || tr("Notification")}
             </Text>
             <Text
               style={[styles.notifMessage, { color: Colors.textSecondary }]}
@@ -149,7 +150,7 @@ export default function PassengerNotificationsScreen() {
             onPress={() => handleMarkRead(item.id)}
           >
             <Ionicons name="checkmark" size={14} color={Colors.green} />
-            <Text style={[styles.markReadText, { color: Colors.green }]}>Marquer comme lu</Text>
+            <Text style={[styles.markReadText, { color: Colors.green }]}>{tr("Marquer comme lu")}</Text>
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -164,8 +165,8 @@ export default function PassengerNotificationsScreen() {
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: Colors.text }]}>Messagerie</Text>
-          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>CENTRE DE NOTIFICATIONS</Text>
+          <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Messagerie")}</Text>
+          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>{tr("CENTRE DE NOTIFICATIONS")}</Text>
         </View>
         <TouchableOpacity
           style={[styles.settingsBtn, { backgroundColor: Colors.input }]}
@@ -185,7 +186,7 @@ export default function PassengerNotificationsScreen() {
               onPress={() => setFilter(f)}
             >
               <Text style={[styles.filterText, { color: filter === f ? Colors.orange : Colors.textMuted }]}>
-                {f === 'ALL' ? 'Tous' : `Non lus${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
+                {f === 'ALL' ? tr("Tous") : `Non lus${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
               </Text>
             </TouchableOpacity>
           ))}
@@ -196,7 +197,7 @@ export default function PassengerNotificationsScreen() {
             onPress={handleMarkAllRead}
           >
             <Ionicons name="checkmark-done" size={14} color={Colors.orange} />
-            <Text style={[styles.markAllText, { color: Colors.orange }]}>Tout marquer lu</Text>
+            <Text style={[styles.markAllText, { color: Colors.orange }]}>{tr("Tout marquer lu")}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -219,8 +220,8 @@ export default function PassengerNotificationsScreen() {
               <View style={[styles.emptyIcon, { backgroundColor: Colors.input }]}>
                 <Ionicons name="mail-outline" size={40} color={Colors.textMuted} />
               </View>
-              <Text style={[styles.emptyTitle, { color: Colors.text }]}>Boîte vide</Text>
-              <Text style={[styles.emptyText, { color: Colors.textMuted }]}>Aucune notification pour le moment</Text>
+              <Text style={[styles.emptyTitle, { color: Colors.text }]}>{tr("Boîte vide")}</Text>
+              <Text style={[styles.emptyText, { color: Colors.textMuted }]}>{tr("Aucune notification pour le moment")}</Text>
             </View>
           }
           ListFooterComponent={
@@ -231,7 +232,7 @@ export default function PassengerNotificationsScreen() {
                   : (
                     <>
                       <Ionicons name="add-circle-outline" size={20} color={Colors.textMuted} />
-                      <Text style={[styles.loadMoreText, { color: Colors.textMuted }]}>Charger les messages précédents</Text>
+                      <Text style={[styles.loadMoreText, { color: Colors.textMuted }]}>{tr("Charger les messages précédents")}</Text>
                     </>
                   )}
               </TouchableOpacity>
@@ -247,8 +248,8 @@ export default function PassengerNotificationsScreen() {
           <View style={[styles.modalContent, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={[styles.modalTitle, { color: Colors.text }]}>Paramètres</Text>
-                <Text style={[styles.modalSub, { color: Colors.textMuted }]}>PRÉFÉRENCES DE RÉCEPTION</Text>
+                <Text style={[styles.modalTitle, { color: Colors.text }]}>{tr("Paramètres")}</Text>
+                <Text style={[styles.modalSub, { color: Colors.textMuted }]}>{tr("PRÉFÉRENCES DE RÉCEPTION")}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowSettings(false)}>
                 <Ionicons name="close" size={22} color={Colors.textMuted} />
@@ -262,10 +263,10 @@ export default function PassengerNotificationsScreen() {
             ) : (
               <ScrollView showsVerticalScrollIndicator={false}>
                 {[
-                  { id: 'pushEnabled', label: 'Notifications Push', icon: 'notifications-outline' as const },
-                  { id: 'emailEnabled', label: 'Alertes E-mail', icon: 'at-outline' as const },
-                  { id: 'smsEnabled', label: 'Messages SMS', icon: 'phone-portrait-outline' as const },
-                  { id: 'whatsappEnabled', label: 'WhatsApp', icon: 'logo-whatsapp' as const },
+                  { id: 'pushEnabled', label: tr("Notifications Push"), icon: 'notifications-outline' as const },
+                  { id: 'emailEnabled', label: tr("Alertes E-mail"), icon: 'at-outline' as const },
+                  { id: 'smsEnabled', label: tr("Messages SMS"), icon: 'phone-portrait-outline' as const },
+                  { id: 'whatsappEnabled', label: tr("WhatsApp"), icon: 'logo-whatsapp' as const },
                 ].map(pref => (
                   <View key={pref.id} style={[styles.prefRow, { backgroundColor: Colors.input }]}>
                     <View style={[styles.prefIcon, { backgroundColor: Colors.card }]}>
@@ -288,7 +289,7 @@ export default function PassengerNotificationsScreen() {
                 >
                   {savingSettings
                     ? <ActivityIndicator color="#FFFFFF" size="small" />
-                    : <Text style={styles.saveBtnText}>Enregistrer</Text>}
+                    : <Text style={styles.saveBtnText}>{tr("Enregistrer")}</Text>}
                 </TouchableOpacity>
               </ScrollView>
             )}

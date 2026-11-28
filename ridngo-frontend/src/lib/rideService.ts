@@ -4,6 +4,7 @@ import {
   CreateOfferRequest, FareRequest, RideTrackingResponse, Wallet, 
   RechargeOrder, DriverTrajectory, TransactionSummary
 } from '@/types/api';
+import { tr } from '@/lib/i18n';
 
 export const rideService = {
   // 1. Estimation
@@ -64,7 +65,8 @@ export const rideService = {
 
   // 5. Handshake Step 2 : Driver accepte définitivement
   // La commission est débitée du wallet Kernel, qui exige un code MFA : étape 1 = demander le code
-  requestAcceptCode: async (offerId: string): Promise<{ challengeToken: string; commission: number }> =>
+  // subscribed = chauffeur abonné : pas de commission, donc pas de code à saisir
+  requestAcceptCode: async (offerId: string): Promise<{ challengeToken?: string; commission: number; subscribed?: boolean }> =>
     (await api.post(`/api/v1/offers/${offerId}/accept/challenge`)).data,
 
   driverAccepts: async (offerId: string, challengeToken: string, code: string): Promise<RideResponse> => {
@@ -112,7 +114,7 @@ export const rideService = {
     const data = Array.isArray(response.data) ? response.data[0] : response.data;
     
     if (!data || !data.id) {
-        throw new Error("Aucune course trouvée pour cette offre");
+        throw new Error(tr("Aucune course trouvée pour cette offre"));
     }
     return data;
   },

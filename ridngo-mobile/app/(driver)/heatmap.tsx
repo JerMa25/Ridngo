@@ -7,6 +7,7 @@ import { WebView } from 'react-native-webview';
 import { useTheme } from '../../src/context/ThemeContext';
 import { rideService } from '../../src/services/rideService';
 import { Spacing } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function DriverHeatmapScreen() {
   const { Colors } = useTheme();
@@ -76,9 +77,9 @@ export default function DriverHeatmapScreen() {
         <View style={{ flex: 1 }}>
           <View style={styles.titleRow}>
             <Ionicons name="flame" size={18} color={Colors.orange} />
-            <Text style={[styles.headerTitle, { color: Colors.text }]}>Zones d'Influence</Text>
+            <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Zones d'Influence")}</Text>
           </View>
-          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>ANALYSE DE VOS TRAJECTOIRES</Text>
+          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>{tr("ANALYSE DE VOS TRAJECTOIRES")}</Text>
         </View>
       </View>
 
@@ -86,14 +87,13 @@ export default function DriverHeatmapScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={Colors.orange} size="large" />
-            <Text style={[styles.loadingText, { color: Colors.textMuted }]}>Génération de la carte...</Text>
+            <Text style={[styles.loadingText, { color: Colors.textMuted }]}>{tr("Génération de la carte...")}</Text>
           </View>
         ) : points.length === 0 ? (
           <View style={styles.emptyWrap}>
             <Ionicons name="map-outline" size={40} color={Colors.textMuted} />
             <Text style={[styles.emptyText, { color: Colors.textMuted }]}>
-              Pas assez de données pour générer la carte de chaleur.
-            </Text>
+              {tr("Pas assez de données pour générer la carte de chaleur.")}</Text>
           </View>
         ) : (
           <WebView

@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { tr } from '@/lib/i18n';
 
 /**
  * SOUS-COMPOSANT : Carte de trajet avec récupération des noms réels
@@ -51,7 +52,7 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
                )}
             </div>
             <div>
-               <p className="text-[10px] font-black uppercase opacity-30 tracking-widest">Chauffeur</p>
+               <p className="text-[10px] font-black uppercase opacity-30 tracking-widest">{tr("Chauffeur")}</p>
                {loading ? (
                  <div className="h-4 w-24 bg-foreground/5 animate-pulse rounded mt-1" />
                ) : (
@@ -62,7 +63,7 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
             </div>
          </div>
          <div className="text-right">
-            <p className="text-[10px] font-black uppercase opacity-30 tracking-widest">Date</p>
+            <p className="text-[10px] font-black uppercase opacity-30 tracking-widest">{tr("Date")}</p>
             <p className="font-bold text-xs">{new Date(ride.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
          </div>
       </div>
@@ -79,7 +80,7 @@ const RideHistoryCard = ({ ride, idx }: { ride: any, idx: number }) => {
          </div>
          <div className="text-right flex flex-col justify-center">
             <p className="text-xl font-black italic tracking-tighter text-orange-btn">{ride.price} F</p>
-            <p className="text-[8px] font-black uppercase opacity-30 tracking-tighter">Prix total</p>
+            <p className="text-[8px] font-black uppercase opacity-30 tracking-tighter">{tr("Prix total")}</p>
          </div>
       </div>
       <div className="pt-3 flex items-center justify-between text-[10px] opacity-60">
@@ -118,9 +119,9 @@ export default function PassengerHistoryPage() {
   });
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-background gap-4">
+    <div className="h-app flex flex-col items-center justify-center bg-background gap-4">
       <Loader2 className="animate-spin text-orange-btn" size={40} />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Récupération des voyages...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{tr("Récupération des voyages...")}</p>
     </div>
   );
 
@@ -131,8 +132,8 @@ export default function PassengerHistoryPage() {
           <ArrowLeft size={24} />
         </Link>
         <div>
-           <h1 className="text-4xl font-black tracking-tighter italic">Mes Voyages</h1>
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Historique complet</p>
+           <h1 className="text-4xl font-black tracking-tighter italic">{tr("Mes Voyages")}</h1>
+           <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{tr("Historique complet")}</p>
         </div>
       </div>
 
@@ -140,7 +141,7 @@ export default function PassengerHistoryPage() {
         {rides.length === 0 ? (
           <div className="glass p-20 text-center border-none shadow-xl bg-background rounded-[40px] flex flex-col items-center gap-4">
             <Calendar size={32} className="opacity-20"/>
-            <p className="opacity-30 italic font-bold">Aucune course enregistrée.</p>
+            <p className="opacity-30 italic font-bold">{tr("Aucune course enregistrée.")}</p>
           </div>
         ) : (
           rides.map((ride: any, idx: number) => (

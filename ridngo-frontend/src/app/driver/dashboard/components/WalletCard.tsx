@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Wallet as WalletIcon, ChevronRight, Zap } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 export const WalletCard = ({ balance }: { balance: number }) => (
   <Link href="/driver/wallet" className="group block h-full">
@@ -18,12 +19,12 @@ export const WalletCard = ({ balance }: { balance: number }) => (
           <div className="w-8 h-6 bg-gradient-to-br from-orange-btn to-yellow-500 rounded-md flex items-center justify-center overflow-hidden shadow-inner">
              <div className="w-full h-[1px] bg-black/10"></div>
           </div>
-          <p className="text-[8px] font-bold italic text-orange-btn">Premium</p>
+          <p className="text-[8px] font-bold italic text-orange-btn">{tr("Premium")}</p>
        </div>
 
        {/* Solde Compact */}
        <div className="relative z-10 my-2">
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/50 mb-0.5">Solde</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-white/50 mb-0.5">{tr("Solde")}</p>
           <div className="flex items-baseline gap-1.5">
             {/* Font réduite de text-5xl à text-3xl */}
             <p className="text-3xl md:text-4xl font-black italic tracking-tighter">
@@ -38,7 +39,7 @@ export const WalletCard = ({ balance }: { balance: number }) => (
           <p className="text-[8px] font-mono tracking-[0.2em] text-white/30">** 2026</p>
           
           <div className="bg-orange-btn hover:bg-white hover:text-orange-btn text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1">
-            Voir l'historique <ChevronRight size={10} />
+            {tr("Voir l'historique ")}<ChevronRight size={10} />
           </div>
        </div>
     </div>

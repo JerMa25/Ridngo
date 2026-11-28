@@ -1,6 +1,7 @@
 import { KEYCHAIN } from './api';
 import api from './api';
 import * as SecureStore from 'expo-secure-store';
+import { tr } from '../i18n';
 
 export const driverService = {
   becomeDriver: async (data: any) => {
@@ -55,7 +56,7 @@ export const userService = {
       const res = await api.post('/api/v1/users/me/photo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       return { ...profile, ...(res.data || {}) };
     } catch (e: any) {
-      throw new Error(e?.response?.data?.detail || "Impossible d'envoyer la photo.");
+      throw new Error(e?.response?.data?.detail || tr("Impossible d'envoyer la photo."));
     }
   },
 

@@ -6,6 +6,7 @@ import {
   ArrowUp, ArrowDown, Calendar, MapPin, 
   Filter, X, ArrowUpDown, SlidersHorizontal 
 } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 export const RadarControls = ({ 
   isOnline, filteredCount, sortBy, togglePriceSort, 
@@ -37,11 +38,11 @@ export const RadarControls = ({
           )}
         </div>
         <div>
-          <h2 className="text-2xl font-black tracking-tighter italic uppercase leading-none">Scanning Live</h2>
+          <h2 className="text-2xl font-black tracking-tighter italic uppercase leading-none">{tr("Scanning Live")}</h2>
           <div className="flex items-center gap-2 mt-1">
             <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
             <p className="text-[10px] font-black text-orange-btn uppercase tracking-[0.2em]">
-              {isOnline ? `${filteredCount} Demandes à proximité` : "Radar en pause"}
+              {isOnline ? tr('{n} Demandes à proximité', { n: filteredCount }) : tr("Radar en pause")}
             </p>
           </div>
         </div>
@@ -67,7 +68,7 @@ export const RadarControls = ({
                 {sortBy === 'recent' && <Calendar size={16} className="opacity-40 group-hover:opacity-100" />}
               </div>
               <span className="whitespace-nowrap">
-                {sortBy === 'price_asc' ? 'Moins cher' : sortBy === 'price_desc' ? 'Plus cher' : 'Plus récents'}
+                {sortBy === 'price_asc' ? tr("Moins cher") : sortBy === 'price_desc' ? tr("Plus cher") : tr("Plus récents")}
               </span>
             </button>
 
@@ -80,7 +81,7 @@ export const RadarControls = ({
             >
               <MapPin size={16} className={depFilter ? 'text-white' : 'text-orange-btn'} />
               <span className="max-w-30 truncate">
-                {depFilter || 'Point A'}
+                {depFilter || tr("Point A")}
               </span>
             </button>
 
@@ -91,7 +92,7 @@ export const RadarControls = ({
             >
               <Filter size={16} className={arrFilter ? 'text-white' : 'opacity-40'} />
               <span className="max-w-30 truncate">
-                {arrFilter || 'Destination'}
+                {arrFilter || tr("Destination")}
               </span>
             </button>
 
@@ -106,7 +107,7 @@ export const RadarControls = ({
                   whileTap={{ scale: 0.9 }}
                   onClick={resetFilters}
                   className="p-4 bg-red-500 text-white rounded-2xl shadow-xl hover:bg-red-600 transition-colors flex items-center justify-center"
-                  title="Réinitialiser"
+                  title={tr("Réinitialiser")}
                 >
                   <X size={18} strokeWidth={3} />
                 </motion.button>

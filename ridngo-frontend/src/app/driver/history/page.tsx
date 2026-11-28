@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { tr } from '@/lib/i18n';
 
 // Interface pour les avis
 interface ReviewInfo {
@@ -88,22 +89,22 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
               )}
            </div>
            <div>
-              <p className="text-[9px] font-black uppercase opacity-30 tracking-widest leading-none mb-1">Passager</p>
+              <p className="text-[9px] font-black uppercase opacity-30 tracking-widest leading-none mb-1">{tr("Passager")}</p>
               {loading ? (
                 <div className="h-4 w-28 bg-foreground/5 animate-pulse rounded mt-1" />
               ) : (
                 <p className="font-black text-base capitalize">
-                  {showAnonymous ? "Anonyme" : `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || "Passager"}
+                  {showAnonymous ? tr("Anonyme") : `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || tr("Passager")}
                 </p>
               )}
               <p className="text-[10px] font-bold opacity-40 mt-1 uppercase tracking-tighter">
-                 {new Date(ride.createdAt).toLocaleDateString()} • ID #{ride.rideId.slice(0, 5)}
+                 {new Date(ride.createdAt).toLocaleDateString()} {tr(" • ID #")}{ride.rideId.slice(0, 5)}
               </p>
            </div>
         </div>
 
          <div className="mt-2 flex items-center justify-end gap-3 text-[10px] opacity-70">
-           <span className="font-black uppercase tracking-widest">Places :</span>
+           <span className="font-black uppercase tracking-widest">{tr("Places :")}</span>
            <span className="font-bold">{ride.numberOfPlaces ?? ride.offer?.numberOfPlaces ?? '—'}</span>
          </div>
         <div className="flex-1 space-y-3 px-2">
@@ -111,7 +112,7 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
               <MapPin size={14} className="text-orange-btn mt-0.5 shrink-0" />
               <div>
                  <p className="text-xs font-bold leading-tight line-clamp-1">{ride.startPoint}</p>
-                 <p className="text-[9px] font-bold opacity-30 uppercase mt-1">Vers : {ride.endPoint?.split(',')[0]}</p>
+                 <p className="text-[9px] font-bold opacity-30 uppercase mt-1">{tr("Vers : ")}{ride.endPoint?.split(',')[0]}</p>
               </div>
            </div>
         </div>
@@ -119,7 +120,7 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
         <div className="flex items-center justify-between md:flex-col md:items-end gap-3 bg-foreground/5 md:bg-transparent p-4 md:p-0 rounded-2xl">
            <div className="text-right order-2 md:order-1">
               <p className="text-2xl font-black italic tracking-tighter text-foreground">{ride.price?.toLocaleString()} F</p>
-              <p className="text-[8px] font-black uppercase opacity-30 tracking-[0.2em] leading-none mt-1 text-right">Net Chauffeur</p>
+              <p className="text-[8px] font-black uppercase opacity-30 tracking-[0.2em] leading-none mt-1 text-right">{tr("Net Chauffeur")}</p>
            </div>
            <div className={`order-1 md:order-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${ride.state === 'COMPLETED' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
              {ride.state === 'COMPLETED' && <CheckCircle2 size={12}/>} {ride.state}
@@ -151,7 +152,7 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
             {review.anonymous && (
               <div className="flex items-center gap-1.5 bg-foreground/5 border border-foreground/10 rounded-xl px-3 py-1.5">
                 <EyeOff size={11} className="text-foreground/40" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-foreground/40">Avis anonyme</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-foreground/40">{tr("Avis anonyme")}</span>
               </div>
             )}
 
@@ -170,8 +171,7 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
                       <p className={`text-xs leading-relaxed text-foreground/70 font-medium italic ${
                         !isCommentExpanded && isLongComment ? 'line-clamp-2' : ''
                       }`}>
-                        &ldquo;{review.comment}&rdquo;
-                      </p>
+                        &ldquo;{review.comment}&rdquo;</p>
                     </div>
 
                     {/* Gradient de fondu quand le texte est tronqué */}
@@ -187,7 +187,7 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
                     className="flex items-center gap-1.5 mt-1.5 text-orange-btn hover:text-orange-btn/80 transition-colors"
                   >
                     <span className="text-[9px] font-black uppercase tracking-widest">
-                      {isCommentExpanded ? 'Voir moins' : 'Voir plus'}
+                      {isCommentExpanded ? tr("Voir moins") : tr("Voir plus")}
                     </span>
                     <ChevronDown 
                       size={10} 
@@ -199,7 +199,7 @@ const DriverHistoryCard = ({ ride, idx, review }: { ride: any, idx: number, revi
             ) : (
               <div className="flex items-center gap-1.5 opacity-30">
                 <MessageSquareQuote size={10} />
-                <span className="text-[9px] font-bold uppercase tracking-widest">Aucun commentaire</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest">{tr("Aucun commentaire")}</span>
               </div>
             )}
           </div>
@@ -235,9 +235,9 @@ export default function HistoryPage() {
   const loading = ridesLoading || reviewsLoading;
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4">
+    <div className="h-app flex flex-col items-center justify-center gap-4">
       <Loader2 className="animate-spin text-orange-btn" size={40} />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Récupération de l&apos;historique...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{tr("Récupération de l'historique...")}</p>
     </div>
   );
 
@@ -248,16 +248,15 @@ export default function HistoryPage() {
           <ArrowLeft size={24} />
         </Link>
         <div>
-           <h1 className="text-4xl font-black tracking-tighter italic">Historique</h1>
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Suivi des activités</p>
+           <h1 className="text-4xl font-black tracking-tighter italic">{tr("Historique")}</h1>
+           <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{tr("Suivi des activités")}</p>
         </div>
       </div>
 
       <div className="grid gap-4">
         {rides.length === 0 ? (
           <div className="glass p-20 text-center opacity-30 italic font-bold rounded-[40px] border-none shadow-xl bg-background">
-            Aucun trajet trouvé.
-          </div>
+            {tr("Aucun trajet trouvé.")}</div>
         ) : (
           rides.map((ride: any, idx: number) => (
             <DriverHistoryCard 

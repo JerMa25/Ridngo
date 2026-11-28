@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/context/ThemeContext';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function LandingScreen() {
   const { Colors } = useTheme();
@@ -22,7 +23,7 @@ export default function LandingScreen() {
             <View style={styles.logoBox}>
               <Text style={styles.logoLetter}>R</Text>
             </View>
-            <Text style={[styles.logoText, { color: Colors.text }]}>RidnGo</Text>
+            <Text style={[styles.logoText, { color: Colors.text }]}>{tr("RidnGo")}</Text>
           </View>
           <ThemeToggle />
         </View>
@@ -32,19 +33,17 @@ export default function LandingScreen() {
           <View style={[styles.iconContainer, { backgroundColor: Colors.orangeBg }]}>
             <Ionicons name="car" size={64} color={Colors.orange} />
           </View>
-          <Text style={[styles.tag, { color: Colors.orange }]}>AFRICA'S FREEDOM MOVE</Text>
+          <Text style={[styles.tag, { color: Colors.orange }]}>{tr("AFRICA'S FREEDOM MOVE")}</Text>
           <Text style={[styles.headline, { color: Colors.text }]}>
-            Votre course,{'\n'}vos règles.
-          </Text>
+            {tr("Votre course,")}{'\n'}{tr("vos règles.")}</Text>
           <Text style={[styles.subhead, { color: Colors.textSecondary }]}>
-            Mise en relation directe avec des chauffeurs certifiés au Cameroun. Prix transparents, sécurité totale.
-          </Text>
+            {tr("Mise en relation directe avec des chauffeurs certifiés au Cameroun. Prix transparents, sécurité totale.")}</Text>
 
           <View style={styles.features}>
             {[
-              { icon: 'shield-checkmark', label: 'Chauffeurs certifiés' },
-              { icon: 'cash', label: 'Prix négociables' },
-              { icon: 'flash', label: 'Rapide & fiable' },
+              { icon: 'shield-checkmark', label: tr("Chauffeurs certifiés") },
+              { icon: 'cash', label: tr("Prix négociables") },
+              { icon: 'flash', label: tr("Rapide & fiable") },
             ].map((f, i) => (
               <View key={i} style={[styles.feature, { backgroundColor: Colors.orangeBg }]}>
                 <Ionicons name={f.icon as any} size={16} color={Colors.orange} />
@@ -57,7 +56,7 @@ export default function LandingScreen() {
         {/* CTAs */}
         <View style={styles.ctas}>
           <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push('/(auth)/login')} activeOpacity={0.85}>
-            <Text style={styles.btnPrimaryText}>Se connecter</Text>
+            <Text style={styles.btnPrimaryText}>{tr("Se connecter")}</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
@@ -66,7 +65,7 @@ export default function LandingScreen() {
             onPress={() => router.push({ pathname: '/(auth)/register', params: { role: 'passenger' } })}
             activeOpacity={0.85}
           >
-            <Text style={[styles.btnSecondaryText, { color: Colors.text }]}>Créer un compte passager</Text>
+            <Text style={[styles.btnSecondaryText, { color: Colors.text }]}>{tr("Créer un compte passager")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -75,11 +74,11 @@ export default function LandingScreen() {
             activeOpacity={0.85}
           >
             <Ionicons name="car-sport" size={16} color={Colors.orange} />
-            <Text style={[styles.btnGhostText, { color: Colors.orange }]}>Devenir chauffeur</Text>
+            <Text style={[styles.btnGhostText, { color: Colors.orange }]}>{tr("Devenir chauffeur")}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.footer, { color: Colors.textMuted }]}>© 2026 Yowyob Inc. Ltd. — Yaoundé, Cameroun</Text>
+        <Text style={[styles.footer, { color: Colors.textMuted }]}>{tr("© 2026 Yowyob Inc. Ltd. — Yaoundé, Cameroun")}</Text>
       </SafeAreaView>
     </View>
   );

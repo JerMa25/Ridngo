@@ -2,6 +2,7 @@
 "use client"
 import React, { useEffect, useRef, useState } from 'react';
 import NavigooMap from 'navigoo';
+import { tr } from '@/lib/i18n';
 
 interface MapProps {
   pickup?: { lat: number | string; lon: number | string; name?: string };

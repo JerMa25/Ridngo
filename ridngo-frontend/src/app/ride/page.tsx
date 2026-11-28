@@ -17,6 +17,7 @@ import { RideWaiting } from './components/RideWaiting';
 import { RideActive } from './components/RideActive';
 import { TripSummary } from './components/TripSummary';
 import { ChatWidget } from './components/ChatWidget';
+import { tr } from '@/lib/i18n';
 
 const MapView = dynamic(() => import('@/components/home/MapView'), { ssr: false });
 
@@ -144,14 +145,14 @@ export default function RidePage() {
   }, [step]);
 
   const handleEstimate = async () => {
-    if (!pickup || !dest) { toast.error('Choisissez un lieu de départ et une destination dans la liste.'); return; }
-    if (pickup.lat === dest.lat && pickup.lon === dest.lon) { toast.error('Le départ et la destination sont identiques.'); return; }
+    if (!pickup || !dest) { toast.error(tr("Choisissez un lieu de départ et une destination dans la liste.")); return; }
+    if (pickup.lat === dest.lat && pickup.lon === dest.lon) { toast.error(tr("Le départ et la destination sont identiques.")); return; }
     try {
       const res = await rideService.estimateFare(pickup.name, dest.name);
       setPrice(Math.max(100, Math.round((res?.prix_moyen || 0) / 50) * 50));
     } catch {
       // estimation indisponible : le passager fixe son prix lui-même
-      toast('Estimation indisponible : proposez votre prix.', { icon: 'ℹ️' });
+      toast(tr("Estimation indisponible : proposez votre prix."), { icon: 'ℹ️' });
       setPrice(price || 1000);
     }
     setStep('price');
@@ -160,10 +161,10 @@ export default function RidePage() {
   const handlePublishOffer = async () => {
     // Contrôles avant envoi : un message précis plutôt qu'un refus serveur générique
     const phone = (passengerPhone || '').replace(/\s/g, '');
-    if (!price || price < 100) { toast.error('Le prix doit être d’au moins 100 FCFA.'); return; }
-    if (!numberOfPlaces || numberOfPlaces < 1) { toast.error('Indiquez au moins une place.'); return; }
-    if (!/^\+?\d{8,15}$/.test(phone)) { toast.error('Numéro de téléphone du passager invalide (ex. 6XXXXXXXX).'); return; }
-    if (!departureTime) { toast.error("Indiquez l'heure de départ."); return; }
+    if (!price || price < 100) { toast.error(tr("Le prix doit être d’au moins 100 FCFA.")); return; }
+    if (!numberOfPlaces || numberOfPlaces < 1) { toast.error(tr("Indiquez au moins une place.")); return; }
+    if (!/^\+?\d{8,15}$/.test(phone)) { toast.error(tr("Numéro de téléphone du passager invalide (ex. 6XXXXXXXX).")); return; }
+    if (!departureTime) { toast.error(tr("Indiquez l'heure de départ.")); return; }
     try {
       // On construit la requête avec les coordonnées extraites de 'pickup'
       const data = await rideService.createOffer({
@@ -184,21 +185,20 @@ export default function RidePage() {
       setStep('waiting');
     } catch (e: any) {
       console.error("Erreur publication:", e.response?.data);
-      toast.error(e.response?.data?.detail || e.response?.data?.message || "Erreur lors de la publication de l'offre");
+      toast.error(e.response?.data?.detail || e.response?.data?.message || tr("Erreur lors de la publication de l'offre"));
     }
   };
 
-  if (step === 'loading') return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-orange-btn" size={40} /></div>;
+  if (step === 'loading') return <div className="h-app flex items-center justify-center"><Loader2 className="animate-spin text-orange-btn" size={40} /></div>;
 
   return (
-    <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
+    <div className="h-app flex flex-col lg:flex-row overflow-hidden">
       <div className="w-full lg:w-112.5 bg-background shadow-2xl z-20 flex flex-col border-r border-foreground/5 overflow-y-auto no-scrollbar">
         
         {step === 'search' && (
           <div className="p-6 pb-0 flex justify-end">
             <Link href="/ride/history" className="flex items-center gap-2 px-4 py-2 bg-foreground/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-btn hover:text-white transition-all">
-              <History size={14} /> Historique
-            </Link>
+              <History size={14} /> {tr(" Historique")}</Link>
           </div>
         )}
 

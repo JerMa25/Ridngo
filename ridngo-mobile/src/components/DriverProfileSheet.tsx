@@ -3,6 +3,7 @@ import { View, Text, Modal, TouchableOpacity, ScrollView, Image, ActivityIndicat
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { tr } from '../i18n';
 
 const FEATURES: [string, string][] = [
   ['airConditioned', 'Climatisation'], ['comfortable', 'Confortable'], ['soft', 'Sièges moelleux'], ['screen', 'Écran'],
@@ -41,10 +42,10 @@ export function DriverProfileSheet({ driverId, onClose, onChoose }: { driverId: 
     <Modal visible={!!driverId} transparent animationType="slide" onRequestClose={onClose}>
       <View style={st.overlay}>
         <View style={[st.sheet, { backgroundColor: Colors.darkCard }]}>
-          <TouchableOpacity style={st.close} onPress={onClose} accessibilityLabel="Fermer"><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+          <TouchableOpacity style={st.close} onPress={onClose} accessibilityLabel={tr("Fermer")}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
           {loading || !profile ? (
             <View style={{ padding: 40, alignItems: 'center' }}>
-              {loading ? <ActivityIndicator color={Colors.orange} /> : <Text style={{ color: Colors.textSecondary }}>Profil indisponible pour le moment.</Text>}
+              {loading ? <ActivityIndicator color={Colors.orange} /> : <Text style={{ color: Colors.textSecondary }}>{tr("Profil indisponible pour le moment.")}</Text>}
             </View>
           ) : (
             <ScrollView>
@@ -55,7 +56,7 @@ export function DriverProfileSheet({ driverId, onClose, onChoose }: { driverId: 
                     : <Text style={st.avatarTxt}>{name.charAt(0).toUpperCase()}</Text>}
                 </View>
                 <Text style={[st.name, { color: Colors.text }]}>{name}</Text>
-                <Text style={{ color: Colors.orange, fontWeight: '900' }}>★ {reviews.length ? avg.toFixed(1) : '—'} <Text style={{ color: Colors.textSecondary, fontWeight: '700' }}>({reviews.length} avis)</Text></Text>
+                <Text style={{ color: Colors.orange, fontWeight: '900' }}>★ {reviews.length ? avg.toFixed(1) : '—'} <Text style={{ color: Colors.textSecondary, fontWeight: '700' }}>({reviews.length} {tr(" avis)")}</Text></Text>
               </View>
 
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
@@ -83,7 +84,7 @@ export function DriverProfileSheet({ driverId, onClose, onChoose }: { driverId: 
                     <Text style={{ color: Colors.text, fontWeight: '700' }}>{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</Text>
                     <Text style={{ color: Colors.textSecondary }}>{r.distance ? `${Number(r.distance).toFixed(1)} km` : ''}</Text>
                     <Text style={{ fontWeight: '900', color: r.state === 'COMPLETED' ? Colors.green : r.state === 'CANCELLED' ? Colors.red : Colors.orange }}>
-                      {r.state === 'COMPLETED' ? 'Terminée' : r.state === 'CANCELLED' ? 'Annulée' : 'En cours'}
+                      {r.state === 'COMPLETED' ? tr("Terminée") : r.state === 'CANCELLED' ? tr("Annulée") : tr("En cours")}
                     </Text>
                   </View>
                 ))}
@@ -91,16 +92,16 @@ export function DriverProfileSheet({ driverId, onClose, onChoose }: { driverId: 
 
               {section('AVIS DES PASSAGERS')}
               {reviews.length === 0
-                ? <Text style={{ color: Colors.textSecondary, fontStyle: 'italic' }}>Aucun avis pour le moment.</Text>
+                ? <Text style={{ color: Colors.textSecondary, fontStyle: 'italic' }}>{tr("Aucun avis pour le moment.")}</Text>
                 : reviews.map(r => (
                   <View key={r.reviewId} style={[st.review, { borderColor: Colors.darkBorder }]}>
-                    <Text style={{ color: Colors.text, fontWeight: '900' }}>{r.passengerName || 'Passager'} <Text style={{ color: Colors.orange }}>{'★'.repeat(r.rating || 0)}</Text></Text>
+                    <Text style={{ color: Colors.text, fontWeight: '900' }}>{r.passengerName || tr("Passager")} <Text style={{ color: Colors.orange }}>{'★'.repeat(r.rating || 0)}</Text></Text>
                     {!!r.comment && <Text style={{ color: Colors.textSecondary, marginTop: 2 }}>{r.comment}</Text>}
                   </View>
                 ))}
 
               <TouchableOpacity style={[st.choose, { backgroundColor: Colors.orange }]} onPress={() => onChoose(driverId!)} accessibilityRole="button">
-                <Text style={{ color: '#fff', fontWeight: '900', letterSpacing: 1 }}>CHOISIR CE CHAUFFEUR</Text>
+                <Text style={{ color: '#fff', fontWeight: '900', letterSpacing: 1 }}>{tr("CHOISIR CE CHAUFFEUR")}</Text>
               </TouchableOpacity>
             </ScrollView>
           )}

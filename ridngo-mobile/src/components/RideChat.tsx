@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, TextInput, FlatList, StyleSheet, K
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { tr } from '../i18n';
 
 type Message = { id: string; senderId: string; senderRole: string; content: string; sentAt: string };
 
@@ -51,14 +52,14 @@ export function RideChat({ rideId, userId, role }: { rideId: string; userId: str
       data.forEach(m => seen.current.add(m.id));
       setMessages([...data].sort((a, b) => +new Date(a.sentAt) - +new Date(b.sentAt)));
     } catch (e: any) {
-      setError(e?.response?.data?.detail || "Message non envoyé, réessayez.");
+      setError(e?.response?.data?.detail || tr("Message non envoyé, réessayez."));
     } finally { setSending(false); }
   };
 
   return (
     <>
       <TouchableOpacity style={[st.fab, { backgroundColor: Colors.orange }]} onPress={() => { setOpen(true); setUnread(0); }}
-        accessibilityRole="button" accessibilityLabel={`Ouvrir le chat${unread ? `, ${unread} nouveau(x) message(s)` : ''}`}>
+        accessibilityRole="button" accessibilityLabel={unread ? tr('Ouvrir le chat, {n} nouveau(x) message(s)', { n: unread }) : tr('Ouvrir le chat')}>
         <Ionicons name="chatbubble-ellipses" size={24} color="#FFFFFF" />
         {unread > 0 && <View style={st.badge}><Text style={st.badgeTxt}>{unread}</Text></View>}
       </TouchableOpacity>
@@ -67,15 +68,15 @@ export function RideChat({ rideId, userId, role }: { rideId: string; userId: str
         <KeyboardAvoidingView style={st.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[st.sheet, { backgroundColor: Colors.darkCard }]}>
             <View style={st.header}>
-              <Text style={[st.title, { color: Colors.text }]}>{role === 'PASSENGER' ? 'Votre chauffeur' : 'Votre passager'}</Text>
-              <TouchableOpacity onPress={() => setOpen(false)} accessibilityLabel="Fermer le chat"><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+              <Text style={[st.title, { color: Colors.text }]}>{role === 'PASSENGER' ? tr("Votre chauffeur") : tr("Votre passager")}</Text>
+              <TouchableOpacity onPress={() => setOpen(false)} accessibilityLabel={tr("Fermer le chat")}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
             </View>
             <FlatList
               data={messages}
               keyExtractor={m => m.id}
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingVertical: 8, gap: 8 }}
-              ListEmptyComponent={<Text style={{ color: Colors.textMuted, textAlign: 'center', marginTop: 24 }}>Aucun message. Écrivez le premier !</Text>}
+              ListEmptyComponent={<Text style={{ color: Colors.textMuted, textAlign: 'center', marginTop: 24 }}>{tr("Aucun message. Écrivez le premier !")}</Text>}
               renderItem={({ item }) => {
                 const mine = item.senderId === userId;
                 return (
@@ -90,10 +91,10 @@ export function RideChat({ rideId, userId, role }: { rideId: string; userId: str
             />
             {!!error && <Text style={{ color: Colors.red, fontSize: 12, marginBottom: 6 }}>{error}</Text>}
             <View style={st.inputRow}>
-              <TextInput value={text} onChangeText={setText} placeholder="Votre message…" placeholderTextColor={Colors.textMuted}
+              <TextInput value={text} onChangeText={setText} placeholder={tr("Votre message…")} placeholderTextColor={Colors.textMuted}
                 style={[st.input, { color: Colors.text, backgroundColor: Colors.input }]} onSubmitEditing={send} returnKeyType="send" maxLength={500} />
               <TouchableOpacity style={[st.send, { backgroundColor: Colors.orange }, (!text.trim() || sending) && { opacity: 0.5 }]}
-                onPress={send} disabled={!text.trim() || sending} accessibilityLabel="Envoyer">
+                onPress={send} disabled={!text.trim() || sending} accessibilityLabel={tr("Envoyer")}>
                 {sending ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons name="send" size={18} color="#FFFFFF" />}
               </TouchableOpacity>
             </View>

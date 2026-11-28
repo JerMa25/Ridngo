@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { NetworkProvider } from '../src/context/NetworkContext';
 import { OfflineBanner } from '../src/components/OfflineBanner';
+import { I18nProvider, useI18n } from '../src/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +34,7 @@ function useSessionGuard() {
 
 function AppContent() {
   const { isDark, Colors } = useTheme();
+  const { lang } = useI18n();
   useEffect(() => { SplashScreen.hideAsync(); }, []);
   useSessionGuard();
 
@@ -41,7 +43,9 @@ function AppContent() {
       {/* SDK 58 : barre d'état edge-to-edge, backgroundColor/translucent n'existent plus */}
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <OfflineBanner />
+      {/* key : au changement de langue, les écrans sont remontés et chaque tr() reprend la nouvelle langue */}
       <Stack
+        key={lang}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: Colors.background },
@@ -63,9 +67,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <NetworkProvider>
           <ThemeProvider>
-            <AuthProvider>
-              <AppContent />
-            </AuthProvider>
+            <I18nProvider>
+              <AuthProvider>
+                <AppContent />
+              </AuthProvider>
+            </I18nProvider>
           </ThemeProvider>
         </NetworkProvider>
       </SafeAreaProvider>

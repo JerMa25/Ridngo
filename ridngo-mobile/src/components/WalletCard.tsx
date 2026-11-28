@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { rideService } from '../services/rideService';
 import { useTheme } from '../context/ThemeContext';
+import { tr } from '../i18n';
 
 const SUCCESS = ['SUCCESS', 'SUCCEEDED', 'COMPLETED', 'PAID', 'RECHARGED'];
 const FAILURE = ['FAILED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'REJECTED'];
@@ -18,7 +19,7 @@ export function WalletCard({ balance, onChanged }: { balance: number; onChanged:
   const [mode, setMode] = useState<Mode>(null);
   return (
     <View style={[st.card, { backgroundColor: Colors.darkCard, borderColor: Colors.darkBorder }]}>
-      <Text style={[st.label, { color: Colors.textMuted }]}>SOLDE DISPONIBLE</Text>
+      <Text style={[st.label, { color: Colors.textMuted }]}>{tr("SOLDE DISPONIBLE")}</Text>
       <Text style={[st.balance, { color: Colors.text }]}>{balance.toLocaleString()} <Text style={{ color: Colors.orange, fontSize: 14 }}>FCFA</Text></Text>
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
         <TouchableOpacity style={[st.btn, { backgroundColor: Colors.orange }]} onPress={() => setMode('recharge')} accessibilityRole="button">
@@ -32,7 +33,7 @@ export function WalletCard({ balance, onChanged }: { balance: number; onChanged:
       <Modal visible={mode !== null} transparent animationType="slide" onRequestClose={() => setMode(null)}>
         <View style={st.overlay}>
           <View style={[st.sheet, { backgroundColor: Colors.darkCard }]}>
-            <TouchableOpacity style={st.close} onPress={() => setMode(null)} accessibilityLabel="Fermer"><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+            <TouchableOpacity style={st.close} onPress={() => setMode(null)} accessibilityLabel={tr("Fermer")}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
             <ScrollView keyboardShouldPersistTaps="handled">
               {mode === 'recharge' && <Recharge onDone={() => { onChanged(); }} />}
               {mode === 'withdraw' && <Withdraw balance={balance} onDone={() => { onChanged(); }} />}
@@ -106,9 +107,9 @@ function Recharge({ onDone }: { onDone: () => void }) {
   const submit = async () => {
     const e: Record<string, string> = {};
     const v = Number(amount);
-    if (!amount.trim() || !Number.isFinite(v)) e.amount = 'Indiquez un montant.';
-    else if (v < MIN) e.amount = `Minimum ${MIN} FCFA.`;
-    if (method !== 'CARD' && !/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ''))) e.phone = 'Numéro Mobile Money invalide.';
+    if (!amount.trim() || !Number.isFinite(v)) e.amount = tr("Indiquez un montant.");
+    else if (v < MIN) e.amount = tr('Minimum {n} FCFA.', { n: MIN });
+    if (method !== 'CARD' && !/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ''))) e.phone = tr("Numéro Mobile Money invalide.");
     setErrors(e);
     if (Object.keys(e).length) return;
     setBusy(true);
@@ -134,24 +135,24 @@ function Recharge({ onDone }: { onDone: () => void }) {
   if (result) return (
     <View style={{ alignItems: 'center', gap: 10 }}>
       <Ionicons name={result === 'paid' ? 'checkmark-circle' : 'close-circle'} size={48} color={result === 'paid' ? Colors.green : Colors.red} />
-      <Text style={[st.title, { color: Colors.text }]}>{result === 'paid' ? `Wallet rechargé de ${Number(amount).toLocaleString()} FCFA` : 'Paiement non confirmé'}</Text>
-      {result === 'failed' && <Text style={{ color: Colors.textSecondary, textAlign: 'center' }}>Si vous avez validé, le solde se mettra à jour sous peu.</Text>}
+      <Text style={[st.title, { color: Colors.text }]}>{result === 'paid' ? tr('Wallet rechargé de {amount} FCFA', { amount: Number(amount).toLocaleString() }) : tr("Paiement non confirmé")}</Text>
+      {result === 'failed' && <Text style={{ color: Colors.textSecondary, textAlign: 'center' }}>{tr("Si vous avez validé, le solde se mettra à jour sous peu.")}</Text>}
     </View>
   );
   if (order) return (
     <View style={{ alignItems: 'center', gap: 10 }}>
       <Ionicons name="phone-portrait" size={40} color={Colors.orange} />
-      <Text style={[st.title, { color: Colors.text }]}>Validez sur MyCoolPay, puis sur votre téléphone</Text>
-      <Text style={{ color: Colors.textSecondary, textAlign: 'center' }}>1. Cliquez « Submit » sur la page de paiement. 2. Tapez votre code secret pour confirmer {Number(amount).toLocaleString()} FCFA.</Text>
+      <Text style={[st.title, { color: Colors.text }]}>{tr("Validez sur MyCoolPay, puis sur votre téléphone")}</Text>
+      <Text style={{ color: Colors.textSecondary, textAlign: 'center' }}>{tr("1. Cliquez « Submit » sur la page de paiement. 2. Tapez votre code secret pour confirmer ")}{Number(amount).toLocaleString()} FCFA.</Text>
       <ActivityIndicator color={Colors.orange} />
-      <Text style={{ color: Colors.textMuted, fontSize: 11 }}>Statut : {order.status}</Text>
-      {!!order.redirectUrl && <Primary title="OUVRIR LA PAGE DE PAIEMENT" onPress={() => Linking.openURL(order.redirectUrl!)} />}
+      <Text style={{ color: Colors.textMuted, fontSize: 11 }}>{tr("Statut : ")}{order.status}</Text>
+      {!!order.redirectUrl && <Primary title={tr("OUVRIR LA PAGE DE PAIEMENT")} onPress={() => Linking.openURL(order.redirectUrl!)} />}
     </View>
   );
   return (
     <View>
-      <Text style={[st.title, { color: Colors.text }]}>Recharger mon wallet</Text>
-      <Field label="MONTANT (FCFA)" value={amount} onChangeText={setAmount} keyboardType="number-pad" error={errors.amount} />
+      <Text style={[st.title, { color: Colors.text }]}>{tr("Recharger mon wallet")}</Text>
+      <Field label={tr("MONTANT (FCFA)")} value={amount} onChangeText={setAmount} keyboardType="number-pad" error={errors.amount} />
       <View style={{ flexDirection: 'row', gap: 8, marginTop: -4, marginBottom: 12 }}>
         {[500, 1000, 2000].map(a => (
           <TouchableOpacity key={a} onPress={() => setAmount(String(a))} style={[st.choice, { borderColor: amount === String(a) ? Colors.orange : Colors.darkBorder }]}>
@@ -159,10 +160,10 @@ function Recharge({ onDone }: { onDone: () => void }) {
           </TouchableOpacity>
         ))}
       </View>
-      <Choice value={method} onChange={setMethod} options={[{ value: 'MOBILE_MONEY', label: 'Mobile Money' }, { value: 'CARD', label: 'Carte' }]} />
-      {method !== 'CARD' && <Field label="NUMÉRO MOBILE MONEY" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="6XXXXXXXX" error={errors.phone} />}
+      <Choice value={method} onChange={setMethod} options={[{ value: 'MOBILE_MONEY', label: tr("Mobile Money") }, { value: 'CARD', label: tr("Carte") }]} />
+      {method !== 'CARD' && <Field label={tr("NUMÉRO MOBILE MONEY")} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="6XXXXXXXX" error={errors.phone} />}
       {!!errors.server && <Text style={[st.err, { color: Colors.red, marginBottom: 8 }]}>{errors.server}</Text>}
-      <Primary title={`VALIDER ${Number(amount) > 0 ? Number(amount).toLocaleString() + ' FCFA' : ''}`} onPress={submit} busy={busy} />
+      <Primary title={`${tr('VALIDER')} ${Number(amount) > 0 ? Number(amount).toLocaleString() + ' FCFA' : ''}`} onPress={submit} busy={busy} />
     </View>
   );
 }
@@ -182,12 +183,12 @@ function Withdraw({ balance, onDone }: { balance: number; onDone: () => void }) 
   const requestCode = async () => {
     const e: Record<string, string> = {};
     const v = Number(amount);
-    if (!amount.trim()) e.amount = 'Indiquez le montant à retirer.';
-    else if (!Number.isFinite(v) || v <= 0) e.amount = 'Montant invalide.';
-    else if (v < MIN) e.amount = `Minimum ${MIN} FCFA.`;
-    else if (v > balance) e.amount = `Solde insuffisant : ${balance.toLocaleString()} FCFA disponibles.`;
-    if (!/^\+?\d{8,15}$/.test(clean)) e.phone = 'Numéro invalide (ex. 6XXXXXXXX).';
-    if (fullName.trim().split(/\s+/).filter(Boolean).length < 2) e.name = 'Nom et prénom exactement comme sur le compte Mobile Money.';
+    if (!amount.trim()) e.amount = tr("Indiquez le montant à retirer.");
+    else if (!Number.isFinite(v) || v <= 0) e.amount = tr("Montant invalide.");
+    else if (v < MIN) e.amount = tr('Minimum {n} FCFA.', { n: MIN });
+    else if (v > balance) e.amount = tr('Solde insuffisant : {amount} FCFA disponibles.', { amount: balance.toLocaleString() });
+    if (!/^\+?\d{8,15}$/.test(clean)) e.phone = tr("Numéro invalide (ex. 6XXXXXXXX).");
+    if (fullName.trim().split(/\s+/).filter(Boolean).length < 2) e.name = tr("Nom et prénom exactement comme sur le compte Mobile Money.");
     setErrors(e);
     if (Object.keys(e).length) return;
     setBusy(true);
@@ -211,28 +212,28 @@ function Withdraw({ balance, onDone }: { balance: number; onDone: () => void }) 
   if (done) return (
     <View style={{ alignItems: 'center', gap: 10 }}>
       <Ionicons name="checkmark-circle" size={48} color={Colors.green} />
-      <Text style={[st.title, { color: Colors.text }]}>Retrait de {Number(amount).toLocaleString()} FCFA envoyé vers le {clean}</Text>
+      <Text style={[st.title, { color: Colors.text }]}>{tr("Retrait de ")}{Number(amount).toLocaleString()} {tr(" FCFA envoyé vers le ")}{clean}</Text>
     </View>
   );
   return (
     <View>
-      <Text style={[st.title, { color: Colors.text }]}>Retirer de l’argent</Text>
-      <Text style={{ color: Colors.textSecondary, marginBottom: 12 }}>Solde : {balance.toLocaleString()} FCFA</Text>
+      <Text style={[st.title, { color: Colors.text }]}>{tr("Retirer de l’argent")}</Text>
+      <Text style={{ color: Colors.textSecondary, marginBottom: 12 }}>{tr("Solde : ")}{balance.toLocaleString()} FCFA</Text>
       {!token ? (
         <>
-          <Field label="MONTANT (FCFA)" value={amount} onChangeText={setAmount} keyboardType="number-pad" error={errors.amount} />
-          <Choice value={method} onChange={setMethod} options={[{ value: 'MTN_MOBILE_MONEY', label: 'MTN MoMo' }, { value: 'ORANGE_MONEY', label: 'Orange Money' }]} />
-          <Field label="NUMÉRO MOBILE MONEY" value={phone} onChangeText={setPhone} keyboardType="phone-pad" error={errors.phone} />
-          <Field label="NOM DU TITULAIRE DU COMPTE" value={fullName} onChangeText={setFullName} placeholder="Nom Prénom" error={errors.name} />
+          <Field label={tr("MONTANT (FCFA)")} value={amount} onChangeText={setAmount} keyboardType="number-pad" error={errors.amount} />
+          <Choice value={method} onChange={setMethod} options={[{ value: 'MTN_MOBILE_MONEY', label: tr("MTN MoMo") }, { value: 'ORANGE_MONEY', label: tr("Orange Money") }]} />
+          <Field label={tr("NUMÉRO MOBILE MONEY")} value={phone} onChangeText={setPhone} keyboardType="phone-pad" error={errors.phone} />
+          <Field label={tr("NOM DU TITULAIRE DU COMPTE")} value={fullName} onChangeText={setFullName} placeholder={tr("Nom Prénom")} error={errors.name} />
           {!!errors.server && <Text style={[st.err, { color: Colors.red, marginBottom: 8 }]}>{errors.server}</Text>}
-          <Primary title="RECEVOIR LE CODE" onPress={requestCode} busy={busy} />
+          <Primary title={tr("RECEVOIR LE CODE")} onPress={requestCode} busy={busy} />
         </>
       ) : (
         <>
-          <Text style={{ color: Colors.textSecondary, marginBottom: 12 }}>Un code de confirmation vient de vous être envoyé.</Text>
-          <Field label="CODE REÇU" value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" autoFocus error={errors.code} />
+          <Text style={{ color: Colors.textSecondary, marginBottom: 12 }}>{tr("Un code de confirmation vient de vous être envoyé.")}</Text>
+          <Field label={tr("CODE REÇU")} value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" autoFocus error={errors.code} />
           {!!errors.server && <Text style={[st.err, { color: Colors.red, marginBottom: 8 }]}>{errors.server}</Text>}
-          <Primary title="CONFIRMER LE RETRAIT" onPress={confirm} busy={busy} />
+          <Primary title={tr("CONFIRMER LE RETRAIT")} onPress={confirm} busy={busy} />
         </>
       )}
     </View>
@@ -265,18 +266,18 @@ function WalletHistory() {
     <View style={{ marginTop: 14 }}>
       <TouchableOpacity onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }} accessibilityRole="button">
         <Ionicons name={open ? 'chevron-up' : 'time-outline'} size={14} color={Colors.textMuted} />
-        <Text style={[st.label, { color: Colors.textMuted, marginBottom: 0 }]}>{open ? 'MASQUER L’HISTORIQUE' : 'VOIR L’HISTORIQUE'}</Text>
+        <Text style={[st.label, { color: Colors.textMuted, marginBottom: 0 }]}>{open ? tr("MASQUER L’HISTORIQUE") : tr("VOIR L’HISTORIQUE")}</Text>
       </TouchableOpacity>
       {open && (loading ? <ActivityIndicator color={Colors.orange} style={{ marginTop: 10 }} /> : (
         <View>
-          <Text style={[st.label, { color: Colors.textMuted, marginTop: 12 }]}>OPÉRATIONS</Text>
-          {txs.length === 0 ? <Text style={{ color: Colors.textMuted, fontStyle: 'italic', fontSize: 12 }}>Aucune transaction enregistrée.</Text>
+          <Text style={[st.label, { color: Colors.textMuted, marginTop: 12 }]}>{tr("OPÉRATIONS")}</Text>
+          {txs.length === 0 ? <Text style={{ color: Colors.textMuted, fontStyle: 'italic', fontSize: 12 }}>{tr("Aucune transaction enregistrée.")}</Text>
             : txs.map(tx => {
               const debit = tx.transactionType === 'RIDE_PAYMENT';
               return (
                 <View key={tx.id} style={row}>
                   <View>
-                    <Text style={{ color: Colors.text, fontWeight: '700', fontSize: 12 }}>{debit ? 'Débit course' : 'Crédit / recharge'}</Text>
+                    <Text style={{ color: Colors.text, fontWeight: '700', fontSize: 12 }}>{debit ? tr("Débit course") : tr("Crédit / recharge")}</Text>
                     <Text style={{ color: Colors.textMuted, fontSize: 10 }}>{new Date(tx.createdAt).toLocaleDateString('fr-FR')}</Text>
                   </View>
                   <Text style={{ color: debit ? Colors.red : Colors.green, fontWeight: '900', fontSize: 10 }}>{tx.status}</Text>
@@ -284,7 +285,7 @@ function WalletHistory() {
               );
             })}
           <Text style={[st.label, { color: Colors.textMuted, marginTop: 14 }]}>RECHARGES</Text>
-          {orders.length === 0 ? <Text style={{ color: Colors.textMuted, fontStyle: 'italic', fontSize: 12 }}>Aucun historique de recharge.</Text>
+          {orders.length === 0 ? <Text style={{ color: Colors.textMuted, fontStyle: 'italic', fontSize: 12 }}>{tr("Aucun historique de recharge.")}</Text>
             : orders.map(o => (
               <View key={o.orderId} style={row}>
                 <Text style={{ color: Colors.orange, fontWeight: '900', fontSize: 12 }}>{o.amount.toLocaleString()} FCFA</Text>

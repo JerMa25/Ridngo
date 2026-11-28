@@ -22,6 +22,7 @@ import { Spacing, Radius } from '../../../src/types/theme';
 import { RideResponse } from '../../../src/types/api';
 import api from '../../../src/services/api';
 import { RideChat } from '../../../src/components/RideChat';
+import { tr } from '../../../src/i18n';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 type RideState = 'CREATED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
@@ -87,7 +88,7 @@ export default function DriverRideScreen() {
       setRide(enriched);
       setRideState((enriched.state as RideState) || 'CREATED');
       if (enriched.passengerId) loadPassenger(enriched.passengerId);
-    } catch { Alert.alert('Erreur', 'Impossible de charger la course.'); }
+    } catch { Alert.alert(tr("Erreur"), tr("Impossible de charger la course.")); }
     finally { setLoading(false); }
   };
 
@@ -157,7 +158,7 @@ export default function DriverRideScreen() {
       setRideState('ONGOING');
       startPoll();
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message || e?.message || 'Impossible de démarrer.');
+      Alert.alert(tr("Erreur"), e?.response?.data?.message || e?.message || tr("Impossible de démarrer."));
     } finally { setAction(false); }
   };
 
@@ -170,14 +171,14 @@ export default function DriverRideScreen() {
   // ONGOING → COMPLETED : chauffeur termine (seulement une fois arrivé, le backend vérifie aussi)
   const handleComplete = () => {
     if (!nav.arrived) {
-      Alert.alert('Pas encore arrivé', nav.toTarget != null
+      Alert.alert(tr("Pas encore arrivé"), nav.toTarget != null
         ? `Vous pourrez terminer à moins de ${ARRIVAL_RADIUS_M} m de la destination (encore ${formatDistance(nav.toTarget)}).`
-        : 'Activez la localisation pour terminer la course.');
+        : tr("Activez la localisation pour terminer la course."));
       return;
     }
-    Alert.alert('Terminer la course', 'Confirmez-vous la fin de la course ?', [
-      { text: 'Non' },
-      { text: 'Oui, terminer', onPress: async () => {
+    Alert.alert(tr("Terminer la course"), tr("Confirmez-vous la fin de la course ?"), [
+      { text: tr("Non") },
+      { text: tr("Oui, terminer"), onPress: async () => {
         setAction(true);
         try {
           await rideService.completeRide(id!);
@@ -185,7 +186,7 @@ export default function DriverRideScreen() {
           if (pollRef.current) clearInterval(pollRef.current);
           setRideState('COMPLETED');
         } catch (e: any) {
-          Alert.alert('Erreur', e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur.');
+          Alert.alert(tr("Erreur"), e?.response?.data?.detail || e?.response?.data?.message || e?.message || 'Erreur.');
         } finally { setAction(false); }
       }},
     ]);
@@ -193,7 +194,7 @@ export default function DriverRideScreen() {
 
   const handleCall = (phone: string) => {
     Linking.openURL(`tel:${phone}`).catch(() =>
-      Alert.alert('Erreur', "Impossible d'ouvrir le téléphone."));
+      Alert.alert(tr("Erreur"), tr("Impossible d'ouvrir le téléphone.")));
   };
 
   const passengerName  = passenger
@@ -203,10 +204,10 @@ export default function DriverRideScreen() {
   const passengerInit  = passengerName[0]?.toUpperCase() || 'P';
 
   const STATE_CFG: Record<RideState, { label: string; color: string; bg: string }> = {
-    CREATED:   { label: 'EN ROUTE VERS LE PASSAGER', color: Colors.orange, bg: Colors.orangeBg },
-    ONGOING:   { label: 'TRAJET EN COURS',            color: Colors.green,  bg: Colors.greenBg  },
-    COMPLETED: { label: 'COURSE TERMINÉE',             color: Colors.green,  bg: Colors.greenBg  },
-    CANCELLED: { label: 'COURSE ANNULÉE',              color: Colors.red,    bg: Colors.redBg    },
+    CREATED:   { label: tr("EN ROUTE VERS LE PASSAGER"), color: Colors.orange, bg: Colors.orangeBg },
+    ONGOING:   { label: tr("TRAJET EN COURS"),            color: Colors.green,  bg: Colors.greenBg  },
+    COMPLETED: { label: tr("COURSE TERMINÉE"),             color: Colors.green,  bg: Colors.greenBg  },
+    CANCELLED: { label: tr("COURSE ANNULÉE"),              color: Colors.red,    bg: Colors.redBg    },
   };
   const cfg = STATE_CFG[rideState] ?? STATE_CFG.CREATED;
   const mapHTML = buildMapHTML(
@@ -236,22 +237,22 @@ export default function DriverRideScreen() {
           />
         </View>
         <Text style={[s.doneTitle, { color: Colors.text }]}>
-          {rideState === 'COMPLETED' ? 'Course terminée' : 'Course annulée'}
+          {rideState === 'COMPLETED' ? tr("Course terminée") : tr("Course annulée")}
         </Text>
         {rideState === 'COMPLETED' && (
           <>
             <Text style={[s.doneSub, { color: Colors.textMuted, marginBottom: 20 }]}>
-              Montant à encaisser : {ride?.price?.toLocaleString() ?? '--'} FCFA
+              {tr("Montant à encaisser : ")}{ride?.price?.toLocaleString() ?? '--'} FCFA
             </Text>
             <TouchableOpacity
               style={[s.doneBtn, { backgroundColor: Colors.green, marginBottom: 12, width: '80%', alignItems: 'center' }]}
               onPress={() => {
                 // TODO: Intégration API de paiement
-                Alert.alert('Paiement Validé', 'Le montant a été ajouté à votre wallet.');
+                Alert.alert(tr("Paiement Validé"), tr("Le montant a été ajouté à votre wallet."));
                 router.replace('/(driver)/dashboard');
               }}
             >
-              <Text style={[s.doneBtnTxt, { color: '#fff' }]}>ENCAISSER LE PAIEMENT</Text>
+              <Text style={[s.doneBtnTxt, { color: '#fff' }]}>{tr("ENCAISSER LE PAIEMENT")}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -259,7 +260,7 @@ export default function DriverRideScreen() {
           style={[s.doneBtn, { backgroundColor: Colors.input, width: '80%', alignItems: 'center' }]}
           onPress={() => router.replace('/(driver)/dashboard')}
         >
-          <Text style={[s.doneBtnTxt, { color: Colors.text }]}>RETOUR AU RADAR</Text>
+          <Text style={[s.doneBtnTxt, { color: Colors.text }]}>{tr("RETOUR AU RADAR")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -312,7 +313,7 @@ export default function DriverRideScreen() {
           <View style={s.routeRow}>
             <View style={[s.dot, { backgroundColor: Colors.orange }]} />
             <View style={{ flex: 1 }}>
-              <Text style={[s.label, { color: Colors.textMuted }]}>DÉPART</Text>
+              <Text style={[s.label, { color: Colors.textMuted }]}>{tr("DÉPART")}</Text>
               <Text style={[s.place, { color: Colors.text }]} numberOfLines={2}>{ride?.startPoint}</Text>
             </View>
           </View>
@@ -328,7 +329,7 @@ export default function DriverRideScreen() {
             <View style={[s.placesRow, { borderTopColor: Colors.cardBorder }]}>
               <Ionicons name="people-outline" size={16} color={Colors.orange} />
               <Text style={[s.placesTxt, { color: Colors.text }]}>
-                {ride.numberOfPlaces} place{ride.numberOfPlaces > 1 ? 's' : ''}
+                {ride.numberOfPlaces} {tr(" place")}{ride.numberOfPlaces > 1 ? 's' : ''}
               </Text>
             </View>
           )}
@@ -344,28 +345,28 @@ export default function DriverRideScreen() {
                 ? <ActivityIndicator color="#FFFFFF" />
                 : <>
                     <Ionicons name="person-add" size={18} color="#FFFFFF" />
-                    <Text style={s.actionBtnTxt}>J'AI RÉCUPÉRÉ LE CLIENT</Text>
+                    <Text style={s.actionBtnTxt}>{tr("J'AI RÉCUPÉRÉ LE CLIENT")}</Text>
                   </>}
             </TouchableOpacity>
             
             <TouchableOpacity
               style={[s.actionBtn, { backgroundColor: Colors.input, borderColor: Colors.red, borderWidth: 1 }]}
               onPress={() => {
-                Alert.alert('Annuler la course', 'Voulez-vous vraiment annuler cette course ?', [
-                  { text: 'Non' },
-                  { text: 'Oui, annuler', style: 'destructive', onPress: async () => {
+                Alert.alert(tr("Annuler la course"), tr("Voulez-vous vraiment annuler cette course ?"), [
+                  { text: tr("Non") },
+                  { text: tr("Oui, annuler"), style: 'destructive', onPress: async () => {
                     setAction(true);
                     try {
                       await rideService.updateRideStatus(id!, 'CANCELLED');
                       setRideState('CANCELLED');
                     } catch (e: any) {
-                      Alert.alert('Erreur', e?.response?.data?.message || 'Impossible d\'annuler');
+                      Alert.alert(tr("Erreur"), e?.response?.data?.message || tr("Impossible d'annuler"));
                     } finally { setAction(false); }
                   }}
                 ]);
               }} 
               disabled={actionLoading} activeOpacity={0.85}>
-              <Text style={[s.actionBtnTxt, { color: Colors.red }]}>ANNULER LA COURSE</Text>
+              <Text style={[s.actionBtnTxt, { color: Colors.red }]}>{tr("ANNULER LA COURSE")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -374,7 +375,7 @@ export default function DriverRideScreen() {
         {(rideState === 'CREATED' || rideState === 'ONGOING') && (
           <View style={{ backgroundColor: Colors.orange, borderRadius: 20, padding: 16, marginBottom: 12 }} accessibilityLiveRegion="polite">
             <Text style={{ color: '#fff', opacity: 0.8, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }}>
-              {rideState === 'CREATED' ? 'VERS LE PASSAGER' : 'VERS LA DESTINATION'}
+              {rideState === 'CREATED' ? tr("VERS LE PASSAGER") : tr("VERS LA DESTINATION")}
             </Text>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900', marginTop: 4 }}>{nav.instruction}</Text>
             <View style={{ flexDirection: 'row', marginTop: 12 }}>
@@ -393,7 +394,7 @@ export default function DriverRideScreen() {
         {/* Bouton ONGOING : Terminer */}
         {rideState === 'ONGOING' && !nav.arrived && (
           <Text style={{ color: Colors.textSecondary, textAlign: 'center', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
-            Terminer à moins de {ARRIVAL_RADIUS_M} m de la destination{nav.toTarget != null ? ` (encore ${formatDistance(nav.toTarget)})` : ''}.
+            {tr("Terminer à moins de ")}{ARRIVAL_RADIUS_M} {tr(" m de la destination")}{nav.toTarget != null ? ` (encore ${formatDistance(nav.toTarget)})` : ''}.
           </Text>
         )}
         {rideState === 'ONGOING' && (
@@ -404,7 +405,7 @@ export default function DriverRideScreen() {
               ? <ActivityIndicator color="#fff" />
               : <>
                   <Ionicons name="checkmark" size={18} color="#fff" />
-                  <Text style={[s.actionBtnTxt, { color: '#fff' }]}>TERMINER LA COURSE</Text>
+                  <Text style={[s.actionBtnTxt, { color: '#fff' }]}>{tr("TERMINER LA COURSE")}</Text>
                 </>}
           </TouchableOpacity>
         )}
@@ -414,7 +415,7 @@ export default function DriverRideScreen() {
           <View style={[s.gpsDot, { backgroundColor: driverPos ? Colors.green : Colors.textMuted }]} />
           <Text style={[s.gpsTxt, { color: Colors.textMuted }]}>
             {driverPos ? `GPS actif · ${driverPos.lat.toFixed(4)}, ${driverPos.lon.toFixed(4)}`
-              : 'Localisation en cours...'}
+              : tr("Localisation en cours...")}
           </Text>
         </View>
       </ScrollView>

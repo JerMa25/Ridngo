@@ -18,6 +18,7 @@ import { OfferResponse } from '../../src/types/api';
 import * as ExpoLocation from 'expo-location';
 import api from '../../src/services/api';
 import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
+import { tr } from '../../src/i18n';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -144,16 +145,16 @@ export default function DriverDashboard() {
       await driverService.toggleOnlineStatus(next);
       setIsOnline(next);
     } catch {
-      Alert.alert('Erreur', 'Impossible de changer de statut. Vérifiez votre connexion.');
+      Alert.alert(tr("Erreur"), tr("Impossible de changer de statut. Vérifiez votre connexion."));
     } finally {
       setToggling(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
-      { text: 'Annuler' },
-      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); router.replace('/(auth)/landing'); } },
+    Alert.alert(tr("Déconnexion"), tr("Voulez-vous vraiment vous déconnecter ?"), [
+      { text: tr("Annuler") },
+      { text: tr("Déconnexion"), style: 'destructive', onPress: async () => { await logout(); router.replace('/(auth)/landing'); } },
     ]);
   };
 
@@ -253,7 +254,7 @@ export default function DriverDashboard() {
           >
             <View style={s.activeBannerLeft}>
               <View style={s.activeDot} />
-              <Text style={s.activeBannerText}>Course en cours</Text>
+              <Text style={s.activeBannerText}>{tr("Course en cours")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#fff" />
           </TouchableOpacity>
@@ -278,14 +279,13 @@ export default function DriverDashboard() {
                 {driverFullName.toLowerCase()}
               </Text>
               <Text style={[s.identityRole, { color: Colors.textMuted }]}>
-                {isValidated ? 'VÉRIFIÉ' : 'EN ATTENTE DE VALIDATION'}
+                {isValidated ? tr("VÉRIFIÉ") : tr("EN ATTENTE DE VALIDATION")}
               </Text>
               <View style={s.ratingRow}>
                 <Ionicons name="star" size={13} color={Colors.orange} />
                 <Text style={[s.ratingVal, { color: Colors.text }]}>{rating.toFixed(1)}</Text>
                 <Text style={[s.ratingCount, { color: Colors.textMuted }]}>
-                  {totalReviews} avis
-                </Text>
+                  {totalReviews} {tr(" avis")}</Text>
               </View>
             </View>
           </View>
@@ -337,13 +337,13 @@ export default function DriverDashboard() {
               )}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.scanTitle, { color: Colors.text }]}>SCANNING LIVE</Text>
+              <Text style={[s.scanTitle, { color: Colors.text }]}>{tr("SCANNING LIVE")}</Text>
               <View style={s.scanSubRow}>
                 <View style={[s.scanDot, { backgroundColor: isOnline ? Colors.green : Colors.textMuted }]} />
                 <Text style={[s.scanSub, { color: isOnline ? Colors.green : Colors.textMuted }]}>
                   {isOnline
                     ? `${sortedOffers.length} DEMANDE${sortedOffers.length !== 1 ? 'S' : ''} À PROXIMITÉ`
-                    : 'RADAR INACTIF'}
+                    : tr("RADAR INACTIF")}
                 </Text>
               </View>
             </View>
@@ -353,9 +353,9 @@ export default function DriverDashboard() {
           {isOnline && (
             <View style={s.filterRow}>
               {[
-                { key: 'recent',     icon: 'calendar-outline', label: 'Plus récents' },
-                { key: 'price_desc', icon: 'location-outline', label: 'Prix haut' },
-                { key: 'price_asc',  icon: 'funnel-outline',   label: 'Prix bas' },
+                { key: 'recent',     icon: 'calendar-outline', label: tr("Plus récents") },
+                { key: 'price_desc', icon: 'location-outline', label: tr("Prix haut") },
+                { key: 'price_asc',  icon: 'funnel-outline',   label: tr("Prix bas") },
               ].map(f => (
                 <TouchableOpacity
                   key={f.key}
@@ -388,7 +388,7 @@ export default function DriverDashboard() {
               style={[s.seeDemandsBtn, { borderColor: Colors.cardBorder, backgroundColor: Colors.card }]}
               onPress={toggleOnline}
             >
-              <Text style={[s.seeDemandsTxt, { color: Colors.text }]}>ACTIVER LE RADAR</Text>
+              <Text style={[s.seeDemandsTxt, { color: Colors.text }]}>{tr("ACTIVER LE RADAR")}</Text>
               <Ionicons name="radio-outline" size={16} color={Colors.textMuted} />
             </TouchableOpacity>
           )}
@@ -398,8 +398,7 @@ export default function DriverDashboard() {
             <View style={[s.emptyRadar, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
               <Ionicons name="radio-outline" size={36} color={Colors.textMuted} />
               <Text style={[s.emptyText, { color: Colors.textMuted }]}>
-                En attente de nouvelles demandes...
-              </Text>
+                {tr("En attente de nouvelles demandes...")}</Text>
             </View>
           )}
 
@@ -418,12 +417,12 @@ export default function DriverDashboard() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.clientLabel, { color: Colors.textMuted }]}>CLIENT</Text>
-                  <Text style={[s.clientName, { color: Colors.text }]}>Anonyme</Text>
+                  <Text style={[s.clientName, { color: Colors.text }]}>{tr("Anonyme")}</Text>
                   {!!item.numberOfPlaces && (
                     <View style={s.placesInline}>
                       <Ionicons name="people-outline" size={12} color={Colors.textMuted} />
                       <Text style={[s.placesInlineTxt, { color: Colors.textMuted }]}>
-                        {item.numberOfPlaces} place{item.numberOfPlaces > 1 ? 's' : ''}
+                        {item.numberOfPlaces} {tr(" place")}{item.numberOfPlaces > 1 ? 's' : ''}
                       </Text>
                     </View>
                   )}
@@ -441,7 +440,7 @@ export default function DriverDashboard() {
                 <View style={[s.departRow, { backgroundColor: Colors.input }]}>
                   <Ionicons name="time-outline" size={14} color={Colors.orange} />
                   <Text style={[s.departTxt, { color: Colors.text }]}>
-                    DÉPART : {formatTime(item.departureTime as string)}
+                    {tr("DÉPART : ")}{formatTime(item.departureTime as string)}
                   </Text>
                 </View>
               )}
@@ -472,8 +471,7 @@ export default function DriverDashboard() {
               {/* Bouton Consulter (toute la carte est aussi cliquable) */}
               <View style={[s.consultBtn, { backgroundColor: Colors.text }]}>
                 <Text style={[s.consultBtnTxt, { color: Colors.background }]}>
-                  CONSULTER L'OFFRE
-                </Text>
+                  {tr("CONSULTER L'OFFRE")}</Text>
               </View>
             </TouchableOpacity>
           ))}

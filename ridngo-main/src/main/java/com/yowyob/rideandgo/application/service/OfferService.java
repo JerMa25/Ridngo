@@ -61,9 +61,8 @@ public class OfferService implements
     private final ExternalUserPort externalUserPort;
     private final OfferCachePort cache;
     private final ObjectMapper objectMapper;
-
-    @Value("${application.payment.commission-rate:0.10}")
-    private double commissionRate;
+    // Taux de commission réglé par l'admin ; 0 pour un chauffeur abonné
+    private final PlatformService platformService;
 
     @Value("${application.notification.templates.new-offer:1}")
     private int tmplNewOffer;
@@ -317,17 +316,17 @@ public class OfferService implements
                                         : !d.isOnline()
                                                 ? Mono.<Offer>error(new IllegalStateException("Vous êtes hors ligne : passez en ligne pour postuler."))
                                                 : Mono.just(offer)))
-                        .flatMap(offer -> paymentPort.getWalletByOwnerId(driverId)
-                                .flatMap(wallet -> {
+                        .flatMap(offer -> platformService.commissionFor(driverId, offer.price())
+                                .flatMap(estimatedCommission -> estimatedCommission == 0 ? Mono.just(offer)
+                                        : paymentPort.getWalletByOwnerId(driverId).flatMap(wallet -> {
                                     // VÉRIFICATION COMMISSION : prix * taux < solde
-                                    double estimatedCommission = offer.price() * commissionRate;
                                     if (wallet.balance() < estimatedCommission) {
                                         return Mono.error(new IllegalStateException(
                                                 "Solde insuffisant pour couvrir la commission (" + estimatedCommission
                                                         + " F)."));
                                     }
                                     return Mono.just(offer);
-                                }))
+                                })))
                         .flatMap(offer -> {
                             if (offer.hasDriverApplied(driverId))
                                 return Mono.just(offer);
@@ -445,10 +444,14 @@ public class OfferService implements
                     if (offer.selectedDriverId() == null || !offer.selectedDriverId().equals(driverId)) {
                         return Mono.error(new IllegalStateException("Vous n'êtes pas le chauffeur sélectionné."));
                     }
-                    double commission = offer.price() * commissionRate;
-                    return paymentPort.getWalletByOwnerId(driverId)
-                            .flatMap(wallet -> paymentPort.startPayment(wallet.id(), commission, commissionReference(offerId)))
-                            .map(token -> java.util.Map.<String, Object>of("challengeToken", token, "commission", commission));
+                    // Chauffeur abonné : aucune commission, donc pas de code à demander
+                    return platformService.commissionFor(driverId, offer.price())
+                            .flatMap(commission -> commission == 0
+                                    ? Mono.just(java.util.Map.<String, Object>of("subscribed", true, "commission", 0.0))
+                                    : paymentPort.getWalletByOwnerId(driverId)
+                                            .flatMap(wallet -> paymentPort.startPayment(wallet.id(), commission, commissionReference(offerId)))
+                                            .map(token -> java.util.Map.<String, Object>of("challengeToken", token,
+                                                    "commission", commission, "subscribed", false)));
                 });
     }
 
@@ -459,9 +462,6 @@ public class OfferService implements
     @Transactional
     public Mono<Ride> driverAcceptsOffer(UUID offerId, UUID driverId, String challengeToken, String code) {
         log.info("🏁 Driver {} is accepting Offer {}", driverId, offerId);
-        if (challengeToken == null || code == null || code.isBlank()) {
-            return Mono.error(new IllegalStateException("Code de confirmation de la commission requis."));
-        }
 
         return repository.findById(offerId)
                 .switchIfEmpty(Mono.error(new OfferNotFoundException("Offre introuvable")))
@@ -474,11 +474,17 @@ public class OfferService implements
                         return Mono.error(new IllegalStateException("Vous n'êtes pas le chauffeur sélectionné."));
                     }
 
-                    // 1. Paiement effectif de la commission
-                    // On débite la commission (prix * taux), le même montant que celui vérifié à la candidature
-                    return paymentPort.getWalletByOwnerId(driverId)
-                            .flatMap(wallet -> paymentPort.processPayment(wallet.id(), offer.price() * commissionRate,
-                                    commissionReference(offerId), challengeToken, code.trim()))
+                    // 1. Paiement effectif de la commission (rien à débiter pour un chauffeur abonné)
+                    return platformService.commissionFor(driverId, offer.price())
+                            .flatMap(commission -> {
+                                if (commission == 0) return Mono.<Void>empty();
+                                if (challengeToken == null || code == null || code.isBlank()) {
+                                    return Mono.<Void>error(new IllegalStateException("Code de confirmation de la commission requis."));
+                                }
+                                return paymentPort.getWalletByOwnerId(driverId)
+                                        .flatMap(wallet -> paymentPort.processPayment(wallet.id(), commission,
+                                                commissionReference(offerId), challengeToken, code.trim()));
+                            })
                             // 2. Mise à jour de l'Offre vers VALIDATED (Retrait de Redis Geo automatique)
                             .then(Mono.defer(() -> updateOfferState(offer, OfferState.VALIDATED)))
                             .thenReturn(offer);

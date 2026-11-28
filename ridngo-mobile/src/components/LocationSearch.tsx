@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ExpoLocation from 'expo-location';
 import { Spacing, Radius } from '../types/theme';
 import { Location } from '../types/api';
+import { tr } from '../i18n';
 
 // ─────────────────────────────────────────────
 // CONSTANTES
@@ -319,8 +320,7 @@ export function LocationSearch({
             {suggestions.length === 0 && query.length < 2 && (
               <View style={styles.hintBlock}>
                 <Text style={[styles.hintTitle, { color: Colors.text }]}>
-                  📍 Lieux populaires à Yaoundé
-                </Text>
+                  {tr("📍 Lieux populaires à Yaoundé")}</Text>
                 <FlatList
                   data={POI_LOCAUX.slice(0, 8)}
                   keyExtractor={(_, i) => `popular-${i}`}
@@ -394,11 +394,10 @@ export function LocationSearch({
             {suggestions.length === 0 && query.length >= 2 && !loading && (
               <View style={styles.emptyBlock}>
                 <Text style={[styles.emptyText, { color: Colors.textMuted }]}>
-                  Aucun résultat pour "{query}"
+                  {tr("Aucun résultat pour \"")}{query}"
                 </Text>
                 <Text style={[styles.emptyHint, { color: Colors.textMuted }]}>
-                  Essayez un nom de quartier, marché ou monument
-                </Text>
+                  {tr("Essayez un nom de quartier, marché ou monument")}</Text>
               </View>
             )}
           </KeyboardAvoidingView>

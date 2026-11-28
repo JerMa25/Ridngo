@@ -124,7 +124,8 @@ export const rideService = {
   },
 
   // La commission est débitée du wallet Kernel, qui exige un code MFA : étape 1 = demander le code
-  requestAcceptCode: async (offerId: string): Promise<{ challengeToken: string; commission: number }> =>
+  // subscribed = chauffeur abonné : pas de commission, donc pas de code à saisir
+  requestAcceptCode: async (offerId: string): Promise<{ challengeToken?: string; commission: number; subscribed?: boolean }> =>
     (await api.post(`/api/v1/offers/${offerId}/accept/challenge`)).data,
 
   // Étape 2 : confirmation avec le code reçu → commission débitée, Trip créé

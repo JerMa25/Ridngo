@@ -23,6 +23,7 @@ import { SecondaryNav } from './components/SecondaryNav';
 import { RadarControls } from './components/RadarControls'; // Sera surchargé localement si besoin ou props ajoutées
 import { DriverAnalytics } from './components/DriverAnalytics';
 import Link from 'next/link';
+import { tr } from '@/lib/i18n';
 
 // --- NOUVEAU COMPOSANT : CARTE COMPACTE ---
 const CompactOfferCard = ({ offer }: { offer: any }) => (
@@ -53,8 +54,7 @@ const CompactOfferCard = ({ offer }: { offer: any }) => (
           <p className="text-[10px] opacity-50">{offer.distance ? `${offer.distance} km` : ''}</p>
        </div>
        <div className="ml-4 text-[12px] font-bold text-foreground/80">
-         {offer.numberOfPlaces ?? '—'} places
-       </div>
+         {offer.numberOfPlaces ?? '—'} {tr(" places")}</div>
        <button className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center group-hover:bg-orange-btn group-hover:text-white transition-colors">
           <Link href={`/driver/offers/${offer.id}`} >
             <ChevronRight size={20} />
@@ -142,7 +142,7 @@ export default function DriverDashboard() {
       }));
       await driverService.toggleOnlineStatus(newStatus);
     } catch (e) {
-      toast.error("Erreur réseau");
+      toast.error(tr("Erreur réseau"));
       // Rollback en cas d'échec
       queryClient.setQueryData(['driverProfile'], (old: any) => ({
         ...old,
@@ -191,14 +191,14 @@ export default function DriverDashboard() {
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background">
+    <div className="h-app flex flex-col items-center justify-center gap-4 bg-background">
       <Loader2 className="animate-spin text-orange-btn" size={40} />
       <p className="text-xs font-black uppercase tracking-widest opacity-50">Chargement...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8 space-y-8 pb-32 font-sans text-foreground bg-background">
+    <div className="min-h-app p-4 md:p-8 space-y-8 pb-32 font-sans text-foreground bg-background">
       
       {/* --- BANNIÈRE COURSE ACTIVE --- */}
       <AnimatePresence>
@@ -211,7 +211,7 @@ export default function DriverDashboard() {
             onClick={scrollToRadar}
             className="flex items-center gap-2 bg-orange-btn/10 text-orange-btn px-4 py-2 rounded-full hover:bg-orange-btn hover:text-white transition-all text-[10px] font-black uppercase tracking-widest border border-orange-btn/20"
          >
-            Voir les demandes ({filteredOffers.length})
+            {tr("Voir les demandes (")}{filteredOffers.length})
             <ArrowDownCircle size={16} />
          </button>
       </div>
@@ -264,14 +264,14 @@ export default function DriverDashboard() {
                     <button 
                         onClick={() => setViewMode('grid')}
                         className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-orange-btn text-white shadow-lg' : 'text-foreground/50 hover:text-foreground'}`}
-                        title="Vue Grille"
+                        title={tr("Vue Grille")}
                     >
                         <LayoutGrid size={18} />
                     </button>
                     <button 
                         onClick={() => setViewMode('list')}
                         className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-orange-btn text-white shadow-lg' : 'text-foreground/50 hover:text-foreground'}`}
-                        title="Vue Liste"
+                        title={tr("Vue Liste")}
                     >
                         <LayoutList size={18} />
                     </button>
@@ -285,12 +285,12 @@ export default function DriverDashboard() {
           {!fullProfile?.driver?.isOnline ? (
              <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 gap-4">
                 <MapPinOff size={50} />
-                <p className="font-black uppercase tracking-widest text-sm">Radar désactivé</p>
+                <p className="font-black uppercase tracking-widest text-sm">{tr("Radar désactivé")}</p>
              </div>
           ) : paginatedOffers.length === 0 ? (
              <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-40 gap-4">
                 <Radar size={50} className="animate-spin-slow text-orange-btn" />
-                <p className="font-black uppercase tracking-widest text-sm">Recherche en cours...</p>
+                <p className="font-black uppercase tracking-widest text-sm">{tr("Recherche en cours...")}</p>
              </div>
           ) : (
             <>
@@ -322,8 +322,8 @@ export default function DriverDashboard() {
       </button>
 
       {/* MODALES */}
-      <LocationFilterModal isOpen={modalType === 'departure'} onClose={() => setModalType(null)} locations={uniqueDeps} onSelect={(loc: string) => { setDepFilter(loc); setCurrentPage(0); }} title="Départ" />
-      <LocationFilterModal isOpen={modalType === 'arrival'} onClose={() => setModalType(null)} locations={uniqueArrs} onSelect={(loc: string) => { setArrFilter(loc); setCurrentPage(0); }} title="Destination" />
+      <LocationFilterModal isOpen={modalType === 'departure'} onClose={() => setModalType(null)} locations={uniqueDeps} onSelect={(loc: string) => { setDepFilter(loc); setCurrentPage(0); }} title={tr("Départ")} />
+      <LocationFilterModal isOpen={modalType === 'arrival'} onClose={() => setModalType(null)} locations={uniqueArrs} onSelect={(loc: string) => { setArrFilter(loc); setCurrentPage(0); }} title={tr("Destination")} />
 
       <style jsx global>{`
         .animate-spin-slow { animation: spin 4s linear infinite; }

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '@/lib/userService';
 import { Notification, NotificationSettings } from '@/types/api';
 import { toast } from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 export default function NotificationsPage() {
   // --- ÉTATS POUR LA PAGINATION ---
@@ -106,7 +107,7 @@ export default function NotificationsPage() {
         whatsapp: settings.whatsappEnabled
       });
       setShowSettings(false);
-    } catch (e) { toast.error("Erreur lors de la sauvegarde"); }
+    } catch (e) { toast.error(tr("Erreur lors de la sauvegarde")); }
     setSavingSettings(false);
   };
 
@@ -118,18 +119,18 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div className="min-h-screen text-foreground font-sans">
+    <div className="min-h-app text-foreground font-sans">
       
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* TITRE ET OUTILS */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter italic">Messagerie</h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Centre de notifications RidnGo</p>
+            <h1 className="text-4xl font-black tracking-tighter italic">{tr("Messagerie")}</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">{tr("Centre de notifications RidnGo")}</p>
           </div>
 
           <div className="flex items-center gap-3">
-             <button onClick={openSettings} className="w-12 h-12 flex items-center justify-center bg-foreground/5 rounded-2xl hover:text-orange-btn transition-all group" title="Réglages">
+             <button onClick={openSettings} className="w-12 h-12 flex items-center justify-center bg-foreground/5 rounded-2xl hover:text-orange-btn transition-all group" title={tr("Réglages")}>
                 <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
              </button>
 
@@ -138,13 +139,12 @@ export default function NotificationsPage() {
                   onClick={() => setFilter('ALL')} 
                   className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'ALL' ? 'bg-background shadow-lg text-orange-btn' : 'opacity-40'}`}
                 >
-                  Tous
-                </button>
+                  {tr("Tous")}</button>
                 <button 
                   onClick={() => setFilter('UNREAD')} 
                   className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'UNREAD' ? 'bg-background shadow-lg text-orange-btn' : 'opacity-40'}`}
                 >
-                  Non lus {unreadCount > 0 && `(${unreadCount})`}
+                  {tr("Non lus ")}{unreadCount > 0 && `(${unreadCount})`}
                 </button>
              </div>
           </div>
@@ -160,8 +160,7 @@ export default function NotificationsPage() {
               onClick={handleMarkAllRead} 
               className="w-full py-4 bg-orange-btn/10 text-orange-btn text-[10px] font-black uppercase tracking-[0.2em] rounded-3xl border border-orange-btn/20 hover:bg-orange-btn hover:text-white transition-all mb-8 shadow-sm"
             >
-              Tout marquer comme lu
-            </motion.button>
+              {tr("Tout marquer comme lu")}</motion.button>
           )}
         </AnimatePresence>
 
@@ -170,14 +169,14 @@ export default function NotificationsPage() {
           {loading ? (
              <div className="text-center py-20 opacity-40">
                 <Loader2 className="animate-spin mx-auto mb-4" size={32}/>
-                <p className="text-xs font-black uppercase tracking-widest">Récupération des données...</p>
+                <p className="text-xs font-black uppercase tracking-widest">{tr("Récupération des données...")}</p>
              </div>
           ) : filteredNotifs.length === 0 ? (
              <div className="glass p-20 text-center border-none shadow-xl flex flex-col items-center gap-4 bg-background/50 rounded-[40px]">
                 <div className="w-16 h-16 bg-foreground/5 rounded-full flex items-center justify-center opacity-20">
                   <Mail size={32} />
                 </div>
-                <span className="text-sm font-bold uppercase tracking-widest opacity-30">Boîte de réception vide</span>
+                <span className="text-sm font-bold uppercase tracking-widest opacity-30">{tr("Boîte de réception vide")}</span>
              </div>
           ) : (
              <div className="space-y-3">
@@ -210,8 +209,7 @@ export default function NotificationsPage() {
                           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="pt-5 border-t border-foreground/5 mt-5 flex justify-end">
                              {!notif.isRead && (
                                <button onClick={(e) => handleMarkRead(notif.id, e)} className="px-6 py-2 bg-green-500/10 text-green-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-500 hover:text-white transition-all">
-                                 <Check size={14} /> Lu
-                               </button>
+                                 <Check size={14} /> {tr(" Lu")}</button>
                              )}
                           </motion.div>
                         )}
@@ -232,7 +230,7 @@ export default function NotificationsPage() {
                    ) : (
                      <>
                         <PlusCircle size={24} className="text-foreground/20 group-hover:text-orange-btn transition-colors" />
-                        <span className="font-black uppercase text-[10px] tracking-[0.3em] opacity-30 group-hover:opacity-100 transition-opacity">Charger les messages précédents</span>
+                        <span className="font-black uppercase text-[10px] tracking-[0.3em] opacity-30 group-hover:opacity-100 transition-opacity">{tr("Charger les messages précédents")}</span>
                      </>
                    )}
                  </button>
@@ -250,8 +248,8 @@ export default function NotificationsPage() {
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass max-w-md w-full p-8 relative z-10 border-none bg-background shadow-2xl rounded-[40px]">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-black italic tracking-tighter">Paramètres</h2>
-                  <p className="text-[10px] font-bold uppercase opacity-40">Préférences de réception</p>
+                  <h2 className="text-2xl font-black italic tracking-tighter">{tr("Paramètres")}</h2>
+                  <p className="text-[10px] font-bold uppercase opacity-40">{tr("Préférences de réception")}</p>
                 </div>
                 <button onClick={() => setShowSettings(false)} className="w-10 h-10 flex items-center justify-center hover:bg-foreground/5 rounded-full transition-colors"><X size={20}/></button>
               </div>
@@ -259,10 +257,10 @@ export default function NotificationsPage() {
               {!settings ? <div className="text-center py-10"><Loader2 className="animate-spin mx-auto text-orange-btn"/></div> : (
                 <div className="space-y-3">
                   {[
-                    { id: 'pushEnabled', label: 'Notifications Push', icon: <Bell size={18}/> },
-                    { id: 'emailEnabled', label: 'Alertes E-mail', icon: <AtSign size={18}/> },
-                    { id: 'smsEnabled', label: 'Messages SMS', icon: <Smartphone size={18}/> },
-                    { id: 'whatsappEnabled', label: 'WhatsApp', icon: <MessageSquare size={18}/> },
+                    { id: 'pushEnabled', label: tr("Notifications Push"), icon: <Bell size={18}/> },
+                    { id: 'emailEnabled', label: tr("Alertes E-mail"), icon: <AtSign size={18}/> },
+                    { id: 'smsEnabled', label: tr("Messages SMS"), icon: <Smartphone size={18}/> },
+                    { id: 'whatsappEnabled', label: tr("WhatsApp"), icon: <MessageSquare size={18}/> },
                   ].map((pref) => (
                     <div key={pref.id} className="flex items-center justify-between p-4 bg-foreground/5 rounded-2xl border border-transparent hover:border-foreground/5 transition-all">
                       <div className="flex items-center gap-4">
@@ -286,7 +284,7 @@ export default function NotificationsPage() {
                     onClick={saveSettings}
                     className="w-full bg-orange-btn text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-orange-btn/20 mt-8 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
                   >
-                    {savingSettings ? <Loader2 className="animate-spin" /> : "Enregistrer les choix"}
+                    {savingSettings ? <Loader2 className="animate-spin" /> : tr("Enregistrer les choix")}
                   </button>
                 </div>
               )}

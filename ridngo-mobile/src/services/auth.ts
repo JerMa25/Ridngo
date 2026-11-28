@@ -2,6 +2,7 @@ import { KEYCHAIN } from './api';
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import { AuthResponse, UserObj, UserRole } from '../types/api';
+import { tr } from '../i18n';
 
 export type AuthResult = {
   success: boolean; role?: string; message?: string;
@@ -11,8 +12,8 @@ export type AuthResult = {
 // Spring ProblemDetail met le message dans `detail` ; sans réponse, message lisible plutôt que celui d'axios
 const errorMessage = (error: any, fallback: string) => {
   if (error.response) return error.response.data?.detail || error.response.data?.message || fallback;
-  if (error.code === 'ECONNABORTED') return 'Le serveur met trop de temps à répondre. Réessayez dans un instant.';
-  if (error.isOffline) return 'Impossible de joindre le serveur Ride&Go. Vérifiez que le téléphone est sur le même Wi-Fi.';
+  if (error.code === 'ECONNABORTED') return tr("Le serveur met trop de temps à répondre. Réessayez dans un instant.");
+  if (error.isOffline) return tr("Impossible de joindre le serveur Ride&Go. Vérifiez que le téléphone est sur le même Wi-Fi.");
   return error.message || fallback;
 };
 
@@ -113,7 +114,7 @@ export const authService = {
 };
 
 const finalizeSession = async (authData: AuthResponse): Promise<{ success: boolean; role: string }> => {
-  if (!authData.accessToken) throw new Error('Token manquant');
+  if (!authData.accessToken) throw new Error(tr("Token manquant"));
   await SecureStore.setItemAsync('accessToken', authData.accessToken, KEYCHAIN);
   if (authData.refreshToken) await SecureStore.setItemAsync('refreshToken', authData.refreshToken, KEYCHAIN);
 

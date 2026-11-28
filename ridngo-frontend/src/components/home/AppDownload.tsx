@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Smartphone, Car, Download, Apple, Play, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { tr } from '@/lib/i18n';
 
 export const AppDownload = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -36,8 +37,7 @@ export const AppDownload = () => {
       //alert("Sur iOS, cliquez sur le bouton 'Partager' en bas de Safari, puis sur 'Sur l'écran d'accueil'.");
       toast(() => (
       <span>
-        Sur iOS, cliquez sur le bouton 'Partager' en bas de Safari, puis sur 'Sur l'écran d'accueil'.
-      </span>
+        {tr("Sur iOS, cliquez sur le bouton 'Partager' en bas de Safari, puis sur 'Sur l'écran d'accueil'.")}</span>
     ));
       return;
     }
@@ -65,11 +65,9 @@ export const AppDownload = () => {
 
           <div className="space-y-4">
             <h2 className="text-4xl md:text-6xl font-black leading-tight tracking-tighter">
-              RidnGo dans <br /> votre poche.
-            </h2>
+              {tr("RidnGo dans ")}<br /> {tr(" votre poche.")}</h2>
             <p className="text-xl opacity-90 font-medium leading-relaxed">
-              Téléchargez l&apos;application pour une expérience fluide, des notifications en temps réel et un suivi GPS précis.
-            </p>
+              {tr("Téléchargez l'application pour une expérience fluide, des notifications en temps réel et un suivi GPS précis.")}</p>
           </div>
 
           <div className="flex flex-wrap gap-4">
@@ -84,7 +82,7 @@ export const AppDownload = () => {
                   className="px-8 py-4 bg-white text-orange-btn rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform"
                 >
                   <Download size={18} />
-                  {isIOS ? "Installer sur iPhone" : "Installer l'App Web"}
+                  {isIOS ? tr("Installer sur iPhone") : tr("Installer l'App Web")}
                 </motion.button>
               ) : (
                 <motion.p 
@@ -93,24 +91,20 @@ export const AppDownload = () => {
                   animate={{ opacity: 1 }}
                   className="px-8 py-4 bg-white/10 text-white rounded-2xl font-extrabold uppercase text-[12px] tracking-widest flex items-center gap-3 border border-white/20"
                 >
-                  <Info size={18} /> Vérifiez si vous avez déjà installé l&apos;application. Sinon, veuillez utiliser Chrome ou Edge pour installer l&apos;application
-                </motion.p>
+                  <Info size={18} /> {tr(" Vérifiez si vous avez déjà installé l'application. Sinon, veuillez utiliser Chrome ou Edge pour installer l'application")}</motion.p>
               )}
             </AnimatePresence>
 
             {/* Liens vers les stores classiques */}
             <button className="px-8 py-4 bg-bleu-nuit text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center gap-3 opacity-50 cursor-not-allowed">
-              <Apple size={18} /> App Store
-            </button>
+              <Apple size={18} /> {tr(" App Store")}</button>
             <button className="px-8 py-4 bg-bleu-nuit text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center gap-3 opacity-50 cursor-not-allowed">
-              <Play size={18} /> Google Play
-            </button>
+              <Play size={18} /> {tr(" Google Play")}</button>
           </div>
 
           {isIOS && (
             <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-70">
-              <Info size={14} /> Installation manuelle requise via Safari
-            </p>
+              <Info size={14} /> {tr(" Installation manuelle requise via Safari")}</p>
           )}
         </div>
 
@@ -126,7 +120,7 @@ export const AppDownload = () => {
               <img 
                 src="/background-desktop.jpeg" 
                 className="w-full h-full object-cover opacity-80" 
-                alt="Desktop App Preview" 
+                alt={tr("Desktop App Preview")} 
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-orange-btn/20 to-transparent" />
            </motion.div>
@@ -143,7 +137,7 @@ export const AppDownload = () => {
               <img 
                 src="/background-mobile.jpeg" 
                 className="w-full h-full" 
-                alt="Mobile App Preview" 
+                alt={tr("Mobile App Preview")} 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-orange-btn/40 to-transparent" />
            </motion.div>

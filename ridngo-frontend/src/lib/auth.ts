@@ -4,6 +4,7 @@ import { AuthResponse, UserRole } from '@/types/api';
 import { handleApiError } from '@/utils/error-handler';
 import { clearOfflineCache } from '@/components/providers/QueryProvider';
 import { homeFor } from '@/components/layout/RouteGuard';
+import { tr } from '@/lib/i18n';
 
 export type AuthResult =
   | { success: true; redirectUrl: string }
@@ -68,7 +69,7 @@ export const register = async (data: any, requestedRole: UserRole = 'RIDE_AND_GO
 };
 
 const finalizeSession = async (authData: AuthResponse): Promise<AuthResult> => {
-  if (!authData?.accessToken) throw new Error("Token manquant");
+  if (!authData?.accessToken) throw new Error(tr("Token manquant"));
 
   localStorage.setItem('accessToken', authData.accessToken);
   if (authData.refreshToken) localStorage.setItem('refreshToken', authData.refreshToken);

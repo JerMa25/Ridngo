@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, ExternalLink, Loader2, Smartphone, X, XCircle } from 'lucide-react';
 import { rideService } from '@/lib/rideService';
 import { RechargeOrder } from '@/types/api';
+import { tr } from '@/lib/i18n';
 
 // ORANGE_MONEY / MTN_MOBILE_MONEY directs : acceptés par le Kernel mais aucune demande n'arrive sur le
 // téléphone (testé en réel). MOBILE_MONEY passe par la page MyCoolPay, où l'opérateur est choisi.
@@ -49,7 +50,7 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
       if (Date.now() - startedAt > POLL_MAX_MS) {
         clearInterval(pollRef.current!);
         setStep('failed');
-        setError("Pas de confirmation après 3 minutes. Si vous avez validé, le solde se mettra à jour sous peu.");
+        setError(tr("Pas de confirmation après 3 minutes. Si vous avez validé, le solde se mettra à jour sous peu."));
       }
     }, POLL_MS);
   };
@@ -57,8 +58,8 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const value = Number(amount);
-    if (!Number.isFinite(value) || value < 100) { setError('Montant minimum : 100 FCFA.'); return; }
-    if (method !== 'CARD' && !/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ''))) { setError('Numéro Mobile Money invalide.'); return; }
+    if (!Number.isFinite(value) || value < 100) { setError(tr("Montant minimum : 100 FCFA.")); return; }
+    if (method !== 'CARD' && !/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ''))) { setError(tr("Numéro Mobile Money invalide.")); return; }
     setBusy(true); setError('');
     try {
       const o = await rideService.rechargeWallet(value, phone.replace(/\s/g, ''), method);
@@ -68,7 +69,7 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
       // MyCoolPay n'envoie la demande au téléphone qu'après validation sur sa page : on l'ouvre toujours
       if (o.redirectUrl) window.open(o.redirectUrl, '_blank', 'noopener');
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Recharge impossible pour le moment.');
+      setError(err.response?.data?.detail || err.response?.data?.message || tr("Recharge impossible pour le moment."));
     } finally {
       setBusy(false);
     }
@@ -81,15 +82,15 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={step === 'waiting' ? undefined : onClose} />
       <div role="dialog" aria-modal="true" aria-labelledby="recharge-title"
         className="relative w-full max-w-sm bg-background text-foreground rounded-3xl shadow-2xl border border-foreground/10 p-6">
-        <button onClick={onClose} aria-label="Fermer" className="absolute top-4 right-4 text-foreground/40 hover:text-orange-btn"><X size={20} /></button>
-        <h2 id="recharge-title" className="text-xl font-black mb-1">Recharger mon wallet</h2>
-        <p className="text-xs text-foreground/50 mb-5">Paiement sécurisé par le Kernel Yowyob</p>
+        <button onClick={onClose} aria-label={tr("Fermer")} className="absolute top-4 right-4 text-foreground/40 hover:text-orange-btn"><X size={20} /></button>
+        <h2 id="recharge-title" className="text-xl font-black mb-1">{tr("Recharger mon wallet")}</h2>
+        <p className="text-xs text-foreground/50 mb-5">{tr("Paiement sécurisé par le Kernel Yowyob")}</p>
 
         {step === 'form' && (
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Montant (FCFA)</label>
-              <input inputMode="numeric" aria-label="Montant en FCFA" value={amount} onChange={e => setAmount(e.target.value)} className={`${field} mt-1`} />
+              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">{tr("Montant (FCFA)")}</label>
+              <input inputMode="numeric" aria-label={tr("Montant en FCFA")} value={amount} onChange={e => setAmount(e.target.value)} className={`${field} mt-1`} />
               <div className="flex gap-2 mt-2">
                 {QUICK_AMOUNTS.map(a => (
                   <button type="button" key={a} onClick={() => setAmount(String(a))}
@@ -97,16 +98,16 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
                 ))}
               </div>
             </div>
-            <div role="radiogroup" aria-label="Mode de paiement" className="grid grid-cols-2 gap-2">
+            <div role="radiogroup" aria-label={tr("Mode de paiement")} className="grid grid-cols-2 gap-2">
               {METHODS.map(m => (
                 <button type="button" role="radio" aria-checked={method === m.value} key={m.value} onClick={() => setMethod(m.value)}
-                  className={`py-2.5 rounded-xl text-xs font-black border ${method === m.value ? 'border-orange-btn bg-orange-btn/10 text-orange-btn' : 'border-foreground/10 text-foreground/60'}`}>{m.label}</button>
+                  className={`py-2.5 rounded-xl text-xs font-black border ${method === m.value ? 'border-orange-btn bg-orange-btn/10 text-orange-btn' : 'border-foreground/10 text-foreground/60'}`}>{tr(m.label)}</button>
               ))}
             </div>
             {method !== 'CARD' && (
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Numéro Mobile Money</label>
-                <input inputMode="tel" autoComplete="tel" aria-label="Numéro Mobile Money" value={phone} onChange={e => setPhone(e.target.value)} placeholder="6XXXXXXXX" className={`${field} mt-1`} />
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">{tr("Numéro Mobile Money")}</label>
+                <input inputMode="tel" autoComplete="tel" aria-label={tr("Numéro Mobile Money")} value={phone} onChange={e => setPhone(e.target.value)} placeholder="6XXXXXXXX" className={`${field} mt-1`} />
               </div>
             )}
             {error && <p role="alert" className="text-xs font-bold text-red-500">{error}</p>}
@@ -119,19 +120,19 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
         {step === 'waiting' && (
           <div className="text-center space-y-4 py-2" aria-live="polite">
             <Smartphone size={40} className="mx-auto text-orange-btn" />
-            <p className="font-black">{method === 'CARD' ? 'Finalisez le paiement par carte' : 'Validez sur MyCoolPay, puis sur votre téléphone'}</p>
+            <p className="font-black">{method === 'CARD' ? tr("Finalisez le paiement par carte") : tr("Validez sur MyCoolPay, puis sur votre téléphone")}</p>
             <p className="text-xs text-foreground/60">
               {method === 'CARD'
-                ? 'Une page de paiement sécurisée vient de s’ouvrir.'
-                : `1. Ouvrez la page de paiement et cliquez « Submit ». 2. Composez votre code secret sur le ${phone} pour confirmer ${Number(amount).toLocaleString()} FCFA.`}
+                ? tr("Une page de paiement sécurisée vient de s’ouvrir.")
+                : tr('1. Ouvrez la page de paiement et cliquez « Submit ». 2. Composez votre code secret sur le {phone} pour confirmer {amount} FCFA.', { phone, amount: Number(amount).toLocaleString() })}
             </p>
             <Loader2 size={22} className="mx-auto animate-spin text-foreground/40" />
-            <p className="text-[10px] uppercase tracking-widest text-foreground/40">Statut : {order?.status || 'en attente'}</p>
+            <p className="text-[10px] uppercase tracking-widest text-foreground/40">{tr("Statut : ")}{order?.status || tr("en attente")}</p>
             {order?.redirectUrl && (
               // clic de l'utilisateur : le navigateur ne bloque pas l'ouverture (contrairement au window.open après l'await)
               <a href={order.redirectUrl} target="_blank" rel="noopener noreferrer"
                 className="w-full bg-orange-btn text-white py-3.5 rounded-xl font-black flex items-center justify-center gap-2">
-                Ouvrir la page de paiement <ExternalLink size={16} />
+                {tr("Ouvrir la page de paiement ")}<ExternalLink size={16} />
               </a>
             )}
           </div>
@@ -140,8 +141,8 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
         {step === 'paid' && (
           <div className="text-center space-y-3 py-2">
             <CheckCircle2 size={44} className="mx-auto text-green-500" />
-            <p className="font-black">Wallet rechargé de {Number(amount).toLocaleString()} FCFA</p>
-            <button onClick={onClose} className="w-full bg-orange-btn text-white py-3 rounded-xl font-black">Terminer</button>
+            <p className="font-black">{tr("Wallet rechargé de ")}{Number(amount).toLocaleString()} FCFA</p>
+            <button onClick={onClose} className="w-full bg-orange-btn text-white py-3 rounded-xl font-black">{tr("Terminer")}</button>
           </div>
         )}
 
@@ -149,7 +150,7 @@ export default function RechargeModal({ onClose, onPaid }: { onClose: () => void
           <div className="text-center space-y-3 py-2">
             <XCircle size={44} className="mx-auto text-red-500" />
             <p role="alert" className="text-sm font-bold">{error}</p>
-            <button onClick={() => { setStep('form'); setError(''); }} className="w-full bg-orange-btn text-white py-3 rounded-xl font-black">Réessayer</button>
+            <button onClick={() => { setStep('form'); setError(''); }} className="w-full bg-orange-btn text-white py-3 rounded-xl font-black">{tr("Réessayer")}</button>
           </div>
         )}
       </div>

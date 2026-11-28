@@ -8,7 +8,7 @@ type Role = 'ADMIN' | 'DRIVER' | 'PASSENGER';
 export const homeFor = (role?: Role) =>
   role === 'ADMIN' ? '/admin/dashboard' : role === 'DRIVER' ? '/driver/dashboard' : role === 'PASSENGER' ? '/ride' : '/';
 
-const PUBLIC = ['/', '/login', '/register'];
+export const PUBLIC = ['/', '/login', '/register'];
 
 /** Rôles autorisés par préfixe de route ; null = tout utilisateur connecté. */
 export function allowedRoles(path: string): Role[] | null | 'public' {

@@ -10,6 +10,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { rideService } from '../../src/services/rideService';
 import { userService } from '../../src/services/userService';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function DriverHistoryScreen() {
   const { Colors } = useTheme();
@@ -72,8 +73,8 @@ export default function DriverHistoryScreen() {
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: Colors.text }]}>Historique</Text>
-          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>SUIVI DES ACTIVITÉS</Text>
+          <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Historique")}</Text>
+          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>{tr("SUIVI DES ACTIVITÉS")}</Text>
         </View>
       </View>
 
@@ -88,7 +89,7 @@ export default function DriverHistoryScreen() {
           </View>
         ) : rides.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={[styles.emptyText, { color: Colors.textMuted }]}>Aucun trajet trouvé.</Text>
+            <Text style={[styles.emptyText, { color: Colors.textMuted }]}>{tr("Aucun trajet trouvé.")}</Text>
           </View>
         ) : (
           rides.map((ride: any) => {
@@ -115,14 +116,14 @@ export default function DriverHistoryScreen() {
                       <Text style={[styles.passLabel, { color: Colors.textMuted }]}>PASSAGER</Text>
                       <Text style={[styles.passName, { color: Colors.text }]}>{passName}</Text>
                       <Text style={[styles.rideDate, { color: Colors.textMuted }]}>
-                        {new Date(ride.createdAt).toLocaleDateString('fr-FR')} • ID #{ride.rideId?.slice(0,5)}
+                        {new Date(ride.createdAt).toLocaleDateString('fr-FR')} {tr(" • ID #")}{ride.rideId?.slice(0,5)}
                       </Text>
                     </View>
                   </View>
                   
                   <View style={styles.priceCol}>
                     <Text style={[styles.priceVal, { color: Colors.text }]}>{ride.price?.toLocaleString()} F</Text>
-                    <Text style={[styles.priceLbl, { color: Colors.textMuted }]}>NET CHAUFFEUR</Text>
+                    <Text style={[styles.priceLbl, { color: Colors.textMuted }]}>{tr("NET CHAUFFEUR")}</Text>
                     <View style={[styles.stateBadge, { backgroundColor: ride.state === 'COMPLETED' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                       {ride.state === 'COMPLETED' && <Ionicons name="checkmark-circle" size={10} color="#22C55E" />}
                       <Text style={[styles.stateText, { color: ride.state === 'COMPLETED' ? '#22C55E' : '#EF4444' }]}>{ride.state}</Text>
@@ -135,7 +136,7 @@ export default function DriverHistoryScreen() {
                   <Ionicons name="location" size={16} color={Colors.orange} style={{ marginTop: 2 }} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.routeStart, { color: Colors.text }]} numberOfLines={1}>{ride.startPoint}</Text>
-                    <Text style={[styles.routeEnd, { color: Colors.textMuted }]} numberOfLines={1}>Vers : {ride.endPoint?.split(',')[0]}</Text>
+                    <Text style={[styles.routeEnd, { color: Colors.textMuted }]} numberOfLines={1}>{tr("Vers : ")}{ride.endPoint?.split(',')[0]}</Text>
                   </View>
                   {!!ride.numberOfPlaces && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -153,7 +154,7 @@ export default function DriverHistoryScreen() {
                     <View style={styles.reviewHeader}>
                       {review.anonymous ? (
                          <View style={[styles.anonBadge, { backgroundColor: Colors.input }]}>
-                            <Text style={[styles.anonText, { color: Colors.textMuted }]}>Anonyme</Text>
+                            <Text style={[styles.anonText, { color: Colors.textMuted }]}>{tr("Anonyme")}</Text>
                          </View>
                       ) : (
                          <Text style={[styles.revPassName, { color: Colors.textMuted }]}>{review.passengerName}</Text>
@@ -174,7 +175,7 @@ export default function DriverHistoryScreen() {
                     ) : (
                       <View style={styles.commentRow}>
                         <Ionicons name="chatbubble-ellipses" size={14} color={Colors.textMuted} style={{ opacity: 0.3 }} />
-                        <Text style={[styles.noCommentText, { color: Colors.textMuted }]}>Aucun commentaire</Text>
+                        <Text style={[styles.noCommentText, { color: Colors.textMuted }]}>{tr("Aucun commentaire")}</Text>
                       </View>
                     )}
                   </View>

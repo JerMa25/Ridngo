@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useRef, useState } from 'react';
 import { rideService } from './rideService';
+import { tr } from '@/lib/i18n';
 
 export type LatLon = { lat: number; lon: number };
 
@@ -21,10 +22,10 @@ const MODIFIERS: Record<string, string> = {
 /** Instruction OSRM → texte français (« tournez à gauche sur Rue X »). */
 const describe = (step: any): string => {
   const m = step?.maneuver || {};
-  const road = step?.name ? ` sur ${step.name}` : '';
-  if (m.type === 'arrive') return 'vous êtes arrivé à destination';
-  if (m.type === 'roundabout' || m.type === 'rotary') return `au rond-point, prenez la ${m.exit || 1}ᵉ sortie${road}`;
-  return `${MODIFIERS[m.modifier] || 'continuez'}${road}`;
+  const road = step?.name ? tr(' sur {road}', { road: step.name }) : '';
+  if (m.type === 'arrive') return tr("vous êtes arrivé à destination");
+  if (m.type === 'roundabout' || m.type === 'rotary') return tr('au rond-point, prenez la {n}ᵉ sortie', { n: m.exit || 1 }) + road;
+  return tr(MODIFIERS[m.modifier] || 'continuez') + road;
 };
 
 export const formatDistance = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.max(0, Math.round(m / 10) * 10)} m`);
@@ -44,7 +45,7 @@ export function useNavigation(target: LatLon | null, active: boolean) {
   // Position réelle + distance parcourue (on ignore le bruit GPS < 5 m)
   useEffect(() => {
     if (!active) return;
-    if (!navigator.geolocation) { setGeoError("La géolocalisation n'est pas disponible sur cet appareil."); return; }
+    if (!navigator.geolocation) { setGeoError(tr("La géolocalisation n'est pas disponible sur cet appareil.")); return; }
     const id = navigator.geolocation.watchPosition(
       p => {
         const here = { lat: p.coords.latitude, lon: p.coords.longitude };
@@ -56,7 +57,7 @@ export function useNavigation(target: LatLon | null, active: boolean) {
         setPosition(here);
         setGeoError('');
       },
-      e => setGeoError(e.code === 1 ? 'Autorisez la localisation pour être guidé et terminer la course.' : 'Position GPS indisponible.'),
+      e => setGeoError(e.code === 1 ? tr("Autorisez la localisation pour être guidé et terminer la course.") : tr("Position GPS indisponible.")),
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 },
     );
     return () => navigator.geolocation.clearWatch(id);

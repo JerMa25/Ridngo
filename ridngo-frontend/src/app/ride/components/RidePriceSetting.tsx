@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, Minus, Phone, Clock, User as UserIcon, Users, Send } from 'lucide-react';
+import { tr } from '@/lib/i18n';
 
 interface Props {
   price: number;
@@ -73,12 +74,11 @@ export const RidePriceSetting = ({
       className="space-y-6"
     >
       <button onClick={onBack} className="flex items-center gap-2 text-[10px] font-black uppercase opacity-40 hover:opacity-100 transition-opacity">
-        <ArrowLeft size={14}/> Retour
-      </button>
+        <ArrowLeft size={14}/> {tr(" Retour")}</button>
 
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-black italic tracking-tighter">Finalisez votre offre</h2>
-        <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Ajustez le prix et le contact</p>
+        <h2 className="text-2xl font-black italic tracking-tighter">{tr("Finalisez votre offre")}</h2>
+        <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{tr("Ajustez le prix et le contact")}</p>
       </div>
       
       {/* SÉLECTEUR DE PRIX */}
@@ -124,7 +124,7 @@ export const RidePriceSetting = ({
         <div className="text-center">
           <p className="text-4xl font-black">{numberOfPlaces}</p>
           <p className="text-[9px] font-black text-orange-btn uppercase">
-            {numberOfPlaces > 1 ? "places" : "place"}
+            {numberOfPlaces > 1 ? tr("places") : tr("place")}
           </p>
         </div>
         
@@ -145,15 +145,13 @@ export const RidePriceSetting = ({
             onClick={() => handleToggleMode(true)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isForSelf ? 'bg-background shadow-lg text-orange-btn' : 'opacity-40'}`}
            >
-             <UserIcon size={14} /> Pour moi
-           </button>
+             <UserIcon size={14} /> {tr(" Pour moi")}</button>
            <button 
             type="button"
             onClick={() => handleToggleMode(false)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${!isForSelf ? 'bg-background shadow-lg text-orange-btn' : 'opacity-40'}`}
            >
-             <Users size={14} /> Pour un tiers
-           </button>
+             <Users size={14} /> {tr(" Pour un tiers")}</button>
         </div>
 
         <div className="space-y-3">
@@ -162,7 +160,7 @@ export const RidePriceSetting = ({
             <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${passengerPhone ? 'text-orange-btn' : 'opacity-20'}`} size={16} />
             <input 
               type="tel" 
-              placeholder="Numéro de téléphone (ex: 677...)"
+              placeholder={tr("Numéro de téléphone (ex: 677...)")}
               readOnly={isForSelf}
               value={passengerPhone}
               onChange={(e) => setPassengerPhone(e.target.value)}
@@ -179,7 +177,7 @@ export const RidePriceSetting = ({
               onChange={(e) => setDepartureTime(e.target.value)}
               className="w-full bg-foreground/5 border border-transparent rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-orange-btn text-sm font-bold transition-all"
             />
-            <p className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase opacity-20">Départ</p>
+            <p className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase opacity-20">{tr("Départ")}</p>
           </div>
         </div>
       </div>
@@ -189,7 +187,7 @@ export const RidePriceSetting = ({
         disabled={!passengerPhone || !departureTime}
         className="w-full py-5 bg-orange-btn text-white rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-20 flex items-center justify-center gap-3"
       >
-        <span>Publier l'offre</span>
+        <span>{tr("Publier l'offre")}</span>
         <Send size={18} />
       </button>
     </motion.div>

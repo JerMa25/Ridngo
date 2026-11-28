@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { clearOfflineCache } from '@/components/providers/QueryProvider';
+import { clearSession } from '@/lib/session';
+import { tr } from '@/lib/i18n';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
@@ -41,7 +43,7 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('Photo trop lourde (5 Mo max).'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error(tr("Photo trop lourde (5 Mo max).")); return; }
     setUploadingPhoto(true);
     try {
       const form = new FormData();
@@ -53,9 +55,9 @@ export default function ProfilePage() {
       localStorage.setItem('user', JSON.stringify({ ...stored, photoUri: res.data.photoUri }));
       window.dispatchEvent(new Event('storage'));
       await queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
-      toast.success('Photo de profil mise à jour');
+      toast.success(tr("Photo de profil mise à jour"));
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Impossible d'envoyer la photo.");
+      toast.error(err.response?.data?.detail || tr("Impossible d'envoyer la photo."));
     } finally {
       setUploadingPhoto(false);
     }
@@ -107,9 +109,9 @@ export default function ProfilePage() {
       localStorage.setItem('user', JSON.stringify({ ...stored, name: `${updateReq.firstName} ${updateReq.lastName}`.trim(), phone: updateReq.phone }));
       window.dispatchEvent(new Event('storage'));
       await queryClient.invalidateQueries({ queryKey: ['userProfileData'] });
-      toast.success("Profil mis à jour !");
+      toast.success(tr("Profil mis à jour !"));
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Erreur lors de la mise à jour");
+      toast.error(err.response?.data?.detail || tr("Erreur lors de la mise à jour"));
     } finally {
       setSaving(false);
     }
@@ -118,7 +120,7 @@ export default function ProfilePage() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("La confirmation ne correspond pas.");
+      toast.error(tr("La confirmation ne correspond pas."));
       return;
     }
     setChangingPassword(true);
@@ -127,26 +129,26 @@ export default function ProfilePage() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-      toast.success("Mot de passe modifié !");
+      toast.success(tr("Mot de passe modifié !"));
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || err.response?.data?.message || "Erreur mot de passe.");
+      toast.error(err.response?.data?.detail || err.response?.data?.message || tr("Erreur mot de passe."));
     } finally {
       setChangingPassword(false);
     }
   };
 
   const handleLogout = () => {
-    if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-      localStorage.clear();
+    if (confirm(tr("Voulez-vous vraiment vous déconnecter ?"))) {
+      clearSession();
       clearOfflineCache().finally(() => { window.location.href = "/"; });
     }
   };
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4">
+    <div className="h-app flex flex-col items-center justify-center gap-4">
       <Loader2 className="animate-spin text-orange-btn" size={40} />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Accès sécurisé au profil...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{tr("Accès sécurisé au profil...")}</p>
     </div>
   );
 
@@ -161,12 +163,12 @@ export default function ProfilePage() {
               <div className="relative w-32 h-32 mx-auto mb-6 group">
                 <div className="w-full h-full bg-orange-btn rounded-[40px] flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-orange-btn/20 overflow-hidden italic">
                   {user?.photoUri ? (
-                    <img src={user.photoUri} className="w-full h-full object-cover" alt="Profile" />
+                    <img src={user.photoUri} className="w-full h-full object-cover" alt={tr("Profile")} />
                   ) : (
                     user?.name?.charAt(0) || user?.firstName?.charAt(0)
                   )}
                 </div>
-                <button type="button" aria-label="Changer la photo de profil" disabled={uploadingPhoto}
+                <button type="button" aria-label={tr("Changer la photo de profil")} disabled={uploadingPhoto}
                   onClick={() => photoInputRef.current?.click()}
                   className="absolute bottom-0 right-0 p-3 bg-foreground text-background rounded-2xl shadow-xl hover:scale-110 transition-transform disabled:opacity-60">
                    {uploadingPhoto ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
@@ -189,14 +191,14 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab('parameters')}
                 className={`flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === 'parameters' ? 'bg-orange-btn text-white shadow-lg shadow-orange-btn/20' : 'hover:bg-foreground/5 opacity-60'}`}
                >
-                 <div className="flex items-center gap-3"><Settings size={18} /> Paramètres</div>
+                 <div className="flex items-center gap-3"><Settings size={18} /> {tr(" Paramètres")}</div>
                  <ChevronRight size={14} />
                </button>
                <button 
                 onClick={() => setActiveTab('security')}
                 className={`flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === 'security' ? 'bg-orange-btn text-white shadow-lg shadow-orange-btn/20' : 'hover:bg-foreground/5 opacity-60'}`}
                >
-                 <div className="flex items-center gap-3"><Lock size={18} /> Sécurité</div>
+                 <div className="flex items-center gap-3"><Lock size={18} /> {tr(" Sécurité")}</div>
                  <ChevronRight size={14} />
                </button>
             </div>
@@ -204,13 +206,13 @@ export default function ProfilePage() {
             {/* INFO COMPLÉMENTAIRES (Spécifiques Driver) */}
             {driverData && (
               <div className="glass p-6 border-none shadow-sm space-y-4 bg-foreground/5">
-                <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">Informations Pro</p>
+                <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">{tr("Informations Pro")}</p>
                 <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3 opacity-70 text-xs font-bold"><Car size={16}/> Véhicule</div>
+                   <div className="flex items-center gap-3 opacity-70 text-xs font-bold"><Car size={16}/> {tr(" Véhicule")}</div>
                    <span className="text-xs font-black">{vehicle?.brand || 'N/A'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3 opacity-70 text-xs font-bold"><Shield size={16}/> Permis</div>
+                   <div className="flex items-center gap-3 opacity-70 text-xs font-bold"><Shield size={16}/> {tr(" Permis")}</div>
                    <span className="text-xs font-black">{driverData.licenseNumber || '---'}</span>
                 </div>
               </div>
@@ -221,8 +223,7 @@ export default function ProfilePage() {
               className="w-full flex items-center justify-center gap-3 p-5 bg-red-500/10 text-red-500 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white transition-all group shadow-sm"
             >
               <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
-              Déconnexion
-            </button>
+              {tr("Déconnexion")}</button>
           </div>
 
           {/* COLONNE DROITE : CONTENU DYNAMIQUE */}
@@ -240,41 +241,41 @@ export default function ProfilePage() {
                       <div className="w-12 h-12 bg-orange-btn/10 text-orange-btn rounded-2xl flex items-center justify-center">
                         <User size={24} />
                       </div>
-                      <h3 className="text-3xl font-black tracking-tighter italic">Informations personnelles</h3>
+                      <h3 className="text-3xl font-black tracking-tighter italic">{tr("Informations personnelles")}</h3>
                    </div>
 
                    <form onSubmit={handleUpdate} className="space-y-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="label-p">Prénom</label>
+                          <label className="label-p">{tr("Prénom")}</label>
                           <input 
                             value={editData.firstName} 
                             onChange={e => setEditData({...editData, firstName: e.target.value})} 
                             className="input-profile" 
-                            placeholder="John"
+                            placeholder={tr("John")}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="label-p">Nom de famille</label>
+                          <label className="label-p">{tr("Nom de famille")}</label>
                           <input 
                             value={editData.lastName} 
                             onChange={e => setEditData({...editData, lastName: e.target.value})} 
                             className="input-profile" 
-                            placeholder="Doe"
+                            placeholder={tr("Doe")}
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 opacity-50">
-                            <label className="label-p">Email (Non modifiable)</label>
+                            <label className="label-p">{tr("Email (Non modifiable)")}</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20" size={18} />
                                 <input readOnly value={user?.email} className="input-profile pl-12 cursor-not-allowed" />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="label-p">Téléphone</label>
+                            <label className="label-p">{tr("Téléphone")}</label>
                             <div className="relative">
                                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20" size={18} />
                                 <input 
@@ -293,7 +294,7 @@ export default function ProfilePage() {
                           type="submit" 
                           className="w-full bg-orange-btn text-white py-6 rounded-[24px] font-black uppercase tracking-[0.2em] shadow-xl shadow-orange-btn/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
-                          {saving ? <Loader2 className="animate-spin" size={24} /> : <><Save size={20} /> Enregistrer les modifications</>}
+                          {saving ? <Loader2 className="animate-spin" size={24} /> : <><Save size={20} /> {tr(" Enregistrer les modifications")}</>}
                         </button>
                       </div>
                    </form>
@@ -310,12 +311,12 @@ export default function ProfilePage() {
                       <div className="w-12 h-12 bg-foreground/5 text-foreground/60 rounded-2xl flex items-center justify-center">
                         <Key size={24} />
                       </div>
-                      <h3 className="text-2xl font-black tracking-tighter italic">Sécurité du compte</h3>
+                      <h3 className="text-2xl font-black tracking-tighter italic">{tr("Sécurité du compte")}</h3>
                    </div>
 
                    <form onSubmit={handleChangePassword} className="space-y-6">
                       <div className="space-y-2">
-                        <label className="label-p">Mot de passe actuel</label>
+                        <label className="label-p">{tr("Mot de passe actuel")}</label>
                         <div className="relative">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20" size={18} />
                           <input 
@@ -331,25 +332,25 @@ export default function ProfilePage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="label-p">Nouveau mot de passe</label>
+                          <label className="label-p">{tr("Nouveau mot de passe")}</label>
                           <input 
                             type="password"
                             required
                             value={passwordData.newPassword} 
                             onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})} 
                             className="input-profile" 
-                            placeholder="Min. 8 caractères"
+                            placeholder={tr("Min. 8 caractères")}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="label-p">Confirmation</label>
+                          <label className="label-p">{tr("Confirmation")}</label>
                           <input 
                             type="password"
                             required
                             value={passwordData.confirmPassword} 
                             onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})} 
                             className="input-profile" 
-                            placeholder="Répétez"
+                            placeholder={tr("Répétez")}
                           />
                         </div>
                       </div>
@@ -360,7 +361,7 @@ export default function ProfilePage() {
                           type="submit" 
                           className="w-full bg-foreground text-background py-6 rounded-[24px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-orange-btn hover:text-white transition-all flex items-center justify-center gap-3"
                         >
-                          {changingPassword ? <Loader2 className="animate-spin" size={24} /> : <><Key size={20} /> Mettre à jour le mot de passe</>}
+                          {changingPassword ? <Loader2 className="animate-spin" size={24} /> : <><Key size={20} /> {tr(" Mettre à jour le mot de passe")}</>}
                         </button>
                       </div>
                    </form>
@@ -371,8 +372,7 @@ export default function ProfilePage() {
             <div className="mt-8 p-6 bg-foreground/5 rounded-3xl flex items-start gap-4">
               <AlertCircle className="text-orange-btn shrink-0" size={20} />
               <p className="text-[11px] font-medium opacity-50 leading-relaxed italic">
-                La sécurité de vos données est notre priorité. Si vous remarquez une activité suspecte, veuillez modifier votre mot de passe immédiatement et contacter l&apos;administration RidnGo.
-              </p>
+                {tr("La sécurité de vos données est notre priorité. Si vous remarquez une activité suspecte, veuillez modifier votre mot de passe immédiatement et contacter l'administration RidnGo.")}</p>
             </div>
           </div>
         </div>

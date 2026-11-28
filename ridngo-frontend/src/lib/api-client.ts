@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import { clearOfflineCache } from '@/components/providers/QueryProvider';
+import { clearSession } from '@/lib/session';
+import { tr } from '@/lib/i18n';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -47,6 +49,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    // messages du backend (français) affichés dans la langue de l'interface
+    const data = error.response?.data;
+    if (data && typeof data.detail === 'string') data.detail = tr(data.detail);
+    if (data && typeof data.message === 'string') data.message = tr(data.message);
 
     // Si l'erreur n'est pas un 401, ou si c'est une requête vers l'auth, on rejette normalement
     if (error.response?.status !== 401 || originalRequest.url.includes('/api/v1/auth')) {
@@ -95,7 +101,7 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError, null);
-      localStorage.clear();
+      clearSession();
       await clearOfflineCache();
       // session expirée : retour à la landing (la popup de connexion s'y ouvre)
       if (window.location.pathname !== '/') {

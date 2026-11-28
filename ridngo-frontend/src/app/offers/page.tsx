@@ -21,6 +21,7 @@ import toast from 'react-hot-toast';
 import { api } from '@/lib/api-client';
 import { rideService } from '@/lib/rideService';
 import { RideWaiting } from '@/app/ride/components/RideWaiting';
+import { tr } from '@/lib/i18n';
 
 type ViewMode = 'current' | 'history';
 
@@ -143,10 +144,10 @@ export default function OffersPage() {
       const updated = await rideService.selectDriver(offer.id, driverId);
       setOffer(updated);
       setHistory(sortOffers(upsertStoredOffer(updated, readStoredOffers())));
-      toast.success('Chauffeur sélectionné avec succès');
+      toast.success(tr("Chauffeur sélectionné avec succès"));
     } catch (error) {
       console.error('Erreur sélection chauffeur', error);
-      toast.error('Impossible de sélectionner ce chauffeur');
+      toast.error(tr("Impossible de sélectionner ce chauffeur"));
     }
   };
 
@@ -158,7 +159,7 @@ export default function OffersPage() {
     new Promise<boolean>((resolve) => {
       toast((t) => (
         <div className="flex flex-col gap-3">
-          <p>Voulez-vous vraiment annulerrr cette offre ?</p>
+          <p>{tr("Voulez-vous vraiment annulerrr cette offre ?")}</p>
 
           <div className="flex justify-end gap-2">
             <button
@@ -168,8 +169,7 @@ export default function OffersPage() {
               }}
               className="px-3 py-1 rounded-lg border"
             >
-              Cancel
-            </button>
+              {tr("Cancel")}</button>
 
             <button
               onClick={() => {
@@ -178,8 +178,7 @@ export default function OffersPage() {
               }}
               className="px-3 py-1 rounded-lg bg-red-500 text-white"
             >
-              Yes
-            </button>
+              {tr("Yes")}</button>
           </div>
         </div>
       ), {
@@ -200,10 +199,10 @@ export default function OffersPage() {
       writeStoredOffers(nextHistory);
       setHistory(sortOffers(nextHistory));
       setOffer(null);
-      toast.success('Offre annulée');
+      toast.success(tr("Offre annulée"));
     } catch (error) {
       console.error('Erreur annulation offre', error);
-      toast.error('Impossible d’annuler cette offre');
+      toast.error(tr("Impossible d’annuler cette offre"));
     } finally {
       setIsCancelling(false);
     }
@@ -211,17 +210,17 @@ export default function OffersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-app flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 text-foreground/70">
           <Loader2 className="animate-spin text-orange-btn" size={36} />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em]">Chargement de vos offres…</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em]">{tr("Chargement de vos offres…")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-app bg-background text-foreground">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-6 md:px-8 md:py-10">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -232,8 +231,8 @@ export default function OffersPage() {
               <ArrowLeft size={20} />
             </Link>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">Passager</p>
-              <h1 className="text-3xl font-black tracking-tighter md:text-4xl">Mes offres</h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">{tr("Passager")}</p>
+              <h1 className="text-3xl font-black tracking-tighter md:text-4xl">{tr("Mes offres")}</h1>
             </div>
           </div>
 
@@ -242,14 +241,12 @@ export default function OffersPage() {
               onClick={() => setView('current')}
               className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] transition ${view === 'current' ? 'bg-orange-btn text-white shadow-lg' : 'text-foreground/50'}`}
             >
-              Offre en cours
-            </button>
+              {tr("Offre en cours")}</button>
             <button
               onClick={() => setView('history')}
               className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] transition ${view === 'history' ? 'bg-orange-btn text-white shadow-lg' : 'text-foreground/50'}`}
             >
-              Historique
-            </button>
+              {tr("Historique")}</button>
           </div>
         </div>
 
@@ -264,17 +261,16 @@ export default function OffersPage() {
                 <div className="flex min-h-80 flex-col items-center justify-center gap-4 rounded-[28px] border border-dashed border-foreground/10 bg-foreground/3 p-8 text-center">
                   <Car size={36} className="text-orange-btn/40" />
                   <div>
-                    <h2 className="text-xl font-black tracking-tight">Aucune offre en cours</h2>
+                    <h2 className="text-xl font-black tracking-tight">{tr("Aucune offre en cours")}</h2>
                     <p className="mt-2 text-sm text-foreground/50">
-                      Publiez une nouvelle course depuis la page de réservation pour voir ici le radar et les chauffeurs intéressés.
-                    </p>
+                      {tr("Publiez une nouvelle course depuis la page de réservation pour voir ici le radar et les chauffeurs intéressés.")}</p>
                   </div>
                 </div>
               ) : (
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn">Offre active</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn">{tr("Offre active")}</p>
                       <h2 className="mt-2 text-2xl font-black tracking-tight">{offer.startPoint}</h2>
                       <div className="mt-2 flex items-center gap-2 text-sm text-foreground/60">
                         <MapPin size={14} className="text-orange-btn" />
@@ -282,7 +278,7 @@ export default function OffersPage() {
                       </div>
                     </div>
                     <div className="rounded-2xl bg-orange-btn/10 px-4 py-3 text-right">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn/70">Prix</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn/70">{tr("Prix")}</p>
                       <p className="text-2xl font-black text-orange-btn">{offer.price} F</p>
                     </div>
                   </div>
@@ -291,25 +287,22 @@ export default function OffersPage() {
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <CalendarDays size={13} className="text-orange-btn" />
-                        Date
-                      </div>
+                        {tr("Date")}</div>
                       <p className="mt-2 text-sm font-bold">
-                        {offer.departureTime ? new Date(offer.departureTime).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'À définir'}
+                        {offer.departureTime ? new Date(offer.departureTime).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : tr("À définir")}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <Users size={13} className="text-orange-btn" />
-                        Places
-                      </div>
+                        {tr("Places")}</div>
                       <p className="mt-2 text-sm font-bold">{offer.numberOfPlaces}</p>
                     </div>
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <ShieldCheck size={13} className="text-orange-btn" />
-                        Statut
-                      </div>
-                      <p className="mt-2 text-sm font-bold">{offer.state === 'VALIDATED' ? 'Validée' : offer.state === 'CANCELLED' ? 'Annulée' : 'En recherche'}</p>
+                        {tr("Statut")}</div>
+                      <p className="mt-2 text-sm font-bold">{offer.state === 'VALIDATED' ? tr("Validée") : offer.state === 'CANCELLED' ? tr("Annulée") : tr("En recherche")}</p>
                     </div>
                   </div>
 
@@ -320,13 +313,12 @@ export default function OffersPage() {
                           <Loader2 className="animate-spin" size={16} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">Radar</p>
-                          <p className="text-sm font-bold">Recherche active des chauffeurs</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">{tr("Radar")}</p>
+                          <p className="text-sm font-bold">{tr("Recherche active des chauffeurs")}</p>
                         </div>
                       </div>
                       <div className="rounded-full bg-orange-btn/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn">
-                        {offer.bids?.length || 0} proposition(s)
-                      </div>
+                        {offer.bids?.length || 0} {tr(" proposition(s)")}</div>
                     </div>
                   </div>
 
@@ -340,8 +332,7 @@ export default function OffersPage() {
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
                   >
                     {isCancelling ? <Loader2 className="animate-spin" size={14} /> : <ShieldCheck size={14} />}
-                    Annuler l’offre
-                  </button>
+                    {tr("Annuler l’offre")}</button>
                 </>
               )}
             </motion.div>
@@ -354,8 +345,8 @@ export default function OffersPage() {
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">Aide rapide</p>
-                  <h3 className="text-xl font-black tracking-tight">Ce que vous pouvez faire</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">{tr("Aide rapide")}</p>
+                  <h3 className="text-xl font-black tracking-tight">{tr("Ce que vous pouvez faire")}</h3>
                 </div>
                 <div className="rounded-2xl bg-foreground/5 p-3 text-orange-btn">
                   <Clock3 size={18} />
@@ -364,16 +355,16 @@ export default function OffersPage() {
 
               <div className="mt-6 space-y-3">
                 <div className="rounded-2xl border border-foreground/5 bg-foreground/3 p-4">
-                  <p className="text-sm font-black">1. Suivez le radar</p>
-                  <p className="mt-1 text-sm text-foreground/55">Les chauffeurs qui manifestent leur intérêt apparaissent automatiquement ici.</p>
+                  <p className="text-sm font-black">{tr("1. Suivez le radar")}</p>
+                  <p className="mt-1 text-sm text-foreground/55">{tr("Les chauffeurs qui manifestent leur intérêt apparaissent automatiquement ici.")}</p>
                 </div>
                 <div className="rounded-2xl border border-foreground/5 bg-foreground/3 p-4">
-                  <p className="text-sm font-black">2. Consultez le profil</p>
-                  <p className="mt-1 text-sm text-foreground/55">Vous pouvez ouvrir les informations du chauffeur avant de le valider.</p>
+                  <p className="text-sm font-black">{tr("2. Consultez le profil")}</p>
+                  <p className="mt-1 text-sm text-foreground/55">{tr("Vous pouvez ouvrir les informations du chauffeur avant de le valider.")}</p>
                 </div>
                 <div className="rounded-2xl border border-foreground/5 bg-foreground/3 p-4">
-                  <p className="text-sm font-black">3. Gérez votre historique</p>
-                  <p className="mt-1 text-sm text-foreground/55">Chaque offre passée reste accessible depuis l’onglet historique.</p>
+                  <p className="text-sm font-black">{tr("3. Gérez votre historique")}</p>
+                  <p className="mt-1 text-sm text-foreground/55">{tr("Chaque offre passée reste accessible depuis l’onglet historique.")}</p>
                 </div>
               </div>
             </motion.div>
@@ -383,8 +374,8 @@ export default function OffersPage() {
             {history.length === 0 ? (
               <div className="rounded-[36px] border border-dashed border-foreground/10 bg-foreground/3 p-12 text-center">
                 <HistoryIcon size={30} className="mx-auto text-orange-btn/40" />
-                <h2 className="mt-4 text-xl font-black tracking-tight">Aucun historique pour le moment</h2>
-                <p className="mt-2 text-sm text-foreground/50">Vos offres passées apparaîtront ici une fois validées ou annulées.</p>
+                <h2 className="mt-4 text-xl font-black tracking-tight">{tr("Aucun historique pour le moment")}</h2>
+                <p className="mt-2 text-sm text-foreground/50">{tr("Vos offres passées apparaîtront ici une fois validées ou annulées.")}</p>
               </div>
             ) : (
               history.map((item) => (
@@ -396,7 +387,7 @@ export default function OffersPage() {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35">Offre</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35">{tr("Offre")}</p>
                       <h3 className="mt-2 text-xl font-black tracking-tight">{item.startPoint}</h3>
                       <div className="mt-2 flex items-center gap-2 text-sm text-foreground/60">
                         <MapPin size={14} className="text-orange-btn" />
@@ -404,7 +395,7 @@ export default function OffersPage() {
                       </div>
                     </div>
                     <div className="rounded-2xl bg-orange-btn/10 px-4 py-3 text-right">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn/70">Prix</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-btn/70">{tr("Prix")}</p>
                       <p className="text-xl font-black text-orange-btn">{item.price} F</p>
                     </div>
                   </div>
@@ -413,30 +404,26 @@ export default function OffersPage() {
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <CalendarDays size={13} className="text-orange-btn" />
-                        Date
-                      </div>
+                        {tr("Date")}</div>
                       <p className="mt-2 text-sm font-bold">{new Date(item.createdAt).toLocaleDateString('fr-FR')}</p>
                     </div>
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <Users size={13} className="text-orange-btn" />
-                        Places
-                      </div>
+                        {tr("Places")}</div>
                       <p className="mt-2 text-sm font-bold">{item.numberOfPlaces}</p>
                     </div>
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <Wallet size={13} className="text-orange-btn" />
-                        Chauffeur
-                      </div>
-                      <p className="mt-2 text-sm font-bold">{item.selectedDriverName || 'En attente'}</p>
+                        {tr("Chauffeur")}</div>
+                      <p className="mt-2 text-sm font-bold">{item.selectedDriverName || tr("En attente")}</p>
                     </div>
                     <div className="rounded-2xl bg-foreground/5 p-4">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40">
                         <ShieldCheck size={13} className="text-orange-btn" />
-                        Statut
-                      </div>
-                      <p className="mt-2 text-sm font-bold">{item.state === 'VALIDATED' ? 'Validée' : item.state === 'CANCELLED' ? 'Annulée' : 'En recherche'}</p>
+                        {tr("Statut")}</div>
+                      <p className="mt-2 text-sm font-bold">{item.state === 'VALIDATED' ? tr("Validée") : item.state === 'CANCELLED' ? tr("Annulée") : tr("En recherche")}</p>
                     </div>
                   </div>
                 </motion.div>

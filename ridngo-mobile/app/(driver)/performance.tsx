@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
 import { rideService } from '../../src/services/rideService';
 import { Spacing, Radius } from '../../src/types/theme';
+import { tr } from '../../src/i18n';
 
 export default function DriverPerformanceScreen() {
   const { Colors } = useTheme();
@@ -50,8 +51,8 @@ export default function DriverPerformanceScreen() {
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: Colors.text }]}>Performance</Text>
-          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>AVIS & ÉVALUATIONS</Text>
+          <Text style={[styles.headerTitle, { color: Colors.text }]}>{tr("Performance")}</Text>
+          <Text style={[styles.headerSub, { color: Colors.textMuted }]}>{tr("AVIS & ÉVALUATIONS")}</Text>
         </View>
       </View>
 
@@ -73,15 +74,15 @@ export default function DriverPerformanceScreen() {
               </View>
               <Text style={[styles.heroScore, { color: Colors.text }]}>{avgRating}</Text>
               <View style={styles.heroStars}>{renderStars(parseFloat(avgRating), 20)}</View>
-              <Text style={[styles.heroTotal, { color: Colors.textMuted }]}>Sur la base de {totalReviews} avis</Text>
+              <Text style={[styles.heroTotal, { color: Colors.textMuted }]}>{tr("Sur la base de ")}{totalReviews} {tr(" avis")}</Text>
             </View>
 
             {/* Liste des avis */}
             <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>DERNIERS AVIS</Text>
+              <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>{tr("DERNIERS AVIS")}</Text>
               {totalReviews === 0 ? (
                 <View style={[styles.emptyCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
-                  <Text style={[styles.emptyText, { color: Colors.textMuted }]}>Aucun avis pour le moment.</Text>
+                  <Text style={[styles.emptyText, { color: Colors.textMuted }]}>{tr("Aucun avis pour le moment.")}</Text>
                 </View>
               ) : (
                 reviews.map((review: any) => (
@@ -89,7 +90,7 @@ export default function DriverPerformanceScreen() {
                     <View style={styles.reviewHeader}>
                       {review.anonymous ? (
                         <View style={[styles.anonBadge, { backgroundColor: Colors.input }]}>
-                          <Text style={[styles.anonText, { color: Colors.textMuted }]}>Anonyme</Text>
+                          <Text style={[styles.anonText, { color: Colors.textMuted }]}>{tr("Anonyme")}</Text>
                         </View>
                       ) : (
                         <View style={styles.passRow}>

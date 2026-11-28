@@ -11,6 +11,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { Spacing, Radius } from '../../src/types/theme';
 import { RideResponse } from '../../src/types/api';
 import { withOfflineFallback, CacheKeys } from '../../src/services/offlineCache';
+import { tr } from '../../src/i18n';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -86,7 +87,7 @@ export default function HistoryScreen() {
             />
             <View style={[styles.stateBadgeOverlay, { backgroundColor: isCompleted ? Colors.greenBg : Colors.redBg }]}>
               <Text style={[styles.stateTextOverlay, { color: isCompleted ? Colors.green : Colors.red }]}>
-                {isCompleted ? 'Terminée' : item.state}
+                {isCompleted ? tr("Terminée") : item.state}
               </Text>
             </View>
           </View>
@@ -132,8 +133,8 @@ export default function HistoryScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <View style={[styles.header, { borderBottomColor: Colors.cardBorder }]}>
         <View>
-          <Text style={[styles.title, { color: Colors.text }]}>Mes Voyages</Text>
-          <Text style={[styles.tag, { color: Colors.textMuted }]}>{rides.length} COURSE(S)</Text>
+          <Text style={[styles.title, { color: Colors.text }]}>{tr("Mes Voyages")}</Text>
+          <Text style={[styles.tag, { color: Colors.textMuted }]}>{rides.length} {tr(" COURSE(S)")}</Text>
         </View>
       </View>
 
@@ -145,7 +146,7 @@ export default function HistoryScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="calendar-outline" size={48} color={Colors.textMuted} />
-            <Text style={[styles.emptyText, { color: Colors.textMuted }]}>Aucune course enregistrée</Text>
+            <Text style={[styles.emptyText, { color: Colors.textMuted }]}>{tr("Aucune course enregistrée")}</Text>
           </View>
         }
         renderItem={({ item }) => <RideCard item={item} />}
